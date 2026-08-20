@@ -1,0 +1,51 @@
+.mk-admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-page);
+}
+
+.mk-admin-layout__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mk-page {
+  padding: 32px 40px 56px;
+}
+
+.mk-page__eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--brand-blue-dark);
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+.mk-page__title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.mk-page__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 34px;
+  margin: 0 0 8px;
+}
+
+.mk-page__subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14.5px;
+  max-width: 560px;
+}
+
+.mk-page__actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}

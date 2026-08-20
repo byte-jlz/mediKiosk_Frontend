@@ -1,0 +1,83 @@
+.mk-klanding__art {
+  width: 42%;
+  flex-shrink: 0;
+}
+
+.mk-klanding__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 56px;
+}
+
+.mk-klanding__logo {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 48px;
+  margin: 0 0 16px;
+}
+
+.mk-klanding__tagline {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 440px;
+  margin: 0 0 36px;
+}
+
+.mk-klanding__actions {
+  display: flex;
+  gap: 14px;
+  max-width: 420px;
+}
+
+.mk-klanding__actions .mk-btn {
+  flex: 1;
+  padding: 16px 20px;
+}
+
+.mk-klanding__divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 420px;
+  margin: 24px 0;
+}
+
+.mk-klanding__divider span {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.mk-klanding__divider p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-light);
+}
+
+.mk-klanding__guest {
+  background: none;
+  border: none;
+  align-self: flex-start;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  letter-spacing: 0.3px;
+}
+
+.mk-klanding__guest:hover {
+  color: var(--navy);
+}
+
+.mk-klanding__staff-link {
+  background: none;
+  border: none;
+  align-self: flex-start;
+  margin-top: 28px;
+  font-size: 13px;
+  color: var(--brand-blue-dark);
+  font-weight: 600;
+}

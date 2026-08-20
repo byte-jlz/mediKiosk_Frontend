@@ -1,0 +1,141 @@
+.mk-patients__name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.mk-patients__id {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.mk-patients__view {
+  border: 1px solid var(--border);
+  background: var(--white);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.mk-patients__view:hover {
+  background: var(--brand-blue-light);
+}
+
+.mk-patients__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 36, 58, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.mk-patients__modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.mk-patients__modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.mk-patients__modal h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0 0 4px;
+}
+
+.mk-patients__modal-id {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 24px;
+}
+
+.mk-patients__modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.mk-patients__field span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.mk-patient-history {
+  margin-top: 28px;
+}
+
+.mk-patient-history__loading,
+.mk-patient-history__empty {
+  color: var(--muted);
+  margin: 16px 0;
+}
+
+.mk-patient-history__card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 16px;
+  background: var(--bg-secondary);
+}
+
+.mk-patient-history__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.mk-patient-history__date,
+.mk-patient-history__kiosk {
+  margin: 0;
+  color: var(--muted);
+}
+
+.mk-patient-history__summary {
+  margin: 0 0 12px;
+  color: var(--ink-soft);
+}
+
+.mk-patient-history__metrics {
+  display: grid;
+  gap: 10px;
+}
+
+.mk-patient-history__metric {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.mk-patient-history__metric strong {
+  color: var(--muted);
+}
+
+.mk-patients__field p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}

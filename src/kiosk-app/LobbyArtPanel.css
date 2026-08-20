@@ -1,0 +1,48 @@
+.mk-kiosk-art {
+  position: relative;
+  height: 100%;
+  background: linear-gradient(155deg, #1e3a5f 0%, #2b4d78 55%, #4a7ba9 100%);
+  overflow: hidden;
+}
+
+.mk-kiosk-art__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+}
+
+.mk-kiosk-art__glow--1 {
+  width: 320px;
+  height: 320px;
+  background: rgba(255,255,255,0.08);
+  top: -80px;
+  left: -80px;
+}
+
+.mk-kiosk-art__glow--2 {
+  width: 260px;
+  height: 260px;
+  background: rgba(255,255,255,0.06);
+  bottom: -60px;
+  right: -60px;
+}
+
+.mk-kiosk-art__floor {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(255,255,255,0.06), transparent);
+}
+
+.mk-kiosk-art__floor::before {
+  content: '+';
+  position: absolute;
+  right: 30px;
+  bottom: -30px;
+  font-family: var(--font-display);
+  font-size: 220px;
+  color: rgba(255,255,255,0.06);
+  line-height: 1;
+}

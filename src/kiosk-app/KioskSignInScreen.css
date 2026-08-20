@@ -1,0 +1,84 @@
+.mk-ksignin__art {
+  width: 42%;
+  flex-shrink: 0;
+}
+
+.mk-ksignin__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 56px;
+  position: relative;
+}
+
+.mk-ksignin__back {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--muted);
+}
+
+.mk-ksignin__logo {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 44px;
+  margin: 0 0 14px;
+}
+
+.mk-ksignin__tagline {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 420px;
+  margin: 0 0 30px;
+}
+
+.mk-ksignin__form {
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.mk-ksignin__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+}
+
+.mk-ksignin__field input {
+  border: 1px solid var(--border);
+  background: var(--brand-blue-light);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+}
+
+.mk-ksignin__field input:focus {
+  border-color: var(--brand-blue);
+}
+
+.mk-ksignin__error {
+  color: var(--red);
+  font-size: 13px;
+  margin: -8px 0 0;
+}
+
+.mk-ksignin__actions {
+  display: flex;
+}
+
+.mk-ksignin__actions .mk-btn {
+  min-width: 160px;
+}

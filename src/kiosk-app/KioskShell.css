@@ -1,0 +1,38 @@
+.mk-kiosk-outer {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, #eef4fa 0%, transparent 60%),
+    var(--bg-page);
+}
+
+.mk-kiosk-shell {
+  width: 100%;
+  max-width: 1180px;
+  aspect-ratio: 16 / 10;
+  min-height: 680px;
+  background: var(--white);
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg), 0 0 0 10px #1a1a1a, 0 0 0 12px #333;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.mk-kiosk-shell--split {
+  flex-direction: row;
+}
+
+@media (max-width: 900px) {
+  .mk-kiosk-shell {
+    aspect-ratio: auto;
+    min-height: 80vh;
+  }
+  .mk-kiosk-shell--split {
+    flex-direction: column;
+  }
+}

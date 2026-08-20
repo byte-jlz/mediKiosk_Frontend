@@ -1,0 +1,77 @@
+// Mock patient records — mirrors the "Patient Records" table in the Figma admin console.
+// Replace with a real fetch to GET /api/patients once the backend is live.
+
+export const mockPatients = [
+  {
+    id: 'P-88401',
+    lastName: 'Whitefield',
+    firstName: 'Eleanor',
+    middleName: 'R.',
+    age: 64,
+    gender: 'Female',
+    bloodType: 'O+',
+    email: 'eleanor.whitefield@example.com',
+    address: '14 Magnolia St, Northgate City',
+    lastVisit: '2026-05-02',
+  },
+  {
+    id: 'P-88402',
+    lastName: 'Park',
+    firstName: 'Daniel',
+    middleName: '',
+    age: 26,
+    gender: 'Female',
+    bloodType: 'A-',
+    email: 'daniel.park@example.com',
+    address: '92 Cedar Ave, Bayview',
+    lastVisit: '2026-04-27',
+  },
+  {
+    id: 'P-88403',
+    lastName: 'Redcloud',
+    firstName: 'Aiyana',
+    middleName: '',
+    age: 16,
+    gender: 'Female',
+    bloodType: 'B+',
+    email: 'aiyana.redcloud@example.com',
+    address: '5 Willow Ln, Eastside',
+    lastVisit: '2026-04-16',
+  },
+  {
+    id: 'P-88404',
+    lastName: 'Bertrand',
+    firstName: 'Hugo',
+    middleName: 'M.',
+    age: 50,
+    gender: 'Male',
+    bloodType: 'AB+',
+    email: 'hugo.bertrand@example.com',
+    address: '77 Oak Dr, Northgate City',
+    lastVisit: '2026-03-30',
+  },
+  {
+    id: 'P-88405',
+    lastName: 'Tanaka',
+    firstName: 'Mae',
+    middleName: '',
+    age: 34,
+    gender: 'Female',
+    bloodType: 'O-',
+    email: 'mae.tanaka@example.com',
+    address: '31 Birch Rd, Bayview',
+    lastVisit: '2026-03-15',
+  },
+];
+
+// The signed-in patient used throughout the patient-app demo (matches "PATIENT - PX304" in Figma)
+export const mockCurrentPatient = {
+  id: 'PX304',
+  lastName: 'Odchigue',
+  firstName: 'Althea',
+  middleName: 'Shane',
+  address: '',
+  birthday: '',
+  bloodType: '',
+  email: '',
+};

@@ -1,0 +1,28 @@
+.mk-tabs {
+  display: flex;
+  border-top: 1px solid var(--border-soft);
+  padding: 10px 0 12px;
+  background: var(--white);
+}
+
+.mk-tabs__tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--muted-light);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.mk-tabs__tab.is-active {
+  color: var(--navy);
+}
+
+.mk-tabs__icon {
+  font-size: 18px;
+}

@@ -1,0 +1,91 @@
+.mk-auth {
+  padding: 42px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.mk-auth__brand {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.mk-auth__logo {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 800;
+  font-size: 36px;
+  margin: 0;
+  color: var(--ink);
+}
+
+.mk-auth__tagline {
+  margin: 10px auto 0;
+  max-width: 280px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mk-auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mk-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f6f9ff;
+  border: 1px solid #dce5f2;
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.mk-field:focus-within {
+  border-color: var(--brand-blue);
+}
+
+.mk-field__icon {
+  font-size: 16px;
+  opacity: 0.65;
+}
+
+.mk-field input {
+  border: none;
+  background: none;
+  outline: none;
+  flex: 1;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.mk-auth__error {
+  color: var(--red);
+  font-size: 13px;
+  margin: -8px 0 0;
+}
+
+.mk-auth__footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mk-auth__alt {
+  background: none;
+  border: none;
+  color: var(--brand-blue-dark);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mk-auth__alt:hover {
+  opacity: 0.9;
+}

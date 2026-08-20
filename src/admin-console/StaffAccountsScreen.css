@@ -1,0 +1,139 @@
+.mk-staff__cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mk-staff__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--brand-blue-light);
+  color: var(--brand-blue-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.mk-staff__name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.mk-staff__email {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.mk-staff__delete {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--red);
+  opacity: 0.75;
+}
+
+.mk-staff__delete:hover {
+  opacity: 1;
+}
+
+.mk-staff__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mk-staff__view {
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--ink-soft);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.mk-staff__view:hover {
+  background: var(--brand-blue-light);
+}
+
+.mk-staff__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 36, 58, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.mk-staff__modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: min(94vw, 520px);
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.mk-staff__modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.mk-staff__modal-subtitle {
+  margin: 10px 0 20px;
+  color: var(--muted);
+}
+
+.mk-staff__modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.mk-staff__field span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.mk-staff__field p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mk-staff__add-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  flex-wrap: wrap;
+}
+
+.mk-staff__add-form input,
+.mk-staff__add-form select {
+  flex: 1;
+  min-width: 140px;
+  border: 1px solid var(--border);
+  background: var(--brand-blue-light);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  outline: none;
+}

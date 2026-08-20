@@ -1,0 +1,76 @@
+.mk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  border: none;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease, opacity 120ms ease;
+  white-space: nowrap;
+}
+
+.mk-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.mk-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mk-btn--full {
+  width: 100%;
+}
+
+.mk-btn--primary {
+  background: var(--brand-blue-dark);
+  color: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+.mk-btn--primary:hover:not(:disabled) {
+  background: var(--navy);
+}
+
+.mk-btn--secondary {
+  background: var(--brand-blue-light);
+  color: var(--navy-ink);
+}
+.mk-btn--secondary:hover:not(:disabled) {
+  background: #e1ecf7;
+}
+
+.mk-btn--ghost {
+  background: transparent;
+  color: var(--brand-blue-dark);
+  border: 1.5px solid var(--border);
+}
+.mk-btn--ghost:hover:not(:disabled) {
+  background: var(--brand-blue-light);
+}
+
+.mk-btn--danger {
+  background: var(--red-bg);
+  color: var(--red);
+}
+.mk-btn--danger:hover:not(:disabled) {
+  background: #f6c2bb;
+}
+
+/* accent = per-vital colored button (Continue / Start Scan) */
+.mk-btn--accent {
+  background: var(--btn-accent, var(--brand-blue-dark));
+  color: var(--white);
+}
+.mk-btn--accent:hover:not(:disabled) {
+  filter: brightness(0.93);
+}
+
+.mk-btn__icon {
+  display: inline-flex;
+  align-items: center;
+}
