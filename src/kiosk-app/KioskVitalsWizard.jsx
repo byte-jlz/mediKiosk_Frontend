@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import KioskShell from './KioskShell';
+import TofLiveFeed from './TofLiveFeed';
 import WizardProgress from '../patient-app/VitalsWizard/WizardProgress';
 import VitalStepScreen from '../patient-app/VitalsWizard/VitalStepScreen';
 import ResultsScreen from '../patient-app/VitalsWizard/ResultsScreen';
@@ -76,6 +77,7 @@ export default function KioskVitalsWizard() {
               onBack={goBack}
               onScan={handleScanOrContinue}
               isFirstStep={stepIndex === 0}
+              extra={currentStep.key === 'bmi' ? <TofLiveFeed compact /> : null}
             />
           )}
         </div>

@@ -15,9 +15,13 @@ export default function AppSwitcher() {
     { key: 'app', label: '📱 Patient App', path: '/app' },
     { key: 'kiosk', label: '🖥 Kiosk', path: '/kiosk' },
     { key: 'admin', label: '💻 Admin Console', path: '/admin' },
+    { key: 'tof', label: '📡 ToF Live', path: '/kiosk/tof-live' },
   ];
 
-  const active = apps.find((a) => location?.pathname?.startsWith(`/${a.key}`))?.key;
+  const pathname = location?.pathname || '';
+  const active = pathname.startsWith('/kiosk/tof-live')
+    ? 'tof'
+    : apps.find((a) => pathname.startsWith(`/${a.key}`))?.key;
 
   return (
     <div className="mk-switcher">

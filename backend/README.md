@@ -68,6 +68,38 @@ three are always simulated. See `app/sensors.py` for the per-vital
 functions and the calibration constants that need to be set on the
 physical kiosk (`SCALE_RAW_PER_GRAM`, `SENSOR_MOUNT_MM`).
 
+## Live ToF feed (MQTT)
+
+The kiosk frontend can show a live readout of the VL53L0X Time-of-Flight
+sensor (the "📡 ToF Live" screen at `/kiosk/tof-live`, and a small live card
+on the kiosk's BMI step). The data flows:
+
+```
+VL53L0X --I2C--> tof_mqtt_publisher.py --MQTT:1883--> Mosquitto --WebSocket:9001--> React (src/services/tofLiveService.js)
+```
+
+On the Raspberry Pi:
+
+```bash
+# 1. Broker (once)
+sudo apt install -y mosquitto mosquitto-clients
+sudo cp mosquitto/medikiosk.conf /etc/mosquitto/conf.d/medikiosk.conf
+sudo systemctl restart mosquitto
+
+# 2. Publisher (from this backend/ folder, inside the venv)
+pip install paho-mqtt
+python tof_mqtt_publisher.py
+```
+
+Check it with `mosquitto_sub -t 'medikiosk/sensors/tof/#' -v`. On a laptop
+without the sensor, the publisher automatically sends simulated readings
+(or force it with `TOF_SIMULATE=1`). If the frontend runs on a different
+machine than the Pi, set `VITE_MQTT_URL=ws://<pi-ip>:9001` in `.env`.
+
+Only one program should talk to the VL53L0X at a time: stop the publisher
+before running a real BMI scan through `POST /api/vitals/scan`, since both
+read the same sensor.
+
 ## Notes
 
 - The backend uses in-memory mock data to mirror the existing frontend demo.

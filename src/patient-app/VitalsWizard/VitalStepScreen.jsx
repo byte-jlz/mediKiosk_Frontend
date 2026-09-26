@@ -12,6 +12,7 @@ export default function VitalStepScreen({
   onBack,
   onScan,
   isFirstStep,
+  extra = null, // optional side content in the colored panel (e.g. the kiosk's live ToF feed on the BMI step)
 }) {
   const hasReading = step.isBloodPressure
     ? reading && reading.systolic != null
@@ -19,7 +20,10 @@ export default function VitalStepScreen({
 
   return (
     <div className="mk-vital-step">
-      <div className="mk-vital-step__panel" style={{ background: step.accentBg }}>
+      <div
+        className={`mk-vital-step__panel${extra ? ' mk-vital-step__panel--with-extra' : ''}`}
+        style={{ background: step.accentBg }}
+      >
         <div className="mk-vital-step__icon" style={{ background: step.accent }}>
           {step.icon}
         </div>
@@ -41,6 +45,8 @@ export default function VitalStepScreen({
             {scanning ? 'Reading…' : hasReading ? 'Continue →' : `${step.scanButtonLabel} →`}
           </Button>
         </div>
+
+        {extra && <div className="mk-vital-step__extra">{extra}</div>}
       </div>
 
       <div className="mk-vital-step__readout">

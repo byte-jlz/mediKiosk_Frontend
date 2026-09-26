@@ -32,6 +32,7 @@ src/
 │   │                           endpoint it should eventually call.
 │   ├── authService.js
 │   ├── vitalsService.js       (sensor readings — has sensor notes at the top)
+│   ├── tofLiveService.js      (live ToF sensor feed over MQTT — useTofLiveFeed hook)
 │   ├── patientsService.js
 │   ├── staffService.js
 │   ├── kiosksService.js
@@ -61,7 +62,9 @@ src/
 │   ├── KioskSignInScreen.jsx
 │   ├── KioskQrScanScreen.jsx
 │   ├── KioskQrDisplayScreen.jsx
-│   └── KioskVitalsWizard.jsx     Reuses patient-app/VitalsWizard/* internally
+│   ├── KioskVitalsWizard.jsx     Reuses patient-app/VitalsWizard/* internally
+│   ├── KioskTofMonitorScreen.jsx Live ToF sensor monitor (/kiosk/tof-live)
+│   └── TofLiveFeed.jsx           Live ToF card (also shown on the kiosk BMI step)
 │
 └── admin-console/               💻 The staff/admin web dashboard
     ├── AdminLoginScreen.jsx

@@ -60,3 +60,38 @@
 .mk-kwizard .mk-results__title {
   font-size: 26px;
 }
+
+/* Live ToF feed on the BMI step: sits in the right half of the colored panel */
+.mk-kwizard .mk-vital-step__panel--with-extra {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 32px;
+  align-items: start;
+}
+
+.mk-kwizard .mk-vital-step__panel--with-extra > * {
+  grid-column: 1;
+}
+
+.mk-kwizard .mk-vital-step__panel--with-extra > .mk-vital-step__extra {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  align-self: center;
+  width: 340px;
+}
+
+.mk-kwizard .mk-vital-step__extra .mk-tof--compact {
+  margin-top: 0;
+}
+
+@media (max-width: 900px) {
+  .mk-kwizard .mk-vital-step__panel--with-extra {
+    grid-template-columns: 1fr;
+  }
+  .mk-kwizard .mk-vital-step__panel--with-extra > .mk-vital-step__extra {
+    grid-column: 1;
+    grid-row: auto;
+    width: 100%;
+    margin-top: 20px;
+  }
+}

@@ -12,5 +12,6 @@
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
     "*.jsx": "${capture}.css"
-  }
+  },
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/Scripts/python.exe"
 }

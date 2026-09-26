@@ -1,0 +1,43 @@
+.mk-tofmon {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 48px;
+  overflow-y: auto;
+}
+
+.mk-tofmon__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.mk-tofmon__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 30px;
+  color: var(--navy-ink);
+  margin: 0 0 6px;
+}
+
+.mk-tofmon__subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+  max-width: 520px;
+  line-height: 1.5;
+}
+
+.mk-tofmon__body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+@media (max-width: 900px) {
+  .mk-tofmon { padding: 24px 20px; }
+}
