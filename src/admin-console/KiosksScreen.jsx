@@ -3,19 +3,41 @@ import AdminLayout from '../components/AdminLayout';
 import { AdminHeader } from '../components/Sidebar';
 import StatusBadge from '../components/StatusBadge';
 import Button from '../components/Button';
-import { getKiosks, setKioskStatus, addKiosk } from '../services/kiosksService';
+import {
+  getKiosks,
+  getRemovedKiosks,
+  setKioskStatus,
+  addKiosk,
+  removeKiosk,
+  restoreKiosk,
+} from '../services/kiosksService';
 import './KiosksScreen.css';
+
+function formatRemovedAt(timestamp) {
+  return new Date(timestamp).toLocaleString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
 
 export default function KiosksScreen() {
   const [kiosks, setKiosks] = useState([]);
+  const [removedKiosks, setRemovedKiosks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('active');
+  const [confirmRemoveId, setConfirmRemoveId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newKiosk, setNewKiosk] = useState({ name: '', clinic: '' });
 
   async function refresh() {
     setLoading(true);
-    const data = await getKiosks();
-    setKiosks(data);
+    const [active, removed] = await Promise.all([getKiosks(), getRemovedKiosks()]);
+    setKiosks(active);
+    setRemovedKiosks(removed);
     setLoading(false);
   }
 
@@ -38,6 +60,20 @@ export default function KiosksScreen() {
     refresh();
   }
 
+  async function handleRemove(kiosk) {
+    await removeKiosk(kiosk.id);
+    setConfirmRemoveId(null);
+    refresh();
+  }
+
+  async function handleRestore(kiosk) {
+    await restoreKiosk(kiosk.id);
+    refresh();
+  }
+
+  const isRemovedTab = activeTab === 'removed';
+  const visibleKiosks = isRemovedTab ? removedKiosks : kiosks;
+
   return (
     <AdminLayout>
       <AdminHeader searchValue="" onSearchChange={() => {}} />
@@ -50,12 +86,39 @@ export default function KiosksScreen() {
               Provision new kiosks, edit settings, and deactivate units across all clinics.
             </p>
           </div>
-          <div className="mk-page__actions">
-            <Button onClick={() => setShowAddForm((v) => !v)}>+ Add kiosks</Button>
-          </div>
+          {!isRemovedTab && (
+            <div className="mk-page__actions">
+              <Button onClick={() => setShowAddForm((v) => !v)}>+ Add kiosks</Button>
+            </div>
+          )}
         </div>
 
-        {showAddForm && (
+        <div className="mk-kiosks__tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!isRemovedTab}
+            className={`mk-kiosks__tab${!isRemovedTab ? ' is-active' : ''}`}
+            onClick={() => setActiveTab('active')}
+          >
+            Active kiosks <span className="mk-kiosks__tab-count">{kiosks.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={isRemovedTab}
+            className={`mk-kiosks__tab${isRemovedTab ? ' is-active' : ''}`}
+            onClick={() => {
+              setActiveTab('removed');
+              setShowAddForm(false);
+              setConfirmRemoveId(null);
+            }}
+          >
+            Removed kiosks <span className="mk-kiosks__tab-count">{removedKiosks.length}</span>
+          </button>
+        </div>
+
+        {showAddForm && !isRemovedTab && (
           <form className="mk-kiosks__add-form" onSubmit={handleAdd}>
             <input
               placeholder="Kiosk name (e.g. Lobby — West Wing)"
@@ -73,17 +136,30 @@ export default function KiosksScreen() {
 
         {loading ? (
           <p className="mk-kiosks__loading">Loading kiosks…</p>
+        ) : visibleKiosks.length === 0 ? (
+          <p className="mk-kiosks__empty">
+            {isRemovedTab
+              ? 'No removed kiosks. Kiosks you remove will appear here and can be restored.'
+              : 'No active kiosks. Add one, or restore a kiosk from the Removed tab.'}
+          </p>
         ) : (
           <div className="mk-kiosks__grid">
-            {kiosks.map((k) => (
-              <div key={k.id} className="mk-kiosks__card">
+            {visibleKiosks.map((k) => (
+              <div
+                key={k.id}
+                className={`mk-kiosks__card${isRemovedTab ? ' mk-kiosks__card--removed' : ''}`}
+              >
                 <div className="mk-kiosks__card-top">
                   <div className="mk-kiosks__icon">🖥</div>
                   <div className="mk-kiosks__title-block">
                     <p className="mk-kiosks__name">{k.name}</p>
                     <p className="mk-kiosks__meta">{k.id} · {k.clinic}</p>
                   </div>
-                  <StatusBadge status={k.status} />
+                  {isRemovedTab ? (
+                    <span className="mk-kiosks__removed-badge">Removed</span>
+                  ) : (
+                    <StatusBadge status={k.status} />
+                  )}
                 </div>
 
                 <div className="mk-kiosks__stats">
@@ -101,15 +177,49 @@ export default function KiosksScreen() {
                   </div>
                 </div>
 
-                <div className="mk-kiosks__actions">
-                  <Button variant="ghost">Settings</Button>
-                  <button
-                    className="mk-kiosks__deactivate"
-                    onClick={() => handleToggle(k)}
-                  >
-                    {k.status === 'Deactivated' ? '↻ Reactivate' : '⏻ Deactivate'}
-                  </button>
-                </div>
+                {isRemovedTab ? (
+                  <>
+                    <p className="mk-kiosks__removed-at">Removed {formatRemovedAt(k.removedAt)}</p>
+                    <div className="mk-kiosks__actions">
+                      <Button variant="secondary" onClick={() => handleRestore(k)}>
+                        ↺ Restore kiosk
+                      </Button>
+                    </div>
+                  </>
+                ) : confirmRemoveId === k.id ? (
+                  <div className="mk-kiosks__confirm">
+                    <p className="mk-kiosks__confirm-text">
+                      Remove this kiosk? You can restore it from the Removed tab.
+                    </p>
+                    <div className="mk-kiosks__actions">
+                      <Button variant="ghost" onClick={() => setConfirmRemoveId(null)}>
+                        Cancel
+                      </Button>
+                      <Button variant="danger" onClick={() => handleRemove(k)}>
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mk-kiosks__actions">
+                      <Button variant="ghost">Settings</Button>
+                      <button
+                        className="mk-kiosks__deactivate"
+                        onClick={() => handleToggle(k)}
+                      >
+                        {k.status === 'Deactivated' ? '↻ Reactivate' : '⏻ Deactivate'}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="mk-kiosks__remove"
+                      onClick={() => setConfirmRemoveId(k.id)}
+                    >
+                      🗑 Remove kiosk
+                    </button>
+                  </>
+                )}
               </div>
             ))}
           </div>

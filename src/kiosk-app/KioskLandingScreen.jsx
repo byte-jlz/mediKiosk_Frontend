@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import KioskShell from './KioskShell';
 import LobbyArtPanel from './LobbyArtPanel';
 import Button from '../components/Button';
+import DevSkipLogin from '../components/DevSkipLogin';
 import './KioskLandingScreen.css';
 
 export default function KioskLandingScreen() {
@@ -42,6 +43,8 @@ export default function KioskLandingScreen() {
         <button className="mk-klanding__staff-link" onClick={() => navigate('/kiosk/sign-in')}>
           Sign in with email instead
         </button>
+
+        <DevSkipLogin as="patient" to="/kiosk/vitals" />
       </div>
     </KioskShell>
   );

@@ -1,5 +1,3 @@
-import { mockKiosks } from '../mocks/mockKiosks';
-
 const STORAGE_KEY = 'mkAdminConsoleStore';
 
 const defaultStore = {
@@ -207,7 +205,6 @@ export function getDashboardStats() {
   const checkInsToday = getTodaysCount();
   const checkInsYesterday = getPreviousDayCount();
   const patientRecords = new Set(store.checkIns.map((checkIn) => checkIn.patientId)).size;
-  const kiosksOnline = mockKiosks.filter((kiosk) => kiosk.status === 'Online').length;
 
   const delta = checkInsToday - checkInsYesterday;
   const checkInsDelta = checkInsYesterday === 0
@@ -221,9 +218,8 @@ export function getDashboardStats() {
     clinicalStaffDelta: 'Add staff to see coverage',
     patientRecords,
     patientRecordsDelta: `${patientRecords} active patients`,
-    kiosksOnline,
-    kiosksTotal: mockKiosks.length,
-    kiosksAcross: `Across ${new Set(mockKiosks.map((k) => k.clinic)).size} clinics`,
+    // Kiosk counts (kiosksOnline / kiosksTotal / kiosksAcross) are added by
+    // kiosksService.getDashboardStats(), which owns the live kiosk list.
     checkInsToday,
     checkInsDelta,
   };

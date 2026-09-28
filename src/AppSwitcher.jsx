@@ -15,7 +15,7 @@ export default function AppSwitcher() {
     { key: 'app', label: '📱 Patient App', path: '/app' },
     { key: 'kiosk', label: '🖥 Kiosk', path: '/kiosk' },
     { key: 'admin', label: '💻 Admin Console', path: '/admin' },
-    { key: 'tof', label: '📡 ToF Live', path: '/kiosk/tof-live' },
+    { key: 'tof', label: '📡 Sensors Live', path: '/kiosk/tof-live' },
   ];
 
   const pathname = location?.pathname || '';

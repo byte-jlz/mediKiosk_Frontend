@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
+import DevSkipLogin from '../components/DevSkipLogin';
 import { staffLogin } from '../services/authService';
 import LobbyArtPanel from '../kiosk-app/LobbyArtPanel';
 import './AdminLoginScreen.css';
@@ -65,6 +66,8 @@ export default function AdminLoginScreen() {
               Sign up here
             </button>
           </p>
+
+          <DevSkipLogin as="staff" to="/admin/dashboard" />
         </form>
       </div>
     </div>

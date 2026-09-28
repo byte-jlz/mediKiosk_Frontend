@@ -71,7 +71,7 @@ physical kiosk (`SCALE_RAW_PER_GRAM`, `SENSOR_MOUNT_MM`).
 ## Live ToF feed (MQTT)
 
 The kiosk frontend can show a live readout of the VL53L0X Time-of-Flight
-sensor (the "📡 ToF Live" screen at `/kiosk/tof-live`, and a small live card
+sensor (the "📡 Sensors Live" screen at `/kiosk/tof-live`, and a small live card
 on the kiosk's BMI step). The data flows:
 
 ```
@@ -99,6 +99,30 @@ machine than the Pi, set `VITE_MQTT_URL=ws://<pi-ip>:9001` in `.env`.
 Only one program should talk to the VL53L0X at a time: stop the publisher
 before running a real BMI scan through `POST /api/vitals/scan`, since both
 read the same sensor.
+
+## Live temperature feed (MQTT)
+
+The MLX90614 (GY-906) infrared thermometer streams the same way, shown on the
+"📡 Sensors Live" screen at `/kiosk/tof-live` and as a live card on the
+kiosk's Temperature step:
+
+```
+MLX90614 --I2C 0x5A--> temp_mqtt_publisher.py --MQTT:1883--> Mosquitto --WebSocket:9001--> React (src/services/temperatureLiveService.js)
+```
+
+Wiring (Pi 4B, 3.3V): VIN→3.3V (pin 1), GND→GND (pin 6), SCL→GPIO3 (pin 5),
+SDA→GPIO2 (pin 3). It shares I2C bus 1 with the VL53L0X at a different
+address, so both publishers can run at the same time:
+
+```bash
+pip install paho-mqtt smbus2
+python temp_mqtt_publisher.py
+```
+
+Check it with `mosquitto_sub -t 'medikiosk/sensors/temperature/#' -v`. Without
+the sensor it publishes simulated readings (force with `TEMP_SIMULATE=1`).
+Each message looks like
+`{"sensor": "mlx90614", "object_c": 36.52, "ambient_c": 27.1, "valid": true, "simulated": false, "ts": ...}`.
 
 ## Notes
 

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import KioskShell from './KioskShell';
 import TofLiveFeed from './TofLiveFeed';
+import TemperatureLiveFeed from './TemperatureLiveFeed';
 import Button from '../components/Button';
 import './KioskTofMonitorScreen.css';
 
@@ -18,7 +19,8 @@ export default function KioskTofMonitorScreen() {
           <div>
             <h1 className="mk-tofmon__title">Sensor Monitor</h1>
             <p className="mk-tofmon__subtitle">
-              Live readings from the Time-of-Flight height sensor, streamed from the kiosk over MQTT.
+              Live readings from the Time-of-Flight height sensor and the infrared thermometer,
+              streamed from the kiosk over MQTT.
             </p>
           </div>
           <Button variant="secondary" onClick={() => navigate('/kiosk')}>
@@ -28,6 +30,7 @@ export default function KioskTofMonitorScreen() {
 
         <div className="mk-tofmon__body">
           <TofLiveFeed />
+          <TemperatureLiveFeed />
         </div>
       </div>
     </KioskShell>

@@ -3,7 +3,7 @@
 # this code is currently for python 2.7
 from __future__ import print_function
 from time import sleep
-import smbus
+import smbus2 as smbus  # pure-Python, API-compatible drop-in for smbus
 
 # register addresses
 REG_INTR_STATUS_1 = 0x00
@@ -43,28 +43,74 @@ class MAX30102():
         self.channel = channel
         self.bus = smbus.SMBus(self.channel)
 
+        # Fail early with a clear message if the chip isn't answering at all
+        # (usually a loose SDA/SCL wire or unsoldered header pins).
+        part_id = self._read_byte(REG_PART_ID)
+        if part_id != 0x15:
+            print("[MAX30102] Warning: unexpected part ID 0x{0:02x} (expected 0x15)".format(part_id))
+
         self.reset()
 
         sleep(1)  # wait 1 sec
 
         # read & clear interrupt register (read 1 byte)
-        reg_data = self.bus.read_i2c_block_data(self.address, REG_INTR_STATUS_1, 1)
+        reg_data = self._read_block(REG_INTR_STATUS_1, 1)
         # print("[SETUP] reset complete with interrupt register0: {0}".format(reg_data))
         self.setup()
         # print("[SETUP] setup complete")
+
+    # ------------------------------------------------------------------
+    # I2C helpers: retry a few times, because a single glitch on the bus
+    # (loose jumper, electrical noise) shouldn't crash the whole program.
+    # ------------------------------------------------------------------
+    def _write(self, reg, values, retries=3):
+        for attempt in range(retries):
+            try:
+                self.bus.write_i2c_block_data(self.address, reg, values)
+                return
+            except OSError:
+                if attempt == retries - 1:
+                    raise
+                sleep(0.05)
+
+    def _read_block(self, reg, length, retries=3):
+        for attempt in range(retries):
+            try:
+                return self.bus.read_i2c_block_data(self.address, reg, length)
+            except OSError:
+                if attempt == retries - 1:
+                    raise
+                sleep(0.05)
+
+    def _read_byte(self, reg, retries=3):
+        for attempt in range(retries):
+            try:
+                return self.bus.read_byte_data(self.address, reg)
+            except OSError:
+                if attempt == retries - 1:
+                    raise
+                sleep(0.05)
 
     def shutdown(self):
         """
         Shutdown the device.
         """
-        self.bus.write_i2c_block_data(self.address, REG_MODE_CONFIG, [0x80])
+        self._write(REG_MODE_CONFIG, [0x80])
 
     def reset(self):
         """
         Reset the device, this will clear all settings,
         so after running this, run setup() again.
         """
-        self.bus.write_i2c_block_data(self.address, REG_MODE_CONFIG, [0x40])
+        try:
+            self._write(REG_MODE_CONFIG, [0x40])
+        except OSError:
+            # Many MAX30102 boards (especially clones) reset instantly when
+            # they receive this bit and don't acknowledge the write, so Linux
+            # reports "[Errno 5] Input/output error". The reset still
+            # happens, so it's safe to ignore the error here.
+            pass
+        sleep(0.1)
 
     def setup(self, led_mode=0x03):
         """
@@ -73,41 +119,41 @@ class MAX30102():
         # INTR setting
         # 0xc0 : A_FULL_EN and PPG_RDY_EN = Interrupt will be triggered when
         # fifo almost full & new fifo data ready
-        self.bus.write_i2c_block_data(self.address, REG_INTR_ENABLE_1, [0xc0])
-        self.bus.write_i2c_block_data(self.address, REG_INTR_ENABLE_2, [0x00])
+        self._write(REG_INTR_ENABLE_1, [0xc0])
+        self._write(REG_INTR_ENABLE_2, [0x00])
 
         # FIFO_WR_PTR[4:0]
-        self.bus.write_i2c_block_data(self.address, REG_FIFO_WR_PTR, [0x00])
+        self._write(REG_FIFO_WR_PTR, [0x00])
         # OVF_COUNTER[4:0]
-        self.bus.write_i2c_block_data(self.address, REG_OVF_COUNTER, [0x00])
+        self._write(REG_OVF_COUNTER, [0x00])
         # FIFO_RD_PTR[4:0]
-        self.bus.write_i2c_block_data(self.address, REG_FIFO_RD_PTR, [0x00])
+        self._write(REG_FIFO_RD_PTR, [0x00])
 
         # 0b 0100 1111
         # sample avg = 4, fifo rollover = false, fifo almost full = 17
-        self.bus.write_i2c_block_data(self.address, REG_FIFO_CONFIG, [0x4f])
+        self._write(REG_FIFO_CONFIG, [0x4f])
 
         # 0x02 for read-only, 0x03 for SpO2 mode, 0x07 multimode LED
-        self.bus.write_i2c_block_data(self.address, REG_MODE_CONFIG, [led_mode])
+        self._write(REG_MODE_CONFIG, [led_mode])
         # 0b 0010 0111
         # SPO2_ADC range = 4096nA, SPO2 sample rate = 100Hz, LED pulse-width = 411uS
-        self.bus.write_i2c_block_data(self.address, REG_SPO2_CONFIG, [0x27])
+        self._write(REG_SPO2_CONFIG, [0x27])
 
         # choose value for ~7mA for LED1
-        self.bus.write_i2c_block_data(self.address, REG_LED1_PA, [0x24])
+        self._write(REG_LED1_PA, [0x24])
         # choose value for ~7mA for LED2
-        self.bus.write_i2c_block_data(self.address, REG_LED2_PA, [0x24])
+        self._write(REG_LED2_PA, [0x24])
         # choose value fro ~25mA for Pilot LED
-        self.bus.write_i2c_block_data(self.address, REG_PILOT_PA, [0x7f])
+        self._write(REG_PILOT_PA, [0x7f])
 
     # this won't validate the arguments!
     # use when changing the values from default
     def set_config(self, reg, value):
-        self.bus.write_i2c_block_data(self.address, reg, value)
+        self._write(reg, value)
 
     def get_data_present(self):
-        read_ptr = self.bus.read_byte_data(self.address, REG_FIFO_RD_PTR)
-        write_ptr = self.bus.read_byte_data(self.address, REG_FIFO_WR_PTR)
+        read_ptr = self._read_byte(REG_FIFO_RD_PTR)
+        write_ptr = self._read_byte(REG_FIFO_WR_PTR)
         if read_ptr == write_ptr:
             return 0
         else:
@@ -125,11 +171,11 @@ class MAX30102():
         ir_led = None
 
         # read 1 byte from registers (values are discarded)
-        reg_INTR1 = self.bus.read_i2c_block_data(self.address, REG_INTR_STATUS_1, 1)
-        reg_INTR2 = self.bus.read_i2c_block_data(self.address, REG_INTR_STATUS_2, 1)
+        reg_INTR1 = self._read_block(REG_INTR_STATUS_1, 1)
+        reg_INTR2 = self._read_block(REG_INTR_STATUS_2, 1)
 
         # read 6-byte data from the device
-        d = self.bus.read_i2c_block_data(self.address, REG_FIFO_DATA, 6)
+        d = self._read_block(REG_FIFO_DATA, 6)
 
         # mask MSB [23:18]
         red_led = (d[0] << 16 | d[1] << 8 | d[2]) & 0x03FFFF

@@ -73,6 +73,17 @@
   color: var(--muted);
 }
 
+.mk-tof__secondary {
+  margin-left: auto;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Temperature feed uses the temperature vital color for its sparkline */
+.mk-tof__spark--temp .mk-tof__line {
+  stroke: var(--vital-temp);
+}
+
 .mk-tof__placeholder {
   font-size: 56px;
   line-height: 1;
@@ -155,3 +166,4 @@
 .mk-tof--compact .mk-tof__out { font-size: 16px; }
 .mk-tof--compact .mk-tof__spark { height: 40px; }
 .mk-tof--compact .mk-tof__hint { font-size: 12px; }
+.mk-tof--compact .mk-tof__secondary { font-size: 11.5px; }

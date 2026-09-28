@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import PhoneShell from './PhoneShell';
 import Button from '../components/Button';
+import DevSkipLogin from '../components/DevSkipLogin';
 import './LandingScreen.css';
 
 export default function LandingScreen() {
@@ -27,6 +28,8 @@ export default function LandingScreen() {
           <button className="mk-landing__qr-link" onClick={() => navigate('/app/qr-login')}>
             Log in with QR code
           </button>
+
+          <DevSkipLogin as="patient" to="/app/vitals-home" />
         </div>
       </div>
     </PhoneShell>

@@ -38,7 +38,7 @@ try:
     import board
     import busio
     import adafruit_vl53l0x
-    import RPi.GPIO as GPIO  # noqa: F401  (imported for side effects / cleanup use)
+    import RPi.GPIO as GPIO  # noqa: F401  # pyright: ignore[reportMissingModuleSource]  (Pi-only; imported for side effects / cleanup use)
     from hx711 import HX711
 
     from app.hardware import max30102, hrcalc

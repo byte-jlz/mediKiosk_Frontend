@@ -17,7 +17,43 @@ let kioskData = [...mockKiosks];
  */
 export async function getKiosks() {
   await delay(400);
-  return kioskData;
+  return kioskData.filter((k) => !k.removedAt);
+}
+
+/**
+ * EXPECTED BACKEND ENDPOINT: GET /api/kiosks?removed=true
+ * RESPONSE: [{ id, name, clinic, status, uptime, today, firmware, removedAt }, ...]
+ */
+export async function getRemovedKiosks() {
+  await delay(400);
+  return kioskData
+    .filter((k) => k.removedAt)
+    .sort((a, b) => new Date(b.removedAt) - new Date(a.removedAt));
+}
+
+/**
+ * EXPECTED BACKEND ENDPOINT: DELETE /api/kiosks/{id}
+ * Soft delete: the kiosk moves to the "Removed" tab and can be restored.
+ */
+export async function removeKiosk(id) {
+  await delay(300);
+  kioskData = kioskData.map((k) =>
+    k.id === id ? { ...k, removedAt: new Date().toISOString() } : k
+  );
+  return kioskData.find((k) => k.id === id);
+}
+
+/**
+ * EXPECTED BACKEND ENDPOINT: POST /api/kiosks/{id}/restore
+ */
+export async function restoreKiosk(id) {
+  await delay(300);
+  kioskData = kioskData.map((k) => {
+    if (k.id !== id) return k;
+    const { removedAt: _removedAt, ...rest } = k;
+    return rest;
+  });
+  return kioskData.find((k) => k.id === id);
 }
 
 /**
@@ -55,5 +91,19 @@ export async function addKiosk(kiosk) {
  */
 export async function getDashboardStats() {
   await delay(400);
-  return getAdminDashboardStats();
+
+  // Computed from the same live list the Kiosks tab edits, so removed or
+  // newly added kiosks are reflected in the overview immediately.
+  const activeKiosks = kioskData.filter((k) => !k.removedAt);
+  const clinicCount = new Set(activeKiosks.map((k) => k.clinic)).size;
+
+  return {
+    ...getAdminDashboardStats(),
+    kiosksOnline: activeKiosks.filter((k) => k.status === 'Online').length,
+    kiosksTotal: activeKiosks.length,
+    kiosksAcross:
+      activeKiosks.length === 0
+        ? 'No active kiosks'
+        : `Across ${clinicCount} clinic${clinicCount === 1 ? '' : 's'}`,
+  };
 }
