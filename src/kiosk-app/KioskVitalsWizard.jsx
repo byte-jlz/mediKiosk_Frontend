@@ -78,6 +78,7 @@ export default function KioskVitalsWizard() {
               onBack={goBack}
               onScan={handleScanOrContinue}
               isFirstStep={stepIndex === 0}
+              readoutInPanel
               extra={
                 currentStep.key === 'bmi' ? (
                   <TofLiveFeed compact />
