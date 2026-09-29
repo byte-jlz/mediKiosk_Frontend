@@ -4,8 +4,8 @@ import PhoneShell from '../PhoneShell';
 import WizardProgress from './WizardProgress';
 import VitalStepScreen from './VitalStepScreen';
 import ResultsScreen from './ResultsScreen';
-import { VITAL_STEPS } from './stepsConfig';
-import { takeReading, takeBloodPressureReading, submitCheckIn } from '../../services/vitalsService';
+import { VITAL_STEPS, getStepReading, hasStepReading } from './stepsConfig';
+import { scanStep, submitCheckIn } from '../../services/vitalsService';
 import { getCurrentPatientProfile } from '../../services/authService';
 import './VitalsWizard.css';
 
@@ -13,18 +13,14 @@ export default function VitalsWizard() {
   const navigate = useNavigate();
   const currentPatient = getCurrentPatientProfile();
   const patientCode = currentPatient?.id || 'guest';
-  const [stepIndex, setStepIndex] = useState(0); // 0..5 = vital steps, 6 = results
+  const [stepIndex, setStepIndex] = useState(0); // 0..N-1 = vital steps, N = results
   const [readings, setReadings] = useState({});
   const [scanning, setScanning] = useState(false);
 
   const isResultsStep = stepIndex === VITAL_STEPS.length;
   const currentStep = VITAL_STEPS[stepIndex];
-  const currentReading = currentStep ? readings[currentStep.key] : null;
-  const hasCurrentReading = currentStep
-    ? currentStep.isBloodPressure
-      ? currentReading?.systolic != null
-      : currentReading?.value != null
-    : false;
+  const currentReading = currentStep ? getStepReading(currentStep, readings) : null;
+  const hasCurrentReading = currentStep ? hasStepReading(currentStep, currentReading) : false;
 
   async function handleScanOrContinue() {
     if (hasCurrentReading) {
@@ -35,10 +31,8 @@ export default function VitalsWizard() {
 
     setScanning(true);
     try {
-      const result = currentStep.isBloodPressure
-        ? await takeBloodPressureReading()
-        : await takeReading(currentStep.key);
-      setReadings((prev) => ({ ...prev, [currentStep.key]: result }));
+      const patch = await scanStep(currentStep);
+      setReadings((prev) => ({ ...prev, ...patch }));
     } finally {
       setScanning(false);
     }

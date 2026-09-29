@@ -1,5 +1,5 @@
 import Button from '../../components/Button';
-import { VITAL_STEPS } from './stepsConfig';
+import { VITAL_STEPS, getStepReading, hasStepReading } from './stepsConfig';
 
 function statusFor(step, reading) {
   // Simple demo status logic — a real implementation would use clinical ranges from the backend.
@@ -20,8 +20,8 @@ export default function ResultsScreen({ readings, onFinish }) {
 
       <div className="mk-results__grid">
         {VITAL_STEPS.map((step) => {
-          const reading = readings[step.key];
-          const hasReading = step.isBloodPressure ? reading?.systolic != null : reading?.value != null;
+          const reading = getStepReading(step, readings);
+          const hasReading = hasStepReading(step, reading);
           return (
             <div key={step.key} className="mk-results__card">
               <div className="mk-results__card-top">
@@ -35,7 +35,9 @@ export default function ResultsScreen({ readings, onFinish }) {
                 {hasReading
                   ? step.isBloodPressure
                     ? `${reading.systolic}/${reading.diastolic} mmHg`
-                    : `${reading.value} ${reading.unit}`
+                    : step.isHeartRateSpo2
+                      ? `${reading.heartRate.value} ${reading.heartRate.unit} · ${reading.spo2.value}${reading.spo2.unit}`
+                      : `${reading.value} ${reading.unit}`
                   : '—'}
               </p>
             </div>

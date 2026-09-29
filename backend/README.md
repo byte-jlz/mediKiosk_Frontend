@@ -45,7 +45,7 @@ The backend exposes the same contracts the frontend expects, including:
 - `GET /api/dashboard/stats`
 - `GET /api/dashboard/recent-activity`
 - `GET /api/kiosks/activity`
-- `POST /api/vitals/scan` — triggers one sensor reading, `{ "vitalKey": "heartRate" }` → `{ value, unit }`
+- `POST /api/vitals/scan` — triggers one sensor reading, `{ "vitalKey": "heartRate" }` → `{ value, unit }` (`"heartRateSpo2"` → `{ heartRate: {…}, spo2: {…} }` from a single MAX30102 pass)
   (or `{ systolic, diastolic, unit }` for `bloodPressure`)
 - `POST /api/vitals/check-in`
 - `GET /api/vitals/history?patientId=...`

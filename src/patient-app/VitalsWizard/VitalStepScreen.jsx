@@ -1,9 +1,10 @@
 import Button from '../../components/Button';
+import { hasStepReading } from './stepsConfig';
 
 /**
- * Renders one step of the vitals wizard. Handles both single-value vitals
- * (heart rate, bmi, temperature, spo2, respiration) and the special two-value
- * blood pressure step.
+ * Renders one step of the vitals wizard. Handles single-value vitals
+ * (bmi, temperature, respiration) and the two-value blood pressure and
+ * heart rate & SpO2 steps.
  */
 export default function VitalStepScreen({
   step,
@@ -15,9 +16,7 @@ export default function VitalStepScreen({
   extra = null, // optional side content in the colored panel (e.g. the kiosk's live ToF feed on the BMI step)
   readoutInPanel = false, // kiosk: show the result dial in the panel's side column, above any `extra`
 }) {
-  const hasReading = step.isBloodPressure
-    ? reading && reading.systolic != null
-    : reading && reading.value != null;
+  const hasReading = hasStepReading(step, reading);
 
   const readout = (
     <div className="mk-vital-step__readout">
@@ -27,6 +26,10 @@ export default function VitalStepScreen({
         ) : step.isBloodPressure ? (
           <span className="mk-vital-step__value">
             {hasReading ? `${reading.systolic}/${reading.diastolic}` : '—'}
+          </span>
+        ) : step.isHeartRateSpo2 ? (
+          <span className="mk-vital-step__value">
+            {hasReading ? `${reading.heartRate.value}/${reading.spo2.value}` : '—'}
           </span>
         ) : (
           <span className="mk-vital-step__value">
@@ -38,7 +41,9 @@ export default function VitalStepScreen({
         {hasReading
           ? step.isBloodPressure
             ? 'mmHg'
-            : reading.unit
+            : step.isHeartRateSpo2
+              ? `${reading.heartRate.unit} / ${reading.spo2.unit}`
+              : reading.unit
           : ''}
       </p>
       <p className="mk-vital-step__unit-label">{step.unitLabel}</p>

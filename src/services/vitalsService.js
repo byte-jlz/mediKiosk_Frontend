@@ -1,8 +1,8 @@
 // ============================================================
 // VITALS SERVICE
 // ------------------------------------------------------------
-// Powers the 7-step vitals wizard (Heart Rate, BMI, Temperature,
-// Blood Pressure, SpO2, Respiration, Results).
+// Powers the vitals wizard (BMI, Heart Rate & SpO2, Temperature,
+// Blood Pressure, Respiration, Results).
 //
 import { mockCurrentPatient } from '../mocks/mockPatients';
 import { saveCheckIn, getPatientById } from './adminStore';
@@ -79,6 +79,35 @@ export async function takeBloodPressureReading() {
     const diastolic = randomInRange(VITAL_RANGES.diastolic.min, VITAL_RANGES.diastolic.max, 0);
     return { systolic, diastolic, unit: 'mmHg' };
   }
+}
+
+/**
+ * Heart rate and SpO2 come from one MAX30102 pass, so they're scanned together.
+ * Returns `{ heartRate: { value, unit }, spo2: { value, unit } }`.
+ */
+export async function takeHeartRateSpo2Reading() {
+  try {
+    return await scanVital('heartRateSpo2');
+  } catch (err) {
+    console.warn('[vitalsService] Backend scan for "heartRateSpo2" unavailable, using simulated reading:', err.message);
+    await delay(1400);
+    const hr = VITAL_RANGES.heartRate;
+    const spo2 = VITAL_RANGES.spo2;
+    return {
+      heartRate: { value: randomInRange(hr.min, hr.max, hr.decimals), unit: hr.unit },
+      spo2: { value: randomInRange(spo2.min, spo2.max, spo2.decimals), unit: spo2.unit },
+    };
+  }
+}
+
+/**
+ * Runs the scan for one wizard step and returns the patch to merge into the
+ * wizard's `readings` map (keyed by vital, so the combined step fills two keys).
+ */
+export async function scanStep(step) {
+  if (step.isHeartRateSpo2) return takeHeartRateSpo2Reading();
+  if (step.isBloodPressure) return { [step.key]: await takeBloodPressureReading() };
+  return { [step.key]: await takeReading(step.key) };
 }
 
 /**

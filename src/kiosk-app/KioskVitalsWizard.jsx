@@ -6,8 +6,8 @@ import TemperatureLiveFeed from './TemperatureLiveFeed';
 import WizardProgress from '../patient-app/VitalsWizard/WizardProgress';
 import VitalStepScreen from '../patient-app/VitalsWizard/VitalStepScreen';
 import ResultsScreen from '../patient-app/VitalsWizard/ResultsScreen';
-import { VITAL_STEPS } from '../patient-app/VitalsWizard/stepsConfig';
-import { takeReading, takeBloodPressureReading, submitCheckIn } from '../services/vitalsService';
+import { VITAL_STEPS, getStepReading, hasStepReading } from '../patient-app/VitalsWizard/stepsConfig';
+import { scanStep, submitCheckIn } from '../services/vitalsService';
 import { getCurrentPatientProfile } from '../services/authService';
 import '../patient-app/VitalsWizard/VitalsWizard.css';
 import './KioskVitalsWizard.css';
@@ -22,12 +22,8 @@ export default function KioskVitalsWizard() {
 
   const isResultsStep = stepIndex === VITAL_STEPS.length;
   const currentStep = VITAL_STEPS[stepIndex];
-  const currentReading = currentStep ? readings[currentStep.key] : null;
-  const hasCurrentReading = currentStep
-    ? currentStep.isBloodPressure
-      ? currentReading?.systolic != null
-      : currentReading?.value != null
-    : false;
+  const currentReading = currentStep ? getStepReading(currentStep, readings) : null;
+  const hasCurrentReading = currentStep ? hasStepReading(currentStep, currentReading) : false;
 
   async function handleScanOrContinue() {
     if (hasCurrentReading) {
@@ -36,10 +32,8 @@ export default function KioskVitalsWizard() {
     }
     setScanning(true);
     try {
-      const result = currentStep.isBloodPressure
-        ? await takeBloodPressureReading()
-        : await takeReading(currentStep.key);
-      setReadings((prev) => ({ ...prev, [currentStep.key]: result }));
+      const patch = await scanStep(currentStep);
+      setReadings((prev) => ({ ...prev, ...patch }));
     } finally {
       setScanning(false);
     }

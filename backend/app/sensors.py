@@ -174,6 +174,20 @@ def read_spo2() -> dict:
     return {"value": round(spo2), "unit": VITAL_RANGES["spo2"]["unit"]}
 
 
+def read_heart_rate_spo2() -> dict:
+    """One MAX30102 pass for the combined kiosk step — HR and SpO2 come from the same samples."""
+    if not HARDWARE_AVAILABLE:
+        hr, spo2 = _simulated("heartRate"), _simulated("spo2")
+        return {"heartRate": hr, "spo2": spo2}
+    hr, spo2 = _measure_hr_spo2()
+    if hr is None or spo2 is None:
+        raise RuntimeError("No valid heart-rate/SpO2 reading — check finger placement and retry.")
+    return {
+        "heartRate": {"value": round(hr), "unit": VITAL_RANGES["heartRate"]["unit"]},
+        "spo2": {"value": round(spo2), "unit": VITAL_RANGES["spo2"]["unit"]},
+    }
+
+
 def read_bmi() -> dict:
     if not HARDWARE_AVAILABLE:
         return _simulated("bmi")
@@ -226,6 +240,7 @@ def read_respiration() -> dict:
 SCAN_HANDLERS = {
     "heartRate": read_heart_rate,
     "spo2": read_spo2,
+    "heartRateSpo2": read_heart_rate_spo2,
     "bmi": read_bmi,
     "bloodPressure": read_blood_pressure,
     "temperature": read_temperature,
