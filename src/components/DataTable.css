@@ -69,3 +69,11 @@
   color: var(--muted);
   padding: 40px 20px !important;
 }
+
+.mk-datatable__table tbody tr.is-clickable {
+  cursor: pointer;
+}
+
+.mk-datatable__table tbody tr.is-clickable:hover td {
+  background: var(--brand-blue-light);
+}

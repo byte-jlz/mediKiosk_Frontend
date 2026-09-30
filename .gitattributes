@@ -1,0 +1,24 @@
+# Store and check out text files with LF line endings on every OS,
+# overriding core.autocrlf (avoids "LF will be replaced by CRLF" warnings).
+* text=auto eol=lf
+
+# Windows-only scripts need CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files — never touch line endings
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.mp4 binary
+*.webm binary
+*.pyc binary

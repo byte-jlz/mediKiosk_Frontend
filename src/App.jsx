@@ -20,6 +20,7 @@ import AdminSignUpScreen from './admin-console/AdminSignUpScreen';
 import DashboardScreen from './admin-console/DashboardScreen';
 import StaffAccountsScreen from './admin-console/StaffAccountsScreen';
 import PatientRecordsScreen from './admin-console/PatientRecordsScreen';
+import PatientDetailScreen from './admin-console/PatientDetailScreen';
 import KiosksScreen from './admin-console/KiosksScreen';
 import KiosksActivityScreen from './admin-console/KiosksActivityScreen';
 import AuditLogsScreen from './admin-console/AuditLogsScreen';
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/admin/dashboard" element={<DashboardScreen />} />
         <Route path="/admin/staff" element={<StaffAccountsScreen />} />
         <Route path="/admin/patients" element={<PatientRecordsScreen />} />
+        <Route path="/admin/patients/:patientId" element={<PatientDetailScreen />} />
         <Route path="/admin/kiosks" element={<KiosksScreen />} />
         <Route path="/admin/kiosks-activity" element={<KiosksActivityScreen />} />
         <Route path="/admin/audit-logs" element={<AuditLogsScreen />} />

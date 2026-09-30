@@ -20,57 +20,44 @@
   color: var(--ink-soft);
 }
 
-.mk-patients__view:hover {
+.mk-datatable__table tbody tr:hover .mk-patients__view {
   background: var(--brand-blue-light);
+  border-color: var(--brand-blue);
 }
 
-.mk-patients__modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(20, 36, 58, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 20px;
+.mk-patients__view {
+  display: inline-block;
 }
 
-.mk-patients__modal {
-  background: var(--white);
-  border-radius: var(--radius-lg);
-  padding: 32px;
-  width: 100%;
-  max-width: 480px;
-  position: relative;
-  box-shadow: var(--shadow-lg);
-}
-
-.mk-patients__modal-close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 16px;
-  color: var(--muted);
-}
-
-.mk-patients__modal h2 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 22px;
-  margin: 0 0 4px;
-}
-
-.mk-patients__modal-id {
-  color: var(--muted);
+.mk-patient-record__back {
+  display: inline-block;
+  margin-bottom: 16px;
   font-size: 13px;
-  margin: 0 0 24px;
+  font-weight: 600;
+  color: var(--brand-blue);
+  text-decoration: none;
 }
 
-.mk-patients__modal-grid {
+.mk-patient-record__back:hover {
+  text-decoration: underline;
+}
+
+.mk-patient-record__card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.mk-patient-record__card h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+
+.mk-patient-record__grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
 }
 
@@ -81,8 +68,8 @@
   margin-bottom: 4px;
 }
 
-.mk-patient-history {
-  margin-top: 28px;
+.mk-patient-history .mk-patient-history__card:first-of-type {
+  margin-top: 0;
 }
 
 .mk-patient-history__loading,
@@ -138,4 +125,255 @@
   margin: 0;
   font-size: 14px;
   font-weight: 600;
+}
+
+.mk-patients__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 36, 58, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.mk-patients__modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: min(100%, 720px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.mk-patients__modal h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0 0 4px;
+}
+
+.mk-patients__modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.mk-patients__modal-subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 24px;
+}
+
+.mk-patients__form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.mk-patients__form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mk-patients__form-field.is-wide {
+  grid-column: span 2;
+}
+
+.mk-patients__form-field.is-full {
+  grid-column: 1 / -1;
+}
+
+.mk-patients__form-field span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mk-patients__form-field em {
+  color: var(--red);
+  font-style: normal;
+}
+
+.mk-patients__form-field input,
+.mk-patients__form-field select {
+  border: 1px solid var(--border);
+  background: var(--brand-blue-light);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mk-patients__form-field input:focus,
+.mk-patients__form-field select:focus {
+  border-color: var(--brand-blue);
+}
+
+.mk-patients__form-field input[readonly] {
+  background: var(--bg-secondary);
+  color: var(--muted);
+}
+
+.mk-patients__form-error {
+  margin: 16px 0 0;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mk-patients__form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+@media (max-width: 640px) {
+  .mk-patients__form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mk-patients__form-field.is-wide {
+    grid-column: auto;
+  }
+}
+
+.mk-patients__modal--confirm {
+  width: min(100%, 440px);
+}
+
+.mk-patients__confirm-text {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.mk-patients__modal--qr {
+  width: min(100%, 420px);
+  text-align: center;
+}
+
+.mk-patients__modal--qr .mk-patients__form-actions {
+  justify-content: center;
+}
+
+.mk-patient-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.mk-patient-qr__image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  box-sizing: content-box;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mk-patient-qr__image img {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.mk-patient-qr__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.mk-patient-qr__actions a {
+  text-decoration: none;
+}
+
+.mk-patient-qr__actions a.is-disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.mk-patient-qr__info {
+  margin-top: 12px;
+  max-width: 560px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.mk-patient-qr__info p {
+  margin: 0 0 12px;
+}
+
+.mk-patient-record__header {
+  align-items: flex-start;
+}
+
+.mk-patient-record__identity {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.mk-patient-qr.is-compact {
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.mk-patient-qr.is-compact .mk-patient-qr__actions {
+  gap: 6px;
+}
+
+.mk-patient-qr.is-compact .mk-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.mk-patient-qr__placeholder {
+  width: 120px;
+  height: 120px;
+  padding: 8px;
+  box-sizing: content-box;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.mk-patient-qr__placeholder .mk-btn {
+  padding: 8px 14px;
+  font-size: 12.5px;
+}
+
+@media (max-width: 720px) {
+  .mk-patient-record__header,
+  .mk-patient-record__identity {
+    flex-direction: column;
+  }
 }

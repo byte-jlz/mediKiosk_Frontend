@@ -1,7 +1,12 @@
+import { demoPatient, demoPatientCheckIns } from '../mocks/demoPatient';
+import { generateQrToken } from './patientQr';
+
 const STORAGE_KEY = 'mkAdminConsoleStore';
 
 const defaultStore = {
   checkIns: [],
+  // Patients registered directly by an admin (may not have any check-ins yet).
+  patients: [],
 };
 
 let store = loadStore();
@@ -13,7 +18,7 @@ function loadStore() {
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : { ...defaultStore };
+    return raw ? { ...defaultStore, ...JSON.parse(raw) } : { ...defaultStore };
   } catch {
     return { ...defaultStore };
   }
@@ -83,23 +88,166 @@ export function saveCheckIn({ kioskId, kioskName, patient, readings }) {
   return checkIn;
 }
 
+/**
+ * Updates a patient's profile. Patients that only exist through kiosk check-ins are
+ * promoted to a stored record on first edit. Pass `passwordHash` only to change the password.
+ * Throws if the patient doesn't exist or the new email belongs to someone else.
+ */
+export function updatePatient(id, { firstName, middleName, lastName, birthday, sex, bloodType, address, email, passwordHash }) {
+  const current = getPatients().find((p) => p.id === id);
+  if (!current) {
+    throw new Error('Patient not found.');
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (getPatients().some((p) => p.id !== id && (p.email || '').toLowerCase() === normalizedEmail)) {
+    throw new Error('A patient with this email already exists.');
+  }
+
+  const stored = store.patients.find((p) => p.id === id);
+  const updated = {
+    ...(stored || { id, createdAt: current.createdAt, registered: true }),
+    firstName: firstName.trim(),
+    middleName: middleName.trim(),
+    lastName: lastName.trim(),
+    age: calculateAge(birthday),
+    address: address.trim(),
+    birthday,
+    bloodType,
+    sex,
+    email: normalizedEmail,
+    ...(passwordHash ? { passwordHash } : {}),
+  };
+
+  const { passwordHash: _passwordHash, qrToken: _qrToken, registered: _registered, ...profile } = updated;
+  store = {
+    ...store,
+    patients: stored
+      ? store.patients.map((p) => (p.id === id ? updated : p))
+      : [...store.patients, updated],
+    // Keep the name snapshot on past check-ins in sync (activity feed, audit logs).
+    checkIns: store.checkIns.map((checkIn) =>
+      checkIn.patientId === id ? { ...checkIn, patient: { ...checkIn.patient, ...profile } } : checkIn
+    ),
+  };
+  saveStore();
+
+  return getPatients().find((p) => p.id === id);
+}
+
+/** Finds the patient whose kiosk QR code carries this token (null if none / revoked). */
+export function findPatientByQrToken(token) {
+  if (!token) return null;
+  return getPatients().find((p) => p.qrToken === token) || null;
+}
+
+/**
+ * Issues a new QR token for a patient, which invalidates their old QR code.
+ * Kiosk-only patients are promoted to a stored record so the token can be saved.
+ */
+export function regeneratePatientQrToken(id) {
+  const current = getPatients().find((p) => p.id === id);
+  if (!current) {
+    throw new Error('Patient not found.');
+  }
+
+  const qrToken = generateQrToken();
+  const stored = store.patients.find((p) => p.id === id);
+  const { lastVisit: _lastVisit, ...profile } = current;
+
+  store = {
+    ...store,
+    patients: stored
+      ? store.patients.map((p) => (p.id === id ? { ...p, qrToken } : p))
+      : [...store.patients, { ...profile, qrToken, registered: true }],
+  };
+  saveStore();
+
+  return qrToken;
+}
+
+/**
+ * Permanently removes a patient and every kiosk check-in recorded for them.
+ * Returns the number of check-ins deleted.
+ */
+export function deletePatient(id) {
+  const removedCheckIns = store.checkIns.filter((checkIn) => checkIn.patientId === id).length;
+
+  store = {
+    ...store,
+    patients: store.patients.filter((p) => p.id !== id),
+    checkIns: store.checkIns.filter((checkIn) => checkIn.patientId !== id),
+  };
+  saveStore();
+
+  return removedCheckIns;
+}
+
+/**
+ * DEV-ONLY: adds the dummy patient (and their check-ins) once per browser.
+ * The flag keeps it from coming back after the patient is deleted.
+ */
+export function seedDemoPatient() {
+  if (store.demoSeeded) return;
+  if (store.patients.some((p) => p.id === demoPatient.id)) {
+    store = { ...store, demoSeeded: true };
+    saveStore();
+    return;
+  }
+
+  const { passwordHash: _passwordHash, ...profile } = demoPatient;
+  const checkIns = demoPatientCheckIns.map((checkIn) => ({
+    ...checkIn,
+    patientId: demoPatient.id,
+    patient: profile,
+  }));
+
+  store = {
+    ...store,
+    patients: [
+      ...store.patients,
+      { ...demoPatient, age: calculateAge(demoPatient.birthday), qrToken: generateQrToken() },
+    ],
+    checkIns: [...store.checkIns, ...checkIns],
+    demoSeeded: true,
+  };
+  saveStore();
+}
+
 export function getCheckIns() {
   return [...store.checkIns].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }
 
 export function getPatients(searchTerm = '') {
   const patientsMap = new Map();
+
+  // Admin-registered patients first; strip the password hash before it leaves the store.
+  store.patients.forEach(({ passwordHash: _passwordHash, ...patient }) => {
+    patientsMap.set(patient.id, { ...patient, lastVisit: null });
+  });
+
   store.checkIns.forEach((checkIn) => {
     const prev = patientsMap.get(checkIn.patientId);
+
+    if (prev?.registered) {
+      if (!prev.lastVisit || new Date(checkIn.timestamp) > new Date(prev.lastVisit)) {
+        prev.lastVisit = checkIn.timestamp;
+      }
+      return;
+    }
+
     const record = {
       id: checkIn.patientId,
       firstName: checkIn.patient.firstName,
+      middleName: checkIn.patient.middleName || '',
       lastName: checkIn.patient.lastName,
       age: checkIn.patient.age || '',
-      gender: checkIn.patient.gender || '',
+      sex: checkIn.patient.sex || checkIn.patient.gender || '',
+      birthday: checkIn.patient.birthday || checkIn.patient.dob || '',
       bloodType: checkIn.patient.bloodType || '',
       email: checkIn.patient.email || '',
       address: checkIn.patient.address || '',
+      createdAt: null,
       lastVisit: checkIn.timestamp,
     };
 
@@ -108,9 +256,8 @@ export function getPatients(searchTerm = '') {
     }
   });
 
-  const patients = Array.from(patientsMap.values()).sort(
-    (a, b) => new Date(b.lastVisit) - new Date(a.lastVisit)
-  );
+  const sortKey = (p) => new Date(p.lastVisit || p.createdAt || 0);
+  const patients = Array.from(patientsMap.values()).sort((a, b) => sortKey(b) - sortKey(a));
 
   if (!searchTerm) {
     return patients;
@@ -121,8 +268,67 @@ export function getPatients(searchTerm = '') {
     (p) =>
       p.firstName.toLowerCase().includes(term) ||
       p.lastName.toLowerCase().includes(term) ||
-      p.id.toLowerCase().includes(term)
+      p.id.toLowerCase().includes(term) ||
+      (p.email || '').toLowerCase().includes(term)
   );
+}
+
+export function calculateAge(birthday) {
+  if (!birthday) return '';
+  const dob = new Date(`${birthday}T00:00:00`);
+  if (Number.isNaN(dob.getTime())) return '';
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const beforeBirthday =
+    today.getMonth() < dob.getMonth() ||
+    (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate());
+  if (beforeBirthday) age -= 1;
+  return age >= 0 ? age : '';
+}
+
+function nextPatientId() {
+  const highest = getPatients().reduce((max, p) => {
+    const match = /^P-(\d+)$/.exec(p.id);
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 10000);
+  return `P-${highest + 1}`;
+}
+
+/**
+ * Registers a new patient. `passwordHash` must already be hashed by the caller.
+ * Throws if the email is already in use.
+ */
+export function addPatient({ firstName, middleName, lastName, birthday, sex, bloodType, address, email, passwordHash }) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (getPatients().some((p) => (p.email || '').toLowerCase() === normalizedEmail)) {
+    throw new Error('A patient with this email already exists.');
+  }
+
+  const patient = {
+    id: nextPatientId(),
+    firstName: firstName.trim(),
+    middleName: middleName.trim(),
+    lastName: lastName.trim(),
+    age: calculateAge(birthday),
+    address: address.trim(),
+    birthday,
+    bloodType,
+    sex,
+    email: normalizedEmail,
+    passwordHash,
+    qrToken: generateQrToken(),
+    createdAt: new Date().toISOString(),
+    registered: true,
+  };
+
+  store = {
+    ...store,
+    patients: [...store.patients, patient],
+  };
+  saveStore();
+
+  const { passwordHash: _passwordHash, ...publicRecord } = patient;
+  return publicRecord;
 }
 
 function classifyReadingSeverity(readings) {
@@ -204,7 +410,7 @@ export function getPatientById(id) {
 export function getDashboardStats() {
   const checkInsToday = getTodaysCount();
   const checkInsYesterday = getPreviousDayCount();
-  const patientRecords = new Set(store.checkIns.map((checkIn) => checkIn.patientId)).size;
+  const patientRecords = getPatients().length;
 
   const delta = checkInsToday - checkInsYesterday;
   const checkInsDelta = checkInsYesterday === 0

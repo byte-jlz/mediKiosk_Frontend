@@ -92,3 +92,66 @@
   color: rgba(255,255,255,0.45);
   margin: 4px 0 0;
 }
+
+.mk-kqr__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror so patients can line the code up naturally */
+}
+
+.mk-kqr__camera-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 24px;
+  font-size: 14px;
+  color: var(--white);
+}
+
+.mk-kqr__camera-msg.is-overlay {
+  background: rgba(20, 36, 58, 0.7);
+  font-weight: 600;
+}
+
+.mk-kqr__error {
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--red-bg);
+  color: var(--red);
+  font-size: 14px;
+  font-weight: 600;
+  max-width: 360px;
+}
+
+.mk-kqr__manual {
+  display: flex;
+  gap: 10px;
+  width: min(100%, 420px);
+}
+
+.mk-kqr__manual input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--white);
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 14px;
+  outline: none;
+}
+
+.mk-kqr__manual input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.mk-kqr__manual input:focus {
+  border-color: var(--white);
+}

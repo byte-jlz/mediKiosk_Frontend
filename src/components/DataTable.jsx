@@ -2,9 +2,10 @@ import './DataTable.css';
 
 /**
  * Generic table shell matching the Figma "6/6" search+count header pattern
- * used across Staff Accounts, Patient Records, and Audit Logs.
+ * used across Staff Accounts, Patients, and Audit Logs.
  *
  * columns: [{ key, label, render?: (row) => node }]
+ * onRowClick?: (row) => void — makes each row clickable
  */
 export default function DataTable({
   columns,
@@ -14,6 +15,7 @@ export default function DataTable({
   searchPlaceholder = 'Search patients, kiosks, alert..',
   emptyMessage = 'No results found.',
   loading = false,
+  onRowClick,
 }) {
   return (
     <div className="mk-datatable">
@@ -54,7 +56,11 @@ export default function DataTable({
           )}
           {!loading &&
             rows.map((row, i) => (
-              <tr key={row.id || i}>
+              <tr
+                key={row.id || i}
+                className={onRowClick ? 'is-clickable' : undefined}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+              >
                 {columns.map((col) => (
                   <td key={col.key}>{col.render ? col.render(row) : row[col.key]}</td>
                 ))}

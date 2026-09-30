@@ -6,7 +6,7 @@ import './Sidebar.css';
 const NAV_ITEMS = [
   { to: '/admin/dashboard', label: 'Overview', icon: '▦', end: true },
   { to: '/admin/staff', label: 'Staff accounts', icon: '👥' },
-  { to: '/admin/patients', label: 'Patient records', icon: '📄' },
+  { to: '/admin/patients', label: 'Patients', icon: '📄' },
   { to: '/admin/kiosks', label: 'Kiosks', icon: '🖥' },
   { to: '/admin/kiosks-activity', label: 'Kiosks Activity', icon: '📈' },
   { to: '/admin/audit-logs', label: 'Audit Logs', icon: '📋' },

@@ -10,12 +10,15 @@
 
 import { mockCurrentPatient } from '../mocks/mockPatients';
 import { getStaffByEmail } from './staffService';
+import { findPatientByQrToken } from './adminStore';
+import { parseQrPayload } from './patientQr';
 
 const AUTH_STORAGE_KEY = 'mkAdminCurrentStaff';
 const PATIENT_PROFILE_KEY = 'mkPatientProfile';
 const PATIENT_PROFILES_KEY = 'mkPatientProfiles';
 const PATIENT_ACTIVE_PROFILE_ID_KEY = 'mkPatientActiveProfileId';
 const FAKE_DELAY_MS = 500;
+const DEMO_QR_TOKEN = 'demo-qr-token';
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function saveCurrentStaff(staff) {
@@ -181,14 +184,33 @@ export async function patientSignup(formData) {
 
 /**
  * EXPECTED BACKEND ENDPOINT: POST /api/patient/login-qr
- * REQUEST BODY:  { qrToken: string }   -- scanned from the mobile app
+ * REQUEST BODY:  { qrToken: string }   -- scanned patient QR (`MEDIKIOSK:<token>`) or the mobile app
  * RESPONSE:      { token: string, patient: {...} }
  * Used by the kiosk's "Scan QR Code" flow to sign a patient in instantly.
  */
 export async function patientLoginWithQr(qrToken) {
   await delay(FAKE_DELAY_MS);
-  const profile = getCurrentPatientProfile();
-  return { token: 'mock-patient-token', patient: profile || mockCurrentPatient };
+
+  // Legacy simulated flow used by the "show QR" screens.
+  if (qrToken === DEMO_QR_TOKEN) {
+    const profile = getCurrentPatientProfile();
+    return { token: 'mock-patient-token', patient: profile || mockCurrentPatient };
+  }
+
+  const record = findPatientByQrToken(parseQrPayload(qrToken));
+  if (!record) {
+    throw new Error('QR code not recognized. Please ask the clinic staff for a new code.');
+  }
+
+  const {
+    qrToken: _qrToken,
+    lastVisit: _lastVisit,
+    registered: _registered,
+    createdAt: _createdAt,
+    ...patient
+  } = record;
+  savePatientProfile(patient);
+  return { token: 'mock-patient-token', patient };
 }
 
 /**
