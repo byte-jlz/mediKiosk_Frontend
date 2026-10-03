@@ -72,6 +72,35 @@
   margin-top: 0;
 }
 
+.mk-patient-history__title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.mk-patient-history__count {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mk-patient-history__number {
+  margin: 0 0 4px;
+  font-weight: 700;
+}
+
+.mk-patient-history__latest {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand-blue-light);
+  color: var(--brand-blue-dark);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .mk-patient-history__loading,
 .mk-patient-history__empty {
   color: var(--muted);

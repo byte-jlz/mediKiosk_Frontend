@@ -139,15 +139,24 @@ export default function PatientDetailScreen() {
             </section>
 
             <section className="mk-patient-record__card mk-patient-history">
-              <h3>Vitals history</h3>
+              <div className="mk-patient-history__title-row">
+                <h3>Vitals history</h3>
+                <span className="mk-patient-history__count">
+                  {patient.visitHistory?.length || 0} {patient.visitHistory?.length === 1 ? 'record' : 'records'}
+                </span>
+              </div>
               {patient.visitHistory?.length === 0 && (
                 <p className="mk-patient-history__empty">No kiosk check-ins found for this patient.</p>
               )}
-              {patient.visitHistory?.map((visit) => (
+              {patient.visitHistory?.map((visit, i) => (
                 <div key={visit.id} className="mk-patient-history__card">
                   <div className="mk-patient-history__head">
                     <div>
-                      <p className="mk-patient-history__date">{formatDate(visit.timestamp)}</p>
+                      <p className="mk-patient-history__number">
+                        Check-in #{visit.recordNumber}
+                        {i === 0 && <span className="mk-patient-history__latest">Latest</span>}
+                      </p>
+                      <p className="mk-patient-history__date">{formatDateTime(visit.timestamp)}</p>
                       <p className="mk-patient-history__kiosk">{visit.kioskName}</p>
                     </div>
                     <StatusBadge status={visit.status} />

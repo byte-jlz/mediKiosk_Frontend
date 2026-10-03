@@ -11,6 +11,16 @@ const defaultStore = {
 
 let store = loadStore();
 
+// Another tab (e.g. the kiosk) saved a check-in — reload so this tab's screens
+// (admin console, patient app) pick up the new history record too.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key !== STORAGE_KEY) return;
+    store = loadStore();
+    window.dispatchEvent(new CustomEvent('mk-admin-store-updated'));
+  });
+}
+
 function loadStore() {
   if (typeof window === 'undefined') {
     return { ...defaultStore };
@@ -386,20 +396,21 @@ function formatVisitSummary(readings) {
   return 'Vitals recorded';
 }
 
+// Every check-in for the patient, newest first. `recordNumber` counts up from
+// the oldest (#1) so each record keeps the same number as new ones are added.
 function getPatientHistory(patientId) {
-  return getCheckIns()
-    .filter((checkIn) => checkIn.patientId === patientId)
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-    .map((checkIn) => ({
-      id: checkIn.id,
-      kioskName: checkIn.kioskName,
-      timestamp: checkIn.timestamp,
-      date: formatTimestamp(checkIn.timestamp),
-      status: classifyReadingSeverity(checkIn.readings),
-      primaryValue: formatVisitSummary(checkIn.readings),
-      summary: `Recorded during kiosk check-in at ${checkIn.kioskName}.`,
-      readings: checkIn.readings,
-    }));
+  const checkIns = getCheckIns().filter((checkIn) => checkIn.patientId === patientId);
+  return checkIns.map((checkIn, index) => ({
+    id: checkIn.id,
+    recordNumber: checkIns.length - index,
+    kioskName: checkIn.kioskName,
+    timestamp: checkIn.timestamp,
+    date: formatTimestamp(checkIn.timestamp),
+    status: classifyReadingSeverity(checkIn.readings),
+    primaryValue: formatVisitSummary(checkIn.readings),
+    summary: `Recorded during kiosk check-in at ${checkIn.kioskName}.`,
+    readings: checkIn.readings,
+  }));
 }
 
 export function getPatientById(id) {

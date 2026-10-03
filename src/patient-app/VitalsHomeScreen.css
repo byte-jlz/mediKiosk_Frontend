@@ -476,3 +476,37 @@
   color: var(--brand-blue-dark);
   margin: 0;
 }
+
+.mk-vhome__history-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mk-vhome__history-heading .mk-vhome__history-title {
+  margin: 0;
+}
+
+.mk-vhome__history-count {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mk-vhome__history-latest {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand-blue-light);
+  color: var(--brand-blue-dark);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  vertical-align: middle;
+}
+
+.mk-vhome__history-row--selected .mk-vhome__history-kiosk {
+  color: var(--brand-blue-dark);
+}
