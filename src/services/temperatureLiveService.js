@@ -2,16 +2,16 @@
 // TEMPERATURE LIVE SERVICE (MQTT)
 // ------------------------------------------------------------
 // Subscribes to the live MLX90614 (GY-906) infrared thermometer readings
-// that backend/temp_mqtt_publisher.py publishes from the kiosk Pi.
+// that the kiosk agent (MediKiosk_hardware/agent/kiosk_agent.py) publishes.
 // Connection handling lives in mqttSensorFeed.js.
 //
 // Override the topic in .env if needed:
-//   VITE_TEMP_TOPIC=medikiosk/sensors/temperature
+//   VITE_TEMP_TOPIC=medikiosk/K-01/live/temp
 // ============================================================
 import { useMqttSensorFeed } from './mqttSensorFeed';
 
 export { MQTT_URL } from './mqttSensorFeed';
-export const TEMP_TOPIC = import.meta.env.VITE_TEMP_TOPIC || 'medikiosk/sensors/temperature';
+export const TEMP_TOPIC = import.meta.env.VITE_TEMP_TOPIC || 'medikiosk/K-01/live/temp';
 
 function parseReading(text) {
   try {

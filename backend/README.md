@@ -11,13 +11,6 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-On the physical kiosk (Raspberry Pi), also install the hardware-only
-dependencies so real sensor readings are used instead of simulated ones:
-
-```bash
-pip install -r requirements-hardware.txt
-```
-
 ## Run
 
 ```bash
@@ -45,87 +38,82 @@ The backend exposes the same contracts the frontend expects, including:
 - `GET /api/dashboard/stats`
 - `GET /api/dashboard/recent-activity`
 - `GET /api/kiosks/activity`
-- `POST /api/vitals/scan` — triggers one sensor reading, `{ "vitalKey": "heartRate" }` → `{ value, unit }` (`"heartRateSpo2"` → `{ heartRate: {…}, spo2: {…} }` from a single MAX30102 pass)
+- `POST /api/vitals/scan` — **old, simulated only** (removed in step 4), one fake reading, `{ "vitalKey": "heartRate" }` → `{ value, unit }` (`"heartRateSpo2"` → `{ heartRate: {…}, spo2: {…} }` from a single MAX30102 pass)
   (or `{ systolic, diastolic, unit }` for `bloodPressure`)
 - `POST /api/vitals/check-in`
 - `GET /api/vitals/history?patientId=...`
+- `POST /api/kiosk-sessions` — start a check-in at a kiosk: `{ "kioskId": "K-01", "patientId": "P-88401" }` → `{ sessionId, readings, missingVitals, urgency, ... }`
+- `GET /api/kiosk-sessions/{id}` — readings the kiosk agent sent for that session + urgency
+- `POST /api/kiosk-sessions/{id}/complete` — save it as the patient's check-in (409 if vitals are missing, unless `{ "allowIncomplete": true }`)
+- `POST /api/kiosk-sessions/{id}/urgency` — re-run the urgency check
+- `GET /api/kiosk-sessions?kioskId=&status=` — recent sessions
+- `GET /api/kiosks/{id}/agent` — the kiosk agent's last MQTT status (online / busy)
+- `GET /api/kiosks/{id}/results` — the last scan results that kiosk sent
 
-## Hardware integration
+## Kiosk agent over MQTT
 
-`app/sensors.py` wires the vitals wizard's `POST /api/vitals/scan` to the
-sensors from the `MediKiosk_hardware` project (the ToF height sensor, the
-HX711 load-cell scale, and the MAX30102 heart-rate/SpO2 sensor — their
-driver code is copied into `app/hardware/`). Heart Rate, SpO2, and BMI
-(computed from height + weight) are read from real hardware **when this
-process can import the Raspberry Pi GPIO/I2C libraries** — i.e. when it's
-actually running on the kiosk Pi with sensors wired up and
-`requirements-hardware.txt` installed. On any other machine (a dev
-laptop, CI, etc.) it automatically falls back to simulated readings, so
-the rest of the app keeps working without physical hardware attached.
-
-Temperature, Blood Pressure, and Respiration have no sensors yet — those
-three are always simulated. See `app/sensors.py` for the per-vital
-functions and the calibration constants that need to be set on the
-physical kiosk (`SCALE_RAW_PER_GRAM`, `SENSOR_MOUNT_MM`).
-
-## Live ToF feed (MQTT)
-
-The kiosk frontend can show a live readout of the VL53L0X Time-of-Flight
-sensor (the "📡 Sensors Live" screen at `/kiosk/tof-live`, and a small live card
-on the kiosk's BMI step). The data flows:
+The backend no longer reads any sensors. The kiosk Pi runs **one** program
+that owns all of them, `MediKiosk_hardware/agent/kiosk_agent.py`, and the
+backend listens to it over MQTT:
 
 ```
-VL53L0X --I2C--> tof_mqtt_publisher.py --MQTT:1883--> Mosquitto --WebSocket:9001--> React (src/services/tofLiveService.js)
+kiosk tablet --scan cmd (with sessionId)--> Mosquitto --> kiosk agent --> sensors
+                                                 |
+backend (app/mqtt_bridge.py) <--result/status----+
+   -> app/store.py   (session readings, kiosk online/offline)
+   -> app/urgency.py (once all 5 vitals are in) -> publishes medikiosk/<kiosk>/urgency
 ```
 
-On the Raspberry Pi:
+Every topic and message is documented in `MediKiosk_hardware/agent/README.md`.
+
+* `app/mqtt_bridge.py` starts with the app. It subscribes to `medikiosk/+/result`
+  and `medikiosk/+/status` (`+` = every kiosk). If no broker is running, the
+  API still works and the bridge keeps retrying. Settings: `MQTT_HOST`,
+  `MQTT_PORT`, `MQTT_USER`, `MQTT_PASSWORD`, `MQTT_ENABLED=0` to switch it off.
+* A kiosk's `status` follows the agent (Online / Offline), **except** when an
+  admin set it to Idle, Maintenance or Deactivated. `agentOnline`,
+  `agentBusy`, `agentSimulated` and `lastSeen` are always there in `GET /api/kiosks`.
+* Readings only get into a session from the agent, never from the browser.
+
+### Test it on one laptop (no Pi)
 
 ```bash
-# 1. Broker (once)
-sudo apt install -y mosquitto mosquitto-clients
-sudo cp mosquitto/medikiosk.conf /etc/mosquitto/conf.d/medikiosk.conf
-sudo systemctl restart mosquitto
-
-# 2. Publisher (from this backend/ folder, inside the venv)
-pip install paho-mqtt
-python tof_mqtt_publisher.py
+# 1. broker (from the repo root)
+mosquitto -c backend/mosquitto/medikiosk.conf -v
+#   Windows: & "C:\Program Files\mosquitto\mosquitto.exe" -c backend\mosquitto\medikiosk.conf -v
+# 2. simulated kiosk agent (in the MediKiosk_hardware repo)
+SIMULATE=1 SIM_FAST=1 python agent/kiosk_agent.py
+# 3. this backend
+uvicorn app.main:app --reload --port 8000
 ```
 
-Check it with `mosquitto_sub -t 'medikiosk/sensors/tof/#' -v`. On a laptop
-without the sensor, the publisher automatically sends simulated readings
-(or force it with `TOF_SIMULATE=1`). If the frontend runs on a different
-machine than the Pi, set `VITE_MQTT_URL=ws://<pi-ip>:9001` in `.env`.
+Then open http://localhost:8000/docs, create a session with
+`POST /api/kiosk-sessions`, and scan with the session ID, for example:
+`python agent/try_agent.py` in the hardware repo, or any MQTT client sending
+`{"action":"scan","id":"t1","vital":"temperature","session":"SES-...","auto_confirm":true}`
+to `medikiosk/K-01/cmd`. `GET /api/kiosk-sessions/{id}` then shows the reading.
 
-Only one program should talk to the VL53L0X at a time: stop the publisher
-before running a real BMI scan through `POST /api/vitals/scan`, since both
-read the same sensor.
+## Urgency model
 
-## Live temperature feed (MQTT)
+`app/urgency.py` has one function, `classify(readings)`, which returns
+`{level: normal|attention|urgent, score, reasons, model, features}`. It runs
+automatically when a session has all 5 vitals.
 
-The MLX90614 (GY-906) infrared thermometer streams the same way, shown on the
-"📡 Sensors Live" screen at `/kiosk/tof-live` and as a live card on the
-kiosk's Temperature step:
+**Until the ML model exists, it uses simple placeholder thresholds** and says so
+in `model` ("placeholder-rules (demo only, not clinically validated)"). To plug
+in the real model: save it with joblib, put it in `backend/models/`, set
+`URGENCY_MODEL_PATH=models/<file>.joblib`, and adjust `_ml_classify()` if needed.
+The inputs (`FEATURE_ORDER`) and step-by-step instructions are at the top of the file.
+If the model can't load or fails, the rules are used and `reasons` explains why.
 
-```
-MLX90614 --I2C 0x5A--> temp_mqtt_publisher.py --MQTT:1883--> Mosquitto --WebSocket:9001--> React (src/services/temperatureLiveService.js)
-```
+## Storage
 
-Wiring (Pi 4B, 3.3V): VIN→3.3V (pin 1), GND→GND (pin 6), SCL→GPIO3 (pin 5),
-SDA→GPIO2 (pin 3). It shares I2C bus 1 with the VL53L0X at a different
-address, so both publishers can run at the same time:
-
-```bash
-pip install paho-mqtt smbus2
-python temp_mqtt_publisher.py
-```
-
-Check it with `mosquitto_sub -t 'medikiosk/sensors/temperature/#' -v`. Without
-the sensor it publishes simulated readings (force with `TEMP_SIMULATE=1`).
-Each message looks like
-`{"sensor": "mlx90614", "object_c": 36.52, "ambient_c": 27.1, "valid": true, "simulated": false, "ts": ...}`.
+Everything is still **in memory** (`app/data.py`, `app/store.py`), so restarting
+the server clears it. `app/store.py` keeps kiosk sessions and scan results as
+MongoDB-style documents (with `_id`), so moving to MongoDB later means changing
+only that file.
 
 ## Notes
 
-- The backend uses in-memory mock data to mirror the existing frontend demo.
 - CORS is enabled to allow the frontend to call the API during local development.
 - Replace the in-memory data and add persistence when moving to a production-ready backend.

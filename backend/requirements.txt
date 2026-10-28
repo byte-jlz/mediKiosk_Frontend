@@ -1,0 +1,14 @@
+# FastAPI backend for Medi-Kiosk.
+#   cd backend
+#   python -m venv .venv
+#   .venv\Scripts\activate          (Linux/macOS: source .venv/bin/activate)
+#   pip install -r requirements.txt
+fastapi==0.138.1
+uvicorn==0.49.0
+pydantic==2.13.4
+email-validator==2.3.0      # pydantic's EmailStr needs it
+paho-mqtt==2.1.0            # app/mqtt_bridge.py - listens to the kiosk agents
+
+# Added by the ML teammate together with the urgency model (app/urgency.py):
+# scikit-learn
+# joblib

@@ -10,11 +10,10 @@ router = APIRouter()
 @router.post("/vitals/scan")
 async def scan_vital(payload: ScanRequest):
     """
-    Triggers one sensor reading for `vitalKey` and returns it once the scan
-    completes. Backed by real hardware for heartRate/spo2/bmi (when running
-    on the kiosk Pi with sensors wired up — see app/sensors.py); the other
-    vitals are simulated until those sensors exist. Blocking sensor I/O runs
-    in a threadpool so it doesn't stall the event loop.
+    OLD, SIMULATED ONLY: returns a fake reading for `vitalKey` (see app/sensors.py).
+    Real scans now go through the kiosk agent over MQTT and are stored per
+    session (app/routers/sessions.py). Kept only until the frontend wizard
+    switches to MQTT (step 4), then this endpoint will be removed.
     """
     handler = sensors.SCAN_HANDLERS.get(payload.vitalKey)
     if handler is None:

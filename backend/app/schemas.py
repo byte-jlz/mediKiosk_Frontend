@@ -61,6 +61,11 @@ class KioskBase(BaseModel):
     uptime: str
     today: int
     firmware: str
+    # filled in from the kiosk agent's MQTT status (see app/mqtt_bridge.py)
+    agentOnline: Optional[bool] = None
+    agentBusy: Optional[bool] = None
+    agentSimulated: Optional[bool] = None
+    lastSeen: Optional[float] = None
 
 class KioskCreate(BaseModel):
     name: str

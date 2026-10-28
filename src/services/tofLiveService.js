@@ -2,18 +2,18 @@
 // TOF LIVE SERVICE (MQTT)
 // ------------------------------------------------------------
 // Subscribes to the live VL53L0X Time-of-Flight readings that
-// backend/tof_mqtt_publisher.py publishes from the kiosk Pi.
+// kiosk agent (MediKiosk_hardware/agent/kiosk_agent.py) publishes from the Pi.
 // Connection handling lives in mqttSensorFeed.js.
 //
 // Set these in .env if the broker isn't on the same machine serving the page
 // (e.g. you run `npm run dev` on your laptop but Mosquitto is on the Pi):
 //   VITE_MQTT_URL=ws://<pi-ip>:9001
-//   VITE_TOF_TOPIC=medikiosk/sensors/tof
+//   VITE_TOF_TOPIC=medikiosk/K-01/live/tof
 // ============================================================
 import { useMqttSensorFeed } from './mqttSensorFeed';
 
 export { MQTT_URL } from './mqttSensorFeed';
-export const TOF_TOPIC = import.meta.env.VITE_TOF_TOPIC || 'medikiosk/sensors/tof';
+export const TOF_TOPIC = import.meta.env.VITE_TOF_TOPIC || 'medikiosk/K-01/live/tof';
 
 function parseReading(text) {
   try {

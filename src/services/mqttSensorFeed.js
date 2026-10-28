@@ -1,8 +1,8 @@
 // ============================================================
 // MQTT SENSOR FEED (shared)
 // ------------------------------------------------------------
-// Generic React hook for a live sensor stream published by one of the
-// backend/*_mqtt_publisher.py scripts on the kiosk Pi. Used by
+// Generic React hook for a live sensor stream published by the kiosk
+// agent (MediKiosk_hardware/agent/kiosk_agent.py) on the Pi. Used by
 // tofLiveService.js and temperatureLiveService.js.
 //
 // Browsers can't open raw MQTT (TCP) connections, so this talks to the

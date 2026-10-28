@@ -37,7 +37,7 @@ function statusOf({ connection, publisherOnline, stale, reading }) {
     return {
       tone: 'warn',
       label: 'Waiting for sensor',
-      hint: 'Connected to the broker, but no ToF readings are arriving. Start tof_mqtt_publisher.py on the Pi.',
+      hint: 'Connected to the broker, but no ToF readings are arriving. Start the kiosk agent (agent/kiosk_agent.py) on the Pi.',
     };
   }
   return {

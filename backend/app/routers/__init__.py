@@ -1,1 +1,1 @@
-from . import auth, patients, staff, kiosks, vitals, audit, dashboard
+from . import auth, patients, staff, kiosks, vitals, audit, dashboard, sessions
