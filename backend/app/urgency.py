@@ -1,12 +1,15 @@
 """
 urgency.py - decides how urgent a finished check-in is.
 
-    classify(readings) -> {"level": "normal" | "attention" | "urgent",
+    classify(readings) -> {"level": "normal" | "medium" | "high",
                            "score": float, "reasons": [...], "model": "...",
                            "features": {...}}
 
-Called by the MQTT bridge as soon as a session has all 5 vitals, and the
-result is published to medikiosk/<kiosk>/urgency and shown in the session.
+Called by the MQTT bridge as soon as a session has all 4 kiosk steps, and
+the result is published to medikiosk/<kiosk>/urgency. ONLY STAFF see it
+(admin console) - the kiosk and the patient's phone never show it.
+
+Levels (shown to staff as): normal = Normal, medium = Medium Risk, high = High Risk
 
 =============================================================================
  FOR THE ML TEAMMATE - how to plug the real model in
@@ -18,7 +21,7 @@ result is published to medikiosk/<kiosk>/urgency and shown in the session.
         bash:        export URGENCY_MODEL_PATH=models/urgency_model.joblib
     (a relative path is relative to the backend/ folder)
  4. Edit ONLY _ml_classify() below if your model works differently
-    (e.g. returns numbers instead of "normal"/"attention"/"urgent", or
+    (e.g. returns numbers instead of "normal"/"medium"/"high", or
     needs scaling). Keep the return shape the same.
  5. pip install scikit-learn joblib   (and add them to backend/requirements.txt)
 
@@ -33,16 +36,18 @@ NOT clinically validated and must not be used to make medical decisions.
 import os
 from typing import Dict, List, Optional, Tuple
 
-LEVELS = ["normal", "attention", "urgent"]
+from app.vitals_rules import official_heart_rate
+
+LEVELS = ["normal", "medium", "high"]      # = Normal / Medium Risk / High Risk
 
 # Inputs the model receives, IN THIS ORDER, with these units.
 FEATURE_ORDER = [
-    "heart_rate_bpm",       # beats per minute         (MAX30102)
-    "spo2_pct",             # blood oxygen, %          (MAX30102)
+    "heart_rate_bpm",       # beats per minute  - BP monitor pulse (finger sensor if no BP)
+    "spo2_pct",             # blood oxygen, %          (MAX30102, finger step)
     "temperature_c",        # body temperature, °C     (MLX90614)
     "systolic_mmhg",        # blood pressure top       (BP monitor)
     "diastolic_mmhg",       # blood pressure bottom    (BP monitor)
-    "respiration_bpm",      # breaths per minute       (MAX30102 signal)
+    "respiration_bpm",      # breaths per minute       (MAX30102, finger step)
     "bmi",                  # kg/m²                    (scale + ToF)
 ]
 
@@ -59,15 +64,16 @@ def build_features(readings: Dict) -> Dict[str, Optional[float]]:
         except (TypeError, ValueError):
             return None
 
-    hr_spo2 = readings.get("heartRateSpo2") or {}
+    finger = readings.get("respirationSpo2Hr") or {}
     bp = readings.get("bloodPressure") or {}
+    hr = official_heart_rate(readings) or {}
     return {
-        "heart_rate_bpm": num((hr_spo2.get("heartRate") or {}).get("value")),
-        "spo2_pct": num((hr_spo2.get("spo2") or {}).get("value")),
+        "heart_rate_bpm": num(hr.get("value")),
+        "spo2_pct": num((finger.get("spo2") or {}).get("value")),
         "temperature_c": num((readings.get("temperature") or {}).get("value")),
         "systolic_mmhg": num(bp.get("systolic")),
         "diastolic_mmhg": num(bp.get("diastolic")),
-        "respiration_bpm": num((readings.get("respiration") or {}).get("value")),
+        "respiration_bpm": num((finger.get("respiration") or {}).get("value")),
         "bmi": num((readings.get("bmi") or {}).get("value")),
     }
 
@@ -95,7 +101,7 @@ def _ml_classify(model, features: Dict[str, Optional[float]]) -> Dict:
     {"level": one of LEVELS, "score": float 0..1, "reasons": [str, ...]}."""
     row = [[features[name] for name in FEATURE_ORDER]]
     label = model.predict(row)[0]
-    if not isinstance(label, str):               # e.g. 0/1/2 -> normal/attention/urgent
+    if not isinstance(label, str):               # e.g. 0/1/2 -> normal/medium/high
         label = LEVELS[int(label)]
     score = 0.0
     if hasattr(model, "predict_proba"):
@@ -107,7 +113,7 @@ def _ml_classify(model, features: Dict[str, Optional[float]]) -> Dict:
 # =============================================================================
 # Placeholder rules (used until the model exists, or if it fails)
 # =============================================================================
-# (feature, label, urgent_if, attention_if) - each test gets the value.
+# (feature, label, high_if, medium_if) - each test gets the value.
 _RULES: List[Tuple[str, str, object, object]] = [
     ("spo2_pct", "SpO2",
      lambda v: v < 92, lambda v: v < 95),
@@ -129,14 +135,14 @@ _RULES: List[Tuple[str, str, object, object]] = [
 def _rule_classify(features: Dict[str, Optional[float]]) -> Dict:
     worst = 0
     reasons = []
-    for key, label, is_urgent, is_attention in _RULES:
+    for key, label, is_high, is_medium in _RULES:
         v = features.get(key)
         if v is None:
             continue
-        if is_urgent(v):
+        if is_high(v):
             worst = max(worst, 2)
-            reasons.append(f"{label} {v:g} is in the urgent range")
-        elif is_attention(v):
+            reasons.append(f"{label} {v:g} is in the high-risk range")
+        elif is_medium(v):
             worst = max(worst, 1)
             reasons.append(f"{label} {v:g} is outside the normal range")
     return {"level": LEVELS[worst], "score": worst / 2,

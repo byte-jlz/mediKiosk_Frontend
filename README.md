@@ -44,12 +44,16 @@ The backend exposes the same API contracts the frontend services currently expec
 
 ## Build status (as of this handoff)
 
-- ✅ **Patient App** — fully built: Landing, Sign In, Sign Up, QR Login, the full
-  7-step Vitals Wizard (Heart Rate → BMI → Temperature → Blood Pressure → SpO2 →
-  Respiration → Results), Vitals Home, Profile, Settings. All buttons, forms, the
-  wizard's scan simulation, and toggles are functional.
-- ✅ **Kiosk App** — fully built: landscape Landing, Sign In, QR Scan, QR Display,
-  and the same Vitals Wizard reused in a wide/landscape layout.
+- ✅ **Patient App** — Landing, Sign In, Sign Up, QR Login, Vitals Home (history),
+  Profile, Settings. The phone is for viewing records only - all measuring
+  happens at the kiosk.
+- ✅ **Kiosk App** — landscape Landing, Sign In, QR Scan, QR Display, and the
+  check-in wizard, which talks to the real sensors through the kiosk agent over
+  MQTT: BMI → Breathing & Oxygen (respiration + SpO2 + pulse from one finger
+  reading) → Blood Pressure → Temperature → Results. Live countdowns, "I'm
+  ready" buttons, Try again, Skip for now (once - moves the step to the end),
+  and Continue without it (saved as incomplete). The risk level is never shown
+  on the kiosk; it is for staff only.
 - ✅ **Admin Console** — fully built: Login, Dashboard (Overview), Staff Accounts
   (add/remove staff), Patient Records (view detail modal), Kiosks (deactivate/
   reactivate, add kiosk), Kiosks Activity (live-style feed), and Audit Logs

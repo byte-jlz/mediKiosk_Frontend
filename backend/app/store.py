@@ -23,6 +23,8 @@ import time
 from typing import Dict, List, Optional
 from uuid import uuid4
 
+from app.vitals_rules import derive
+
 _lock = threading.Lock()
 _sessions: Dict[str, dict] = {}     # "kiosk_sessions" collection
 _results: List[dict] = []           # "scan_results" collection (every agent result, as received)
@@ -32,7 +34,9 @@ MAX_RESULTS = 2000                  # in-memory only: keep the newest N results
 
 # The check-in is complete once each of these has a good reading.
 # (Names = the frontend wizard's step keys = the agent's vital names.)
-REQUIRED_VITALS = ["bmi", "heartRateSpo2", "temperature", "bloodPressure", "respiration"]
+# Kiosk order: BMI -> respiration + SpO2 + heart rate (one finger reading) ->
+# blood pressure -> temperature.
+REQUIRED_VITALS = ["bmi", "respirationSpo2Hr", "bloodPressure", "temperature"]
 
 
 def _now() -> float:
@@ -53,6 +57,7 @@ def create_session(kiosk_id: str, patient_id: Optional[str]) -> dict:
         "createdAt": _now(),
         "updatedAt": _now(),
         "readings": {},                 # vital -> latest good reading (+ resultId, ts, simulated)
+        "derived": {"heartRate": None},  # worked out from several readings (vitals_rules.py)
         "failures": {},                 # vital -> latest error text (cleared by a good reading)
         "urgency": None,
         "checkInId": None,
@@ -101,6 +106,7 @@ def add_result(result: dict) -> Optional[dict]:
                 "simulated": bool(result.get("simulated")),
             }
             session["failures"].pop(vital, None)
+            session["derived"] = derive(session["readings"])
             session["urgency"] = None       # readings changed -> classify again
         elif not result.get("cancelled"):
             session["failures"][vital] = result.get("error")

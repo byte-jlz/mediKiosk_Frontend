@@ -38,15 +38,20 @@ The backend exposes the same contracts the frontend expects, including:
 - `GET /api/dashboard/stats`
 - `GET /api/dashboard/recent-activity`
 - `GET /api/kiosks/activity`
-- `POST /api/vitals/scan` — **old, simulated only** (removed in step 4), one fake reading, `{ "vitalKey": "heartRate" }` → `{ value, unit }` (`"heartRateSpo2"` → `{ heartRate: {…}, spo2: {…} }` from a single MAX30102 pass)
-  (or `{ systolic, diastolic, unit }` for `bloodPressure`)
-- `POST /api/vitals/check-in`
 - `GET /api/vitals/history?patientId=...`
-- `POST /api/kiosk-sessions` — start a check-in at a kiosk: `{ "kioskId": "K-01", "patientId": "P-88401" }` → `{ sessionId, readings, missingVitals, urgency, ... }`
-- `GET /api/kiosk-sessions/{id}` — readings the kiosk agent sent for that session + urgency
-- `POST /api/kiosk-sessions/{id}/complete` — save it as the patient's check-in (409 if vitals are missing, unless `{ "allowIncomplete": true }`)
-- `POST /api/kiosk-sessions/{id}/urgency` — re-run the urgency check
-- `GET /api/kiosk-sessions?kioskId=&status=` — recent sessions
+Kiosk check-in (what the kiosk tablet calls - **never** includes the risk level):
+- `POST /api/kiosk-sessions` — start a check-in: `{ "kioskId": "K-01", "patientId": "P-88401" }` (or `null` for a guest) → `{ sessionId, readings, missingVitals, ... }`
+- `GET /api/kiosk-sessions/{id}` — readings the kiosk agent sent for that session + the official heart rate
+- `POST /api/kiosk-sessions/{id}/complete` — save it as the patient's check-in (409 if a step is missing, unless `{ "allowIncomplete": true }` = "Continue without it")
+
+Staff (admin console - includes the risk level and the heart-rate cross-check):
+- `GET /api/admin/kiosk-sessions?kioskId=&status=` — recent sessions
+- `GET /api/admin/kiosk-sessions/{id}` — one session, everything
+- `POST /api/admin/kiosk-sessions/{id}/urgency` — re-run the risk check
+- `GET /api/admin/check-ins` — saved check-ins, newest first
+
+The old `POST /api/vitals/scan` and `POST /api/vitals/check-in` are gone: readings
+only come from the kiosk agent now.
 - `GET /api/kiosks/{id}/agent` — the kiosk agent's last MQTT status (online / busy)
 - `GET /api/kiosks/{id}/results` — the last scan results that kiosk sent
 
@@ -61,7 +66,7 @@ kiosk tablet --scan cmd (with sessionId)--> Mosquitto --> kiosk agent --> sensor
                                                  |
 backend (app/mqtt_bridge.py) <--result/status----+
    -> app/store.py   (session readings, kiosk online/offline)
-   -> app/urgency.py (once all 5 vitals are in) -> publishes medikiosk/<kiosk>/urgency
+   -> app/urgency.py (once all 4 steps are in) -> publishes medikiosk/<kiosk>/urgency (staff only)
 ```
 
 Every topic and message is documented in `MediKiosk_hardware/agent/README.md`.
@@ -96,8 +101,9 @@ to `medikiosk/K-01/cmd`. `GET /api/kiosk-sessions/{id}` then shows the reading.
 ## Urgency model
 
 `app/urgency.py` has one function, `classify(readings)`, which returns
-`{level: normal|attention|urgent, score, reasons, model, features}`. It runs
-automatically when a session has all 5 vitals.
+`{level: normal|medium|high, score, reasons, model, features}` (shown to staff as
+Normal / Medium Risk / High Risk - never to the patient). It runs automatically
+when a session has all 4 kiosk steps, and NOT for incomplete check-ins.
 
 **Until the ML model exists, it uses simple placeholder thresholds** and says so
 in `model` ("placeholder-rules (demo only, not clinically validated)"). To plug
@@ -105,6 +111,18 @@ in the real model: save it with joblib, put it in `backend/models/`, set
 `URGENCY_MODEL_PATH=models/<file>.joblib`, and adjust `_ml_classify()` if needed.
 The inputs (`FEATURE_ORDER`) and step-by-step instructions are at the top of the file.
 If the model can't load or fails, the rules are used and `reasons` explains why.
+
+## Kiosk steps and the official heart rate
+
+The kiosk does 4 steps (`REQUIRED_VITALS` in `app/store.py`): `bmi`,
+`respirationSpo2Hr` (one 60 s finger reading: respiration + SpO2 + pulse),
+`bloodPressure`, `temperature`.
+
+Heart rate comes from two devices (`app/vitals_rules.py`): the **BP monitor's
+pulse is official**, the finger sensor is the cross-check. If they differ by more
+than 10 bpm, the BP pulse is still used but both values and a `mismatch` flag are
+saved for staff (`heartRateCheck` on the check-in). If there is no BP pulse, the
+finger sensor's value is used (`source: "finger_sensor"`).
 
 ## Storage
 

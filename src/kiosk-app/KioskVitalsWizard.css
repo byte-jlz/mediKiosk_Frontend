@@ -61,7 +61,7 @@
   font-size: 26px;
 }
 
-/* Live ToF feed on the BMI step: sits in the right half of the colored panel */
+/* The readout column sits in the right half of the colored panel */
 .mk-kwizard .mk-vital-step__panel--with-extra {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -132,4 +132,39 @@
     width: 100%;
     margin-top: 20px;
   }
+}
+
+/* Top bar: progress + "Cancel check-in" */
+.mk-kwizard__top {
+  position: relative;
+}
+
+.mk-kwizard__cancel {
+  position: absolute;
+  top: 22px;
+  right: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--muted);
+  font: 600 13px var(--font-body);
+}
+
+.mk-kwizard__cancel:hover {
+  color: var(--ink);
+}
+
+/* Server / sensor problem banner */
+.mk-kwizard__banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 40px 0;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--red-bg);
+  color: var(--ink);
+  font-size: 14px;
 }

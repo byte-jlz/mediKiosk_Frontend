@@ -1,3 +1,6 @@
+/* Kiosk check-in wizard styles (moved here from patient-app/VitalsWizard,
+   which only the kiosk used). Kiosk-specific overrides: ../KioskVitalsWizard.css */
+
 .mk-wizard {
   height: 100%;
   display: flex;
@@ -280,15 +283,6 @@
   font-size: 14px;
 }
 
-.mk-results__status {
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--green);
-  background: var(--green-bg);
-  padding: 3px 8px;
-  border-radius: 999px;
-}
-
 .mk-results__card-label {
   margin: 0 0 4px;
   font-size: 12.5px;
@@ -300,4 +294,108 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--ink);
+}
+
+.mk-results__card-sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- Progress: a step the patient finished without ---- */
+.mk-wizard-progress__circle.is-missing {
+  background: var(--amber-bg);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+/* ---- Scan step ---- */
+.mk-scan__instruction {
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--navy-ink);
+  line-height: 1.45;
+}
+
+.mk-scan__hint {
+  margin: -12px 0 20px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mk-scan__error {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  max-width: 520px;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  border-left: 4px solid var(--amber);
+  font-size: 14px;
+  color: var(--ink-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.mk-scan__error strong {
+  color: var(--ink);
+}
+
+.mk-vital-step__actions {
+  flex-wrap: wrap;
+}
+
+.mk-scan__countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--navy-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-scan__countdown small {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mk-scan__values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 20px;
+  width: 100%;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.mk-scan__values div {
+  text-align: center;
+}
+
+.mk-scan__values dt {
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mk-scan__values dd {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mk-scan__values dd span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
 }

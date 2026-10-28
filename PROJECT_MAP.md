@@ -31,7 +31,9 @@ src/
 │   │                           has a comment describing the real FastAPI
 │   │                           endpoint it should eventually call.
 │   ├── authService.js
-│   ├── vitalsService.js       (sensor readings — has sensor notes at the top)
+│   ├── kioskAgentService.js   (MQTT: sends scans to the kiosk agent, follows its progress)
+│   ├── kioskSessionService.js (REST: start / read / complete a kiosk check-in session)
+│   ├── vitalsService.js       (patient history)
 │   ├── mqttSensorFeed.js      (shared MQTT-over-WebSocket hook for live sensor feeds)
 │   ├── tofLiveService.js      (live ToF sensor feed over MQTT — useTofLiveFeed hook)
 │   ├── temperatureLiveService.js (live MLX90614 temperature feed — useTemperatureLiveFeed hook)
@@ -51,23 +53,23 @@ src/
 │   ├── QrLoginScreen.jsx
 │   ├── VitalsHomeScreen.jsx
 │   ├── ProfileScreen.jsx
-│   ├── SettingsScreen.jsx
-│   └── VitalsWizard/            The 7-step check-in flow
-│       ├── stepsConfig.js        ⭐ Edit vital names/colors/copy here
-│       ├── VitalsWizard.jsx      Controls step state
-│       ├── VitalStepScreen.jsx   Renders one step (shared by all 6 vitals)
-│       ├── WizardProgress.jsx    The progress bar + step circles
-│       └── ResultsScreen.jsx     Final summary screen
+│   └── SettingsScreen.jsx       (the phone only VIEWS records - no measuring)
 │
 ├── kiosk-app/                  🖥 The physical tablet kiosk (landscape)
 │   ├── KioskLandingScreen.jsx
 │   ├── KioskSignInScreen.jsx
 │   ├── KioskQrScanScreen.jsx
 │   ├── KioskQrDisplayScreen.jsx
-│   ├── KioskVitalsWizard.jsx     Reuses patient-app/VitalsWizard/* internally
+│   ├── KioskVitalsWizard.jsx     ⭐ The check-in: session, MQTT scans, skip / retry
+│   ├── wizard/
+│   │   ├── kioskSteps.js         ⭐ Step order, names, colors, "I'm ready" wording
+│   │   ├── ScanStepScreen.jsx    One step (start / I'm ready / countdown / done / failed)
+│   │   ├── WizardProgress.jsx    The progress bar + step circles
+│   │   ├── KioskResults.jsx      Final summary (readings only - no risk level)
+│   │   └── wizard.css
 │   ├── KioskTofMonitorScreen.jsx Live sensor monitor: ToF + temperature (/kiosk/tof-live)
-│   ├── TofLiveFeed.jsx           Live ToF card (also shown on the kiosk BMI step)
-│   └── TemperatureLiveFeed.jsx   Live IR temperature card (also on the kiosk Temperature step)
+│   ├── TofLiveFeed.jsx           Live ToF card (used on the monitor screen)
+│   └── TemperatureLiveFeed.jsx   Live IR temperature card (used on the monitor screen)
 │
 └── admin-console/               💻 The staff/admin web dashboard
     ├── AdminLoginScreen.jsx
@@ -84,7 +86,7 @@ src/
 | I want to... | Edit this file |
 |---|---|
 | Change a color used everywhere | `src/index.css` |
-| Change vital step names, icons, or descriptions | `src/patient-app/VitalsWizard/stepsConfig.js` |
+| Change kiosk step order, names, icons, or wording | `src/kiosk-app/wizard/kioskSteps.js` |
 | Change the fake patient/staff/kiosk names shown | `src/mocks/*.js` |
 | Add a new page/route | `src/App.jsx` |
 | Connect a real backend endpoint | The matching file in `src/services/` |

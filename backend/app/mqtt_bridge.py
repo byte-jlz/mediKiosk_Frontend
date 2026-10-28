@@ -3,9 +3,10 @@ mqtt_bridge.py - connects the FastAPI backend to the kiosk agents over MQTT.
 
 Started/stopped with the app (see main.py). It listens to EVERY kiosk:
 
-    medikiosk/+/result   -> store.add_result(); when a session has all 5
-                            vitals, run urgency.classify() and publish
-                            medikiosk/<kiosk>/urgency
+    medikiosk/+/result   -> store.add_result(); when a session has all 4
+                            kiosk steps, run urgency.classify() and publish
+                            medikiosk/<kiosk>/urgency (for the admin console -
+                            the kiosk tablet must not subscribe to it)
     medikiosk/+/status   -> remember the agent's online/busy state and keep
                             the kiosk's Online/Offline status in data.kiosks
 
@@ -49,6 +50,7 @@ ADMIN_STATUSES = {"Idle", "Maintenance", "Deactivated"}
 
 VITAL_LABELS = {
     "bmi": "BMI", "height": "Height", "weight": "Weight", "heartRateSpo2": "Heart rate & SpO2",
+    "respirationSpo2Hr": "Respiration, SpO2 & heart rate",
     "temperature": "Temperature", "bloodPressure": "Blood pressure", "respiration": "Respiration",
 }
 
