@@ -137,3 +137,40 @@
   font-size: 13px;
   outline: none;
 }
+
+/* ---- part 3: access roles, edit form ---- */
+.mk-staff__you {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--brand-blue-light);
+  color: var(--brand-blue-dark);
+  font-size: 10.5px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+.mk-staff__access {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.mk-staff__access--clinic_staff { background: #e6edf6; color: #2f4d78; }
+.mk-staff__access--super_admin { background: #1e3a5f; color: #fff; }
+.mk-staff__delete:disabled { opacity: 0.35; cursor: not-allowed; }
+.mk-staff__radios { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mk-staff__radio {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.mk-staff__radio input { grid-row: span 2; margin-top: 3px; }
+.mk-staff__radio span { color: var(--muted); font-size: 12px; font-weight: 400; }
+.mk-staff__radio.is-on { border-color: var(--brand-blue); background: var(--brand-blue-light); }

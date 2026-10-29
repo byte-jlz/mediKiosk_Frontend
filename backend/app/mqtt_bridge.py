@@ -45,9 +45,6 @@ MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
 T_RESULTS = "medikiosk/+/result"
 T_STATUS = "medikiosk/+/status"
 
-# Kiosk statuses an admin sets on purpose - the agent never overrides these.
-ADMIN_STATUSES = {"Idle", "Maintenance", "Deactivated"}
-
 VITAL_LABELS = {
     "bmi": "BMI", "height": "Height", "weight": "Weight", "heartRateSpo2": "Heart rate & SpO2",
     "respirationSpo2Hr": "Respiration, SpO2 & heart rate",
@@ -148,29 +145,30 @@ class MqttBridge:
         return result
 
     def handle_status(self, kiosk_id: str, status: dict):
+        """The agent's retained status (also its MQTT last-will when it drops).
+        Connection is shown next to the admin's own setting (Active/Deactivated),
+        it never changes that setting."""
+        before = store.get_agent_status(kiosk_id) or {}
         store.set_agent_status(kiosk_id, status)
-        kiosk = find_kiosk(kiosk_id)
-        if kiosk is None:
-            return
-        online = bool(status.get("online"))
-        kiosk["agentOnline"] = online
-        kiosk["agentBusy"] = bool(status.get("busy")) if online else False
-        kiosk["agentSimulated"] = bool(status.get("simulated")) if online else None
-        kiosk["lastSeen"] = round(time.time(), 3)
-        if kiosk.get("status") not in ADMIN_STATUSES:
-            kiosk["status"] = "Online" if online else "Offline"
+        was, now = bool(before.get("online")), bool(status.get("online"))
+        if not before:
+            _activity(kiosk_id, "Kiosk agent connected" if now else "Kiosk agent is offline", None)
+        elif was != now:
+            _activity(kiosk_id, "Kiosk agent came online" if now else "Kiosk agent went OFFLINE", None)
 
 
 def _activity(kiosk_id, event, patient_id):
     """Add a line to the admin console's live kiosk activity feed."""
     kiosk = find_kiosk(kiosk_id)
     kiosk_activity.insert(0, {
+        "ts": round(time.time(), 3),
         "time": time.strftime("%H:%M:%S"),
+        "kioskId": kiosk_id,
         "kiosk": f"{kiosk_id} · {kiosk['name']}" if kiosk else kiosk_id,
         "event": event,
         "patient": patient_id or "—",
     })
-    del kiosk_activity[100:]
+    del kiosk_activity[300:]
 
 
 bridge = MqttBridge()

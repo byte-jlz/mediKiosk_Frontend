@@ -116,6 +116,16 @@ def add_result(result: dict) -> Optional[dict]:
         return _copy(session)
 
 
+def delete_patient_sessions(patient_id: str) -> int:
+    """Privacy request: drop every kiosk session (and its raw results) of a patient."""
+    with _lock:
+        ids = [sid for sid, d in _sessions.items() if d.get("patientId") == patient_id]
+        for sid in ids:
+            del _sessions[sid]
+        _results[:] = [r for r in _results if r.get("session") not in ids]
+    return len(ids)
+
+
 def set_urgency(session_id: str, urgency: dict) -> None:
     with _lock:
         if session_id in _sessions:

@@ -2,6 +2,13 @@ import './StatusBadge.css';
 
 const STATUS_COLORS = {
   Online: { dot: '#2f9e5c', bg: '#e3f5ea', text: '#1f6b3f' },
+  Active: { dot: '#2f9e5c', bg: '#e3f5ea', text: '#1f6b3f' },
+  Offline: { dot: '#9aa3af', bg: '#eef0f2', text: '#4b5563' },
+  Busy: { dot: '#3f7bc4', bg: '#e3edf9', text: '#24528a' },
+  'Never connected': { dot: '#9aa3af', bg: '#eef0f2', text: '#6b7280' },
+  Archived: { dot: '#9aa3af', bg: '#eef0f2', text: '#6b7280' },
+  Info: { dot: '#3f7bc4', bg: '#e3edf9', text: '#24528a' },
+  Warning: { dot: '#d99a2b', bg: '#fdf1d6', text: '#8a611a' },
   Idle: { dot: '#d99a2b', bg: '#fdf1d6', text: '#8a611a' },
   Maintenance: { dot: '#6b7280', bg: '#e9ebee', text: '#4b5563' },
   Suspended: { dot: '#e0574a', bg: '#fbdcdc', text: '#a3352a' },

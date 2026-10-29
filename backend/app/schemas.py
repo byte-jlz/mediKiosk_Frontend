@@ -35,11 +35,12 @@ class StaffBase(BaseModel):
     email: EmailStr
     role: str
     clinic: str
-    status: Optional[str] = 'Online'
-    lastActive: Optional[str] = 'just now'
+    status: Optional[str] = 'Active'
+    lastActive: Optional[str] = None
     initials: Optional[str] = None
     accessRole: Optional[str] = None        # "super_admin" | "clinic_staff" (app/security.py)
     accessRoleLabel: Optional[str] = None   # "Super Admin" | "Clinic Staff"
+    lastLoginAt: Optional[float] = None     # epoch seconds of the last successful sign-in
     # passwordHash is never part of this model, so it is never sent out
 
 class StaffCreate(BaseModel):

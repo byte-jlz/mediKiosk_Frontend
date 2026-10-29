@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import Button from '../components/Button';
 import { addPatient, updatePatient } from '../services/patientsService';
-import { calculateAge } from '../services/adminStore';
-import { formatDateTime } from './patientFormat';
+import { calculateAge, formatDateTime } from './patientFormat';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
-const SEXES = ['Male', 'Female', 'Bading'];
+const SEXES = ['Male', 'Female', 'Other'];
 const MIN_PASSWORD_LENGTH = 8;
 
 const emptyForm = {

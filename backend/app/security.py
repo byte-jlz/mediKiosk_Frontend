@@ -73,6 +73,14 @@ def create_token(account: dict) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
+def create_patient_token(patient: dict) -> str:
+    """Kiosk / phone sign-in token for a PATIENT (role "patient" - rejected by
+    every staff route). Patient-only routes come with the phone app step."""
+    now = int(time.time())
+    return jwt.encode({"sub": patient["id"], "role": "patient", "iat": now,
+                       "exp": now + int(JWT_HOURS * 3600)}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
 def _unauthorized(detail: str):
     return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail,
                          headers={"WWW-Authenticate": "Bearer"})
@@ -98,6 +106,8 @@ def account_from_token(token: str) -> dict:
         raise _unauthorized("Session expired - please sign in again")
     except jwt.InvalidTokenError:
         raise _unauthorized("Invalid session - please sign in again")
+    if payload.get("role") not in ROLES:      # e.g. a patient token: never opens staff routes
+        raise _unauthorized("Not a staff session")
     account = find_staff(payload.get("sub", ""))
     if account is None:
         raise _unauthorized("Account no longer exists")

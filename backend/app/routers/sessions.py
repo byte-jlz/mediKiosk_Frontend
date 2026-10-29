@@ -32,7 +32,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from app import store, triage
-from app.data import add_check_in, append_audit_event, check_ins, find_kiosk
+from app.data import add_check_in, append_audit_event, check_ins, find_kiosk, find_patient
 from app.mqtt_bridge import bridge, _activity
 from app.security import CLINIC_STAFF, SUPER_ADMIN, require_roles
 
@@ -90,10 +90,17 @@ def _get_or_404(session_id: str) -> dict:
 # ---------------------------------------------------------------- kiosk
 @router.post("/kiosk-sessions")
 async def create_session(payload: SessionCreate):
-    if not find_kiosk(payload.kioskId):
+    kiosk = find_kiosk(payload.kioskId)
+    if not kiosk:
         raise HTTPException(status_code=404, detail="Kiosk not found")
+    if kiosk.get("status") == "Deactivated":
+        raise HTTPException(status_code=403,
+                            detail="This kiosk is deactivated. Please use another kiosk or ask the clinic staff.")
     patient_id = None if payload.patientId in (None, "", "guest") else payload.patientId
     name = ((payload.patientName or "").strip()[:80] or None) if patient_id else None
+    registered = find_patient(patient_id) if patient_id else None
+    if registered:                       # the registry's name wins over what the tablet sent
+        name = " ".join(x for x in [registered.get("firstName"), registered.get("lastName")] if x)
     session = store.create_session(payload.kioskId, patient_id, name)
     _activity(payload.kioskId, "Check-in started", patient_id)
     return _kiosk_view(session)
@@ -158,7 +165,8 @@ async def complete_session(session_id: str, payload: Optional[SessionComplete] =
     )
     store.complete_session(session_id, check_in["id"])
     append_audit_event("CHECK-IN COMPLETE" + (" (INCOMPLETE)" if missing else ""),
-                       f"{check_in['id']} ({session['kioskId']})")
+                       f"{check_in['id']} ({session['patientId'] or 'guest'})",
+                       role=f"kiosk {session['kioskId']}")
     _activity(session["kioskId"], "Check-in completed" + (" - incomplete" if missing else ""),
               session["patientId"])
     level = (urgency or {}).get("level")

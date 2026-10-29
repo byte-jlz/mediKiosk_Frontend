@@ -60,3 +60,43 @@
   color: var(--brand-blue-dark);
   font-weight: 600;
 }
+
+/* ---- part 3: live kiosk monitor ---- */
+.mk-kmon__updated { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+.mk-kmon__error { background: var(--red-bg); color: #8f2a20; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13.5px; }
+.mk-kmon__broker {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--white);
+  font-size: 13.5px;
+}
+.mk-kmon__broker div { display: flex; flex-direction: column; gap: 2px; }
+.mk-kmon__broker span { color: var(--muted); }
+.mk-kmon__broker-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.mk-kmon__broker.is-ok .mk-kmon__broker-dot { background: var(--green); }
+.mk-kmon__broker.is-down { border-color: #f3c5bf; background: #fff7f6; }
+.mk-kmon__broker.is-down .mk-kmon__broker-dot { background: var(--red); }
+.mk-kmon__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.mk-kmon__card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--muted-light);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+}
+.mk-kmon__card--online { border-left-color: var(--green); }
+.mk-kmon__card--busy { border-left-color: var(--blue-status); }
+.mk-kmon__card--offline { border-left-color: var(--red); }
+.mk-kmon__card-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.mk-kmon__name { margin: 0; font-weight: 700; font-size: 15px; }
+.mk-kmon__meta { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+.mk-kmon__facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin: 14px 0 0; }
+.mk-kmon__facts dt { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--muted); }
+.mk-kmon__facts dd { margin: 2px 0 0; font-size: 13.5px; font-weight: 600; }
+.mk-kmon__h2 { font-family: var(--font-display); font-size: 20px; margin: 30px 0 12px; }
+.mk-kactivity__dot.is-bad { background: var(--red); }

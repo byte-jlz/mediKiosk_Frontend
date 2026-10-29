@@ -1,80 +1,49 @@
-from typing import List, Dict
+"""
+data.py - the system's records, IN MEMORY for now (a backend restart clears
+everything except the demo accounts below). MongoDB later: only the lists and
+helper functions in this file (and app/store.py) have to change.
+"""
+import time
+from datetime import date, datetime
+from typing import Dict, List, Optional
 from uuid import uuid4
 
-patients = [
-    {
-        "id": "P-88401",
-        "lastName": "Whitefield",
-        "firstName": "Eleanor",
-        "middleName": "R.",
-        "age": 64,
-        "gender": "Female",
-        "bloodType": "O+",
-        "email": "eleanor.whitefield@example.com",
-        "address": "14 Magnolia St, Northgate City",
-        "lastVisit": "2026-05-02",
-    },
-    {
-        "id": "P-88402",
-        "lastName": "Park",
-        "firstName": "Daniel",
-        "middleName": "",
-        "age": 26,
-        "gender": "Female",
-        "bloodType": "A-",
-        "email": "daniel.park@example.com",
-        "address": "92 Cedar Ave, Bayview",
-        "lastVisit": "2026-04-27",
-    },
-    {
-        "id": "P-88403",
-        "lastName": "Redcloud",
-        "firstName": "Aiyana",
-        "middleName": "",
-        "age": 16,
-        "gender": "Female",
-        "bloodType": "B+",
-        "email": "aiyana.redcloud@example.com",
-        "address": "5 Willow Ln, Eastside",
-        "lastVisit": "2026-04-16",
-    },
-    {
-        "id": "P-88404",
-        "lastName": "Bertrand",
-        "firstName": "Hugo",
-        "middleName": "M.",
-        "age": 50,
-        "gender": "Male",
-        "bloodType": "AB+",
-        "email": "hugo.bertrand@example.com",
-        "address": "77 Oak Dr, Northgate City",
-        "lastVisit": "2026-03-30",
-    },
-    {
-        "id": "P-88405",
-        "lastName": "Tanaka",
-        "firstName": "Mae",
-        "middleName": "",
-        "age": 34,
-        "gender": "Female",
-        "bloodType": "O-",
-        "email": "mae.tanaka@example.com",
-        "address": "31 Birch Rd, Bayview",
-        "lastVisit": "2026-03-15",
-    },
+# ============================================================== patients
+# Patient registry (Super Admin "Manage patients records"). Patients sign in at
+# the kiosk with email + password or their QR code (qrToken, 36 hex chars,
+# encoded as MEDIKIOSK:<token> - see src/services/patientQr.js).
+#   status: "active" | "archived" (archived = hidden by default, can't sign in)
+#   passwordHash: bcrypt. DEMO PASSWORD for every demo patient: Patient@1234
+PATIENT_DEMO_HASH = "$2b$12$mQZRKkDIHlpGGoUuZgjlWOkcVjKuqOZWDAR4xjXuDqbu5FScAi/Wy"   # Patient@1234
+
+
+def _demo_patient(pid, first, middle, last, birthday, sex, blood, email, address, token):
+    return {
+        "id": pid, "firstName": first, "middleName": middle, "lastName": last,
+        "birthday": birthday, "sex": sex, "bloodType": blood, "email": email,
+        "address": address, "passwordHash": PATIENT_DEMO_HASH, "qrToken": token,
+        "createdAt": "2026-10-01T09:00:00", "status": "active", "registeredVia": "admin",
+    }
+
+
+patients: List[Dict] = [
+    _demo_patient("P-10001", "Eleanor", "R.", "Whitefield", "1962-03-14", "Female", "O+",
+                  "eleanor.whitefield@example.com", "14 Magnolia St, Northgate City",
+                  "5aabdd0666dfda1233c2fd264e95988d1e45"),
+    _demo_patient("P-10002", "Daniel", "", "Park", "2000-07-02", "Male", "A-",
+                  "daniel.park@example.com", "92 Cedar Ave, Bayview",
+                  "7de7a36eede5266942a4ad39fdad3c5773f2"),
+    _demo_patient("P-10003", "Mae", "", "Tanaka", "1992-11-20", "Female", "O-",
+                  "mae.tanaka@example.com", "31 Birch Rd, Bayview",
+                  "2691290f0508a53377fa992de24b56e653fc"),
+    # the kiosk's DEV "Skip login" patient (src/services/devAuth.js), so dev
+    # check-ins show up in a real patient record
+    _demo_patient("PAT-DEV-0001", "Dev", "T.", "Patient", "1995-01-01", "Other", "O+",
+                  "dev.patient@medikiosk.dev", "1 Test Lane, Dev City",
+                  "ddfa06eb1760fa26c83961316b3079ca6f61"),
 ]
 
-current_patient = {
-    "id": "PX304",
-    "lastName": "Odchigue",
-    "firstName": "Althea",
-    "middleName": "Shane",
-    "address": "",
-    "birthday": "",
-    "bloodType": "",
-    "email": "",
-}
-
+# ============================================================== staff
 # Staff accounts (in memory, like the rest of data.py).
 #   accessRole  = what the account may open in the admin console:
 #                 "super_admin" or "clinic_staff" (see app/security.py)
@@ -93,8 +62,7 @@ staff = [
         "email": "superadmin@clinic.io",
         "role": "Super Admin",
         "clinic": "All clinics",
-        "status": "Online",
-        "lastActive": "just now",
+        "status": "Active",
         "initials": "SA",
         "accessRole": "super_admin",
         "passwordHash": ADMIN_DEMO_HASH,
@@ -105,8 +73,7 @@ staff = [
         "email": "amelia.chen@clinic.io",
         "role": "Doctor",
         "clinic": "Northgate Clinic",
-        "status": "Online",
-        "lastActive": "2 mins ago",
+        "status": "Active",
         "initials": "DA",
         "accessRole": "clinic_staff",
         "passwordHash": STAFF_DEMO_HASH,
@@ -117,8 +84,7 @@ staff = [
         "email": "marcus.reyes@clinic.io",
         "role": "Nurse",
         "clinic": "Bayview Medical",
-        "status": "Online",
-        "lastActive": "14 mins ago",
+        "status": "Active",
         "initials": "MR",
         "accessRole": "clinic_staff",
         "passwordHash": STAFF_DEMO_HASH,
@@ -129,8 +95,7 @@ staff = [
         "email": "priya.n@clinic.io",
         "role": "Receptionist",
         "clinic": "Northgate Clinic",
-        "status": "Online",
-        "lastActive": "1 hr ago",
+        "status": "Active",
         "initials": "PN",
         "accessRole": "clinic_staff",
         "passwordHash": STAFF_DEMO_HASH,
@@ -142,7 +107,6 @@ staff = [
         "role": "Doctor",
         "clinic": "Eastside Family",
         "status": "Suspended",
-        "lastActive": "3 days ago",
         "initials": "DH",
         "accessRole": "clinic_staff",
         "passwordHash": STAFF_DEMO_HASH,
@@ -153,226 +117,66 @@ staff = [
         "email": "sofia.m@clinic.io",
         "role": "Pharmacist",
         "clinic": "Eastside Family",
-        "status": "Online",
-        "lastActive": "27 mins ago",
+        "status": "Active",
         "initials": "SM",
         "accessRole": "clinic_staff",
         "passwordHash": STAFF_DEMO_HASH,
     },
 ]
 
-current_staff = {
-    "name": "Dr. Arine Throne",
-    "role": "Attending - ER",
-    "initials": "AT",
-}
-
-kiosks = [
+# ============================================================== kiosks
+# status = what the Super Admin set: "Active" | "Deactivated" (a deactivated
+# kiosk can't start check-ins). Connection (online/busy/last seen) comes live
+# from the kiosk agent over MQTT (app/mqtt_bridge.py) into agent* fields.
+kiosks: List[Dict] = [
     {
         "id": "K-01",
         "name": "Lobby — North Gate",
         "clinic": "Northgate Clinic",
-        "status": "Online",
-        "uptime": "99.8%",
-        "today": 142,
-        "firmware": "2.4.1",
-    },
-    {
-        "id": "K-02",
-        "name": "Reception — Northgate",
-        "clinic": "Northgate Clinic",
-        "status": "Online",
-        "uptime": "99.4%",
-        "today": 98,
-        "firmware": "2.4.1",
-    },
-    {
-        "id": "K-03",
-        "name": "Pharmacy — Bayview",
-        "clinic": "Bayview Medical",
-        "status": "Idle",
-        "uptime": "97.1%",
-        "today": 41,
-        "firmware": "2.4.1",
-    },
-    {
-        "id": "K-04",
-        "name": "Lab Wing — Bayview",
-        "clinic": "Bayview Medical",
-        "status": "Maintenance",
-        "uptime": "—",
-        "today": 0,
-        "firmware": "2.3.9",
-    },
-    {
-        "id": "K-05",
-        "name": "Entrance — Eastside",
-        "clinic": "Eastside Family",
-        "status": "Online",
-        "uptime": "99.9%",
-        "today": 67,
-        "firmware": "2.4.1",
-    },
-    {
-        "id": "K-06",
-        "name": "Lobby — Eastside",
-        "clinic": "Eastside Family",
-        "status": "Online",
-        "uptime": "98.9%",
-        "today": 55,
-        "firmware": "2.4.1",
+        "notes": "Main kiosk (Raspberry Pi 4B)",
+        "status": "Active",
+        "createdAt": "2026-10-01T09:00:00",
     },
 ]
 
-dashboard_stats = {
-    "clinicalStaff": 6,
-    "clinicalStaffDelta": "+2 this week",
-    "patientRecords": 1421,
-    "patientRecordsDelta": "+128 this week",
-    "kiosksOnline": 3,
-    "kiosksTotal": 6,
-    "kiosksAcross": "Across 3 clinics",
-    "checkInsToday": 312,
-    "checkInsDelta": "+18% vs yesterday",
-}
+# ============================================================== logs
+audit_logs: List[Dict] = []        # newest first - see append_audit_event()
+kiosk_activity: List[Dict] = []    # newest first - filled by app/mqtt_bridge.py
+check_ins: List[Dict] = []         # every saved kiosk check-in (sessions.py)
 
-audit_logs = [
-    {
-        "timestamp": "2026-05-06 09:42:11",
-        "role": "superadmin@clinic.io",
-        "actor": "LOGIN",
-        "target": "—",
-        "ip": "10.0.4.21",
-        "severity": "Online",
-    },
-    {
-        "timestamp": "2026-05-06 09:38:02",
-        "role": "superadmin@clinic.io",
-        "actor": "STAFF CREATE",
-        "target": "S-1029 Liam O'Connor",
-        "ip": "10.0.4.21",
-        "severity": "Online",
-    },
-    {
-        "timestamp": "2026-05-05 17:12:44",
-        "role": "amelia.chen@clinic.io",
-        "actor": "PATIENT VIEW",
-        "target": "P-88401 Eleanor Whitefield",
-        "ip": "10.0.4.33",
-        "severity": "Online",
-    },
-    {
-        "timestamp": "2026-05-05 15:03:19",
-        "role": "superadmin@clinic.io",
-        "actor": "KIOSK DEACTIVATE",
-        "target": "K-04 Lab Wing — Bayview",
-        "ip": "10.0.4.21",
-        "severity": "Online",
-    },
-    {
-        "timestamp": "2026-05-04 08:55:07",
-        "role": "henrik.o@clinic.io",
-        "actor": "LOGIN FAILED",
-        "target": "—",
-        "ip": "10.0.9.12",
-        "severity": "Online",
-    },
-    {
-        "timestamp": "2026-05-03 11:20:51",
-        "role": "superadmin@clinic.io",
-        "actor": "STAFF SUSPEND",
-        "target": "S-1027 Dr. Henrick Olsen",
-        "ip": "10.0.4.21",
-        "severity": "Online",
-    },
-]
-
-recent_activity = [
-    {
-        "label": "LOGIN",
-        "meta": "2026-05-06 09:42:11 · superadmin@clinic.io · 10.0.4.21",
-        "status": "Online",
-    },
-    {
-        "label": "STAFF CREATE — S-1029 Liam O'Connor",
-        "meta": "2026-05-06 09:38:02 · superadmin@clinic.io · 10.0.4.21",
-        "status": "Online",
-    },
-    {
-        "label": "PATIENT VIEW — P-88401 Eleanor Whitefield",
-        "meta": "2026-05-05 17:12:44 · amelia.chen@clinic.io · 10.0.4.33",
-        "status": "Online",
-    },
-    {
-        "label": "KIOSK DEACTIVATE — K-04 Lab Wing — Bayview",
-        "meta": "2026-05-05 15:03:19 · superadmin@clinic.io · 10.0.4.21",
-        "status": "Online",
-    },
-]
-
-kiosk_activity = [
-    {
-        "time": "09:42:11",
-        "kiosk": "K-01 · Lobby — North Gate",
-        "event": "Check-in completed",
-        "patient": "P-88401",
-    },
-    {
-        "time": "09:31:05",
-        "kiosk": "K-02 · Reception — Northgate",
-        "event": "Vitals scan started",
-        "patient": "P-88402",
-    },
-    {
-        "time": "09:15:42",
-        "kiosk": "K-05 · Entrance — Eastside",
-        "event": "Check-in completed",
-        "patient": "P-88403",
-    },
-    {
-        "time": "08:58:20",
-        "kiosk": "K-03 · Pharmacy — Bayview",
-        "event": "Idle timeout",
-        "patient": "—",
-    },
-    {
-        "time": "08:40:11",
-        "kiosk": "K-04 · Lab Wing — Bayview",
-        "event": "Entered maintenance mode",
-        "patient": "—",
-    },
-]
-
-check_ins: List[Dict] = []
-
+# phone app demo history (step 4b replaces it with real check-ins)
 vitals_history = [
-    {
-        "kioskName": "Lobby — North Gate",
-        "date": "2026-04-01 10:31 AM",
-        "vital": "Blood Pressure",
-        "status": "Optimal",
-    },
-    {
-        "kioskName": "Reception — Northgate",
-        "date": "2026-03-18 08:12 AM",
-        "vital": "Heart Rate",
-        "status": "Normal",
-    },
+    {"kioskName": "Lobby — North Gate", "date": "2026-04-01 10:31 AM",
+     "vital": "Blood Pressure", "status": "Optimal"},
+    {"kioskName": "Reception — Northgate", "date": "2026-03-18 08:12 AM",
+     "vital": "Heart Rate", "status": "Normal"},
 ]
 
-VITAL_RANGES = {
-    "heartRate": {"min": 62, "max": 96, "unit": "bpm"},
-    "bmi": {"min": 18.5, "max": 27, "unit": "kg/m²"},
-    "temperature": {"min": 36.2, "max": 37.6, "unit": "°C"},
-    "systolic": {"min": 105, "max": 128, "unit": "mmHg"},
-    "diastolic": {"min": 68, "max": 84, "unit": "mmHg"},
-    "spo2": {"min": 95, "max": 99, "unit": "%"},
-    "respiration": {"min": 12, "max": 18, "unit": "br/min"},
-}
 
-
+# ============================================================== helpers
 def find_patient(patient_id: str):
     return next((patient for patient in patients if patient["id"] == patient_id), None)
+
+
+def find_patient_by_email(email: str):
+    email = (email or "").strip().lower()
+    return next((p for p in patients if (p.get("email") or "").lower() == email), None)
+
+
+def find_patient_by_qr(token: str):
+    token = (token or "").strip().lower()
+    if not token:
+        return None
+    return next((p for p in patients if p.get("qrToken") == token), None)
+
+
+def patient_age(birthday: Optional[str]) -> Optional[int]:
+    try:
+        b = date.fromisoformat(birthday)
+    except (TypeError, ValueError):
+        return None
+    t = date.today()
+    return t.year - b.year - ((t.month, t.day) < (b.month, b.day))
 
 
 def find_staff(member_id: str):
@@ -392,15 +196,35 @@ def create_id(prefix: str):
     return f"{prefix}-{uuid4().hex[:6].upper()}"
 
 
-def append_audit_event(actor: str, target: str, role: str = "system@clinic.io", ip: str = "10.0.0.1", severity: str = "Online"):
+def now_iso() -> str:
+    return datetime.now().isoformat(timespec="seconds")
+
+
+MAX_AUDIT = 5000
+
+
+def append_audit_event(action: str, target: str, role: str = "system", ip: str = "-",
+                       severity: str = "Info"):
+    """Write one audit-trail entry (Super Admin "View system logs / audit trail").
+
+    action   what happened, e.g. "STAFF CREATE", "VIEW PATIENT VITALS"
+    target   what it happened to (an ID)
+    role     WHO did it: the staff email (or "system" / "kiosk K-01")
+    severity "Info" | "Warning"
+    Entries are never edited or deleted (in memory: the oldest drop off after MAX_AUDIT).
+    """
+    ts = time.time()
     audit_logs.insert(0, {
-        "timestamp": "2026-08-03 12:00:00",
-        "role": role,
-        "actor": actor,
+        "id": uuid4().hex[:10],
+        "ts": round(ts, 3),
+        "timestamp": datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S"),
+        "actor": role,
+        "action": action,
         "target": target,
         "ip": ip,
         "severity": severity,
     })
+    del audit_logs[MAX_AUDIT:]
 
 
 def add_check_in(patient_id: str, kiosk_id: str, readings: Dict):
@@ -411,10 +235,4 @@ def add_check_in(patient_id: str, kiosk_id: str, readings: Dict):
         "readings": readings,
     }
     check_ins.append(check_in)
-    vitals_history.insert(0, {
-        "kioskName": find_kiosk(kiosk_id)["name"] if find_kiosk(kiosk_id) else kiosk_id,
-        "date": "2026-08-03 12:00 PM",
-        "vital": "Vitals Check-In",
-        "status": "Completed",
-    })
     return check_in

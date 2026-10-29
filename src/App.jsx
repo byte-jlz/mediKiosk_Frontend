@@ -23,7 +23,7 @@ import PatientDetailScreen from './admin-console/PatientDetailScreen';
 import KiosksScreen from './admin-console/KiosksScreen';
 import KiosksActivityScreen from './admin-console/KiosksActivityScreen';
 import AuditLogsScreen from './admin-console/AuditLogsScreen';
-import ComingNextScreen from './admin-console/ComingNextScreen';
+import ReportsScreen from './admin-console/ReportsScreen';
 import LiveDashboardScreen from './admin-console/staff/LiveDashboardScreen';
 import PatientQueueScreen from './admin-console/staff/PatientQueueScreen';
 import CheckInDetailScreen from './admin-console/staff/CheckInDetailScreen';
@@ -79,8 +79,7 @@ export default function App() {
         <Route path="/admin/patients/:patientId" element={adminOnly(<PatientDetailScreen />)} />
         <Route path="/admin/kiosks" element={adminOnly(<KiosksScreen />)} />
         <Route path="/admin/kiosks-activity" element={adminOnly(<KiosksActivityScreen />)} />
-        <Route path="/admin/reports" element={adminOnly(
-          <ComingNextScreen title="Reports" useCase="Generate reports (+ export report)" part={3} />)} />
+        <Route path="/admin/reports" element={adminOnly(<ReportsScreen />)} />
         <Route path="/admin/audit-logs" element={adminOnly(<AuditLogsScreen />)} />
         <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
 

@@ -2,15 +2,13 @@
 // AUTH SERVICE
 // ------------------------------------------------------------
 // This file is the ONLY place patient/admin auth logic lives.
-// Right now it fakes network calls with a short delay and mock
-// data. To connect the real FastAPI backend, replace the body
-// of each function with a real fetch() — the screens that call
-// these functions do not need to change.
+// Staff login and patient login / sign-up / QR sign-in call the
+// real FastAPI backend (bcrypt passwords, JWT tokens). The signed-in
+// patient's profile is kept in localStorage for the kiosk / phone app.
 // ============================================================
 
 import { mockCurrentPatient } from '../mocks/mockPatients';
 import { AUTH_EVENT, request, setStaffToken } from './apiClient';
-import { findPatientByQrToken } from './adminStore';
 import { parseQrPayload } from './patientQr';
 
 const AUTH_STORAGE_KEY = 'mkAdminCurrentStaff';
@@ -131,87 +129,50 @@ export function getCurrentStaff() {
 }
 
 /**
- * EXPECTED BACKEND ENDPOINT: POST /api/patient/login
- * REQUEST BODY:  { email: string, password: string }
- * RESPONSE:      { token: string, patient: { id, firstName, lastName, ... } }
- * ERRORS:        401 if credentials are invalid
+ * REAL BACKEND: POST /api/patient/login { email, password } -> { token, patient }
+ * Checked against the patient registry (bcrypt). 401 = wrong email/password,
+ * 403 = the record is archived. Used by the kiosk and the phone app.
  */
 export async function patientLogin(email, password) {
-  await delay(FAKE_DELAY_MS);
   if (!email || !password) {
     throw new Error('Email and password are required.');
   }
-
-  const profiles = Object.values(getStoredPatientProfiles());
-  const profile = profiles.find((candidate) => candidate?.email && candidate.email.toLowerCase() === email.toLowerCase());
-
-  if (profile) {
-    savePatientProfile(profile);
-    return { token: 'mock-patient-token', patient: profile };
-  }
-
-  const currentProfile = getCurrentPatientProfile();
-  if (currentProfile && currentProfile.email && currentProfile.email.toLowerCase() === email.toLowerCase()) {
-    savePatientProfile(currentProfile);
-    return { token: 'mock-patient-token', patient: currentProfile };
-  }
-
-  throw new Error('No patient account found for that email.');
+  const { token, patient } = await request(
+    'POST', '/patient/login', { email: email.trim(), password }, { auth: false });
+  savePatientProfile(patient);
+  return { token, patient };
 }
 
 /**
- * EXPECTED BACKEND ENDPOINT: POST /api/patient/signup
- * REQUEST BODY:  { lastName, firstName, middleName, address, dob, bloodType, email, password }
- * RESPONSE:      { token: string, patient: {...} }
+ * REAL BACKEND: POST /api/patient/signup
+ *   { firstName, middleName, lastName, address, dob, bloodType, email, password }
+ * -> { token, patient }   (409 if the email is already registered)
  */
 export async function patientSignup(formData) {
-  await delay(FAKE_DELAY_MS);
-
-  const rawEmail = (formData?.email || '').trim().toLowerCase();
-  const existingProfiles = Object.values(getStoredPatientProfiles());
-  const existingProfile = existingProfiles.find((candidate) => candidate?.email && candidate.email.toLowerCase() === rawEmail);
-
-  const seed = rawEmail || `${formData?.firstName || 'patient'}${formData?.lastName || 'user'}`.toLowerCase().replace(/[^a-z0-9]+/g, '');
-  const patient = {
-    ...mockCurrentPatient,
-    ...formData,
-    email: formData?.email || existingProfile?.email || '',
-    id: existingProfile?.id || `PAT-${seed || 'patient'}-${Date.now().toString(36)}`,
-  };
-
+  const { token, patient } = await request('POST', '/patient/signup', formData, { auth: false });
   savePatientProfile(patient);
-  return { token: 'mock-patient-token', patient };
+  return { token, patient };
 }
 
 /**
- * EXPECTED BACKEND ENDPOINT: POST /api/patient/login-qr
- * REQUEST BODY:  { qrToken: string }   -- scanned patient QR (`MEDIKIOSK:<token>`) or the mobile app
- * RESPONSE:      { token: string, patient: {...} }
- * Used by the kiosk's "Scan QR Code" flow to sign a patient in instantly.
+ * REAL BACKEND: POST /api/patient/login-qr { qrToken } -> { token, patient }
+ * qrToken = the scanned code (`MEDIKIOSK:<token>`). Used by the kiosk's
+ * "Scan QR Code" sign-in. The phone app's demo QR screen still uses DEMO_QR_TOKEN.
  */
 export async function patientLoginWithQr(qrToken) {
-  await delay(FAKE_DELAY_MS);
-
-  // Legacy simulated flow used by the "show QR" screens.
+  // Legacy simulated flow used by the phone app's "show QR" demo screen.
   if (qrToken === DEMO_QR_TOKEN) {
+    await delay(FAKE_DELAY_MS);
     const profile = getCurrentPatientProfile();
     return { token: 'mock-patient-token', patient: profile || mockCurrentPatient };
   }
-
-  const record = findPatientByQrToken(parseQrPayload(qrToken));
-  if (!record) {
+  const token = parseQrPayload(qrToken);
+  if (!token) {
     throw new Error('QR code not recognized. Please ask the clinic staff for a new code.');
   }
-
-  const {
-    qrToken: _qrToken,
-    lastVisit: _lastVisit,
-    registered: _registered,
-    createdAt: _createdAt,
-    ...patient
-  } = record;
-  savePatientProfile(patient);
-  return { token: 'mock-patient-token', patient };
+  const res = await request('POST', '/patient/login-qr', { qrToken: token }, { auth: false });
+  savePatientProfile(res.patient);
+  return res;
 }
 
 /**

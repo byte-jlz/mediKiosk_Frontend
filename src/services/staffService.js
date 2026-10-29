@@ -1,95 +1,20 @@
 // ============================================================
-// STAFF SERVICE
-// ------------------------------------------------------------
-// Powers the admin console's "Staff Accounts" screen.
-// Swap the bodies below for real fetch() calls to FastAPI.
+// STAFF SERVICE  (Super Admin: "Manage Clinic staff account")
+// Backend: backend/app/routers/staff.py - Super Admin only.
+// Passwords are hashed with bcrypt on the server and never sent back.
 // ============================================================
+import { request } from './apiClient';
 
-const STAFF_STORAGE_KEY = 'mkStaffAccounts';
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-let staffData = loadStaffStore();
+const q = (s) => (s ? `?search=${encodeURIComponent(s)}` : '');
 
-function loadStaffStore() {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(STAFF_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
+/** GET /api/staff -> [{ id, name, email, role, clinic, status, accessRole, accessRoleLabel, ... }] */
+export const getStaff = (search = '') => request('GET', `/staff${q(search)}`);
 
-function saveStaffStore() {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(STAFF_STORAGE_KEY, JSON.stringify(staffData));
-  } catch {
-    // ignore storage failures in demo mode
-  }
-}
+/** POST /api/staff { name, email, role (job title), clinic, accessRole, password } */
+export const addStaff = (account) => request('POST', '/staff', account);
 
-/**
- * EXPECTED BACKEND ENDPOINT: GET /api/staff?search=...
- * RESPONSE: [{ id, name, email, role, clinic, status, lastActive }, ...]
- */
-export async function getStaff(searchTerm = '') {
-  await delay(400);
-  if (!searchTerm) return staffData;
-  const term = searchTerm.toLowerCase();
-  return staffData.filter(
-    (s) =>
-      s.name.toLowerCase().includes(term) ||
-      s.email.toLowerCase().includes(term) ||
-      s.role.toLowerCase().includes(term)
-  );
-}
+/** PATCH /api/staff/{id} - any of name, email, role, clinic, status, accessRole, password */
+export const updateStaff = (id, changes) => request('PATCH', `/staff/${encodeURIComponent(id)}`, changes);
 
-/**
- * EXPECTED BACKEND ENDPOINT: POST /api/staff
- * REQUEST BODY: { name, email, role, clinic }
- * RESPONSE: the created staff record
- */
-export async function getStaffByEmail(email) {
-  await delay(100);
-  return staffData.find((s) => s.email.toLowerCase() === email.toLowerCase()) || null;
-}
-
-export async function addStaff(staffMember) {
-  await delay(400);
-  const newStaff = {
-    id: `S-${1000 + staffData.length + 30}`,
-    status: 'Online',
-    lastActive: 'just now',
-    initials: staffMember.name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase(),
-    ...staffMember,
-  };
-  staffData = [...staffData, newStaff];
-  saveStaffStore();
-  return newStaff;
-}
-
-/**
- * EXPECTED BACKEND ENDPOINT: DELETE /api/staff/{id}
- */
-export async function removeStaff(id) {
-  await delay(300);
-  staffData = staffData.filter((s) => s.id !== id);
-  saveStaffStore();
-  return { success: true };
-}
-
-/**
- * EXPECTED BACKEND ENDPOINT: PATCH /api/staff/{id}
- * REQUEST BODY: partial fields to update, e.g. { status: 'Suspended' }
- */
-export async function updateStaff(id, updates) {
-  await delay(300);
-  staffData = staffData.map((s) => (s.id === id ? { ...s, ...updates } : s));
-  saveStaffStore();
-  return staffData.find((s) => s.id === id);
-}
+/** DELETE /api/staff/{id} */
+export const removeStaff = (id) => request('DELETE', `/staff/${encodeURIComponent(id)}`);

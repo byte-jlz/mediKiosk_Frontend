@@ -141,6 +141,28 @@ and every clinic staff account / `Staff@1234` (S-1027 is suspended).
 Set `JWT_SECRET` in the environment for real use; without it a random secret is
 made at startup, so everyone has to sign in again after a backend restart.
 
+## Super Admin (patients, kiosks, reports, audit trail)
+
+All Super Admin only (use-case diagram, Figure 3.5):
+
+- **Patients** (`app/patients_db.py`, `routers/patients.py`): the patient registry.
+  bcrypt passwords, a QR token per patient (`MEDIKIOSK:<token>`), archive/restore
+  (an archived patient can't sign in at the kiosk), delete for data privacy
+  requests (also deletes all their check-ins). The kiosk and phone app sign
+  patients in against it (`/api/patient/login`, `/login-qr`, `/signup`).
+  Demo patients: `eleanor.whitefield@example.com`, `daniel.park@example.com`,
+  `mae.tanaka@example.com`, all with password `Patient@1234`.
+- **Kiosks** (`routers/kiosks.py`): add, edit settings (name, clinic, notes),
+  deactivate (a deactivated kiosk can't start check-ins). `GET /api/kiosks/monitor`
+  = live connection of every kiosk + MQTT broker + activity feed.
+- **Reports** (`routers/reports.py`): triage data, patient volume and kiosk usage;
+  `GET /api/reports/export` downloads it as CSV.
+- **Audit trail** (`routers/audit.py`): every sign-in, every view of a patient
+  record or vitals, every change - with who, when and from which IP.
+
+Everything is still in memory, so a backend restart clears new patients,
+check-ins and the audit trail (MongoDB is the next step).
+
 ## Clinic Staff queue, alerts and live dashboard
 
 `app/triage.py` + `app/routers/triage.py` (Clinic Staff only). Every finished

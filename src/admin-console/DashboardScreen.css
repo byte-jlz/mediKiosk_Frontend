@@ -133,3 +133,7 @@
     grid-template-columns: 1fr;
   }
 }
+
+.mk-dash__stat-card--link { text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.mk-dash__stat-card--link:hover { box-shadow: var(--shadow-md); }
+.mk-dash__panel-footer { margin-top: 14px; }

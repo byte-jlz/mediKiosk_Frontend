@@ -1,19 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AdminLayout from '../components/AdminLayout';
 import { AdminHeader } from '../components/Sidebar';
 import StatusBadge from '../components/StatusBadge';
+import { UrgencyBadge } from './staff/StaffBits';
 import Button from '../components/Button';
 import PatientFormModal from './PatientFormModal';
 import PatientQrCode from './PatientQrCode';
-import { getPatientById, deletePatient, regenerateQrToken } from '../services/patientsService';
-import { formatDate, formatDateTime, formatMetricLabel, formatMetricValue } from './patientFormat';
+import {
+  archivePatient,
+  deletePatient,
+  getPatientById,
+  regenerateQrToken,
+  restorePatient,
+} from '../services/patientsService';
+import { formatDate, formatDateTime, formatEpochDate } from './patientFormat';
+import { fmtBp, fmtVital } from './staff/triageFormat';
+import { fmtDateTimeSec } from './kioskFormat';
 import './PatientRecordsScreen.css';
 
 export default function PatientDetailScreen() {
   const { patientId } = useParams();
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [archiving, setArchiving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -24,28 +35,47 @@ export default function PatientDetailScreen() {
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
 
-  useEffect(() => {
-    const loadPatient = () => {
-      getPatientById(patientId).then((data) => {
+  const loadPatient = useCallback(() => {
+    getPatientById(patientId)
+      .then((data) => {
         setPatient(data);
-        setLoading(false);
-      });
-    };
+        setError('');
+      })
+      .catch((err) => {
+        if (err.status === 404) setPatient(null);
+        else setError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [patientId]);
 
+  useEffect(() => {
     setLoading(true);
     loadPatient();
-    window.addEventListener('mk-admin-store-updated', loadPatient);
-
-    return () => {
-      window.removeEventListener('mk-admin-store-updated', loadPatient);
-    };
-  }, [patientId]);
+  }, [loadPatient]);
 
   async function handleRegenerate() {
     setRegenerating(true);
-    await regenerateQrToken(patient.id);
+    try {
+      const { qrToken } = await regenerateQrToken(patient.id);
+      setPatient((p) => ({ ...p, qrToken }));
+    } catch (err) {
+      setError(err.message);
+    }
     setRegenerating(false);
     setConfirmingRegenerate(false);
+  }
+
+  async function handleArchiveToggle() {
+    setArchiving(true);
+    try {
+      const updated = patient.status === 'archived'
+        ? await restorePatient(patient.id)
+        : await archivePatient(patient.id);
+      setPatient(updated);
+    } catch (err) {
+      setError(err.message);
+    }
+    setArchiving(false);
   }
 
   function closeNewQr() {
@@ -56,8 +86,14 @@ export default function PatientDetailScreen() {
 
   async function handleDelete() {
     setDeleting(true);
-    await deletePatient(patient.id);
-    navigate('/admin/patients', { replace: true });
+    try {
+      await deletePatient(patient.id);
+      navigate('/admin/patients', { replace: true });
+    } catch (err) {
+      setError(err.message);
+      setDeleting(false);
+      setConfirmingDelete(false);
+    }
   }
 
   const fullName = patient
@@ -66,13 +102,14 @@ export default function PatientDetailScreen() {
 
   return (
     <AdminLayout>
-      <AdminHeader searchValue="" onSearchChange={() => {}} />
+      <AdminHeader showSearch={false} />
       <div className="mk-page">
         <Link to="/admin/patients" className="mk-patient-record__back">
           ← Back to patients
         </Link>
 
         {loading && <p className="mk-patient-history__loading">Loading patient record…</p>}
+        {error && <p className="mk-patients__form-error" role="alert">{error}</p>}
 
         {!loading && !patient && (
           <p className="mk-patient-history__empty">No patient found with ID {patientId}.</p>
@@ -116,9 +153,21 @@ export default function PatientDetailScreen() {
               </div>
               <div className="mk-page__actions">
                 <Button variant="secondary" onClick={() => setEditing(true)}>✎ Edit</Button>
+                <Button variant="ghost" disabled={archiving} onClick={handleArchiveToggle}>
+                  {patient.status === 'archived' ? '↺ Restore' : '🗄 Archive'}
+                </Button>
                 <Button variant="danger" onClick={() => setConfirmingDelete(true)}>🗑 Delete</Button>
               </div>
             </div>
+
+            {patient.status === 'archived' && (
+              <p className="mk-patient-record__archived" role="status">
+                <StatusBadge status="Archived" /> This record is archived
+                {patient.archivedAt ? ` since ${formatDateTime(patient.archivedAt)}` : ''}
+                {patient.archivedBy ? ` by ${patient.archivedBy}` : ''}. The patient can&apos;t sign in at a kiosk
+                until you restore it.
+              </p>
+            )}
 
             <section className="mk-patient-record__card">
               <h3>Personal information</h3>
@@ -134,21 +183,22 @@ export default function PatientDetailScreen() {
                 <Field label="Email" value={patient.email} />
                 <Field label="Address" value={patient.address} />
                 <Field label="Created" value={patient.createdAt && formatDateTime(patient.createdAt)} />
-                <Field label="Last Visit" value={formatDate(patient.lastVisit)} />
+                <Field label="Registered via" value={patient.registeredVia === 'app' ? 'Phone app sign-up' : 'Super Admin'} />
+                <Field label="Last Visit" value={formatEpochDate(patient.lastVisit)} />
               </div>
             </section>
 
             <section className="mk-patient-record__card mk-patient-history">
               <div className="mk-patient-history__title-row">
-                <h3>Vitals history</h3>
+                <h3>Patient history</h3>
                 <span className="mk-patient-history__count">
-                  {patient.visitHistory?.length || 0} {patient.visitHistory?.length === 1 ? 'record' : 'records'}
+                  {patient.history.length} {patient.history.length === 1 ? 'check-in' : 'check-ins'}
                 </span>
               </div>
-              {patient.visitHistory?.length === 0 && (
+              {patient.history.length === 0 && (
                 <p className="mk-patient-history__empty">No kiosk check-ins found for this patient.</p>
               )}
-              {patient.visitHistory?.map((visit, i) => (
+              {patient.history.map((visit, i) => (
                 <div key={visit.id} className="mk-patient-history__card">
                   <div className="mk-patient-history__head">
                     <div>
@@ -156,19 +206,33 @@ export default function PatientDetailScreen() {
                         Check-in #{visit.recordNumber}
                         {i === 0 && <span className="mk-patient-history__latest">Latest</span>}
                       </p>
-                      <p className="mk-patient-history__date">{formatDateTime(visit.timestamp)}</p>
-                      <p className="mk-patient-history__kiosk">{visit.kioskName}</p>
+                      <p className="mk-patient-history__date">{fmtDateTimeSec(visit.createdAt)}</p>
+                      <p className="mk-patient-history__kiosk">
+                        {visit.kioskName} · {visit.id}
+                        {visit.queueStatus === 'seen'
+                          ? ` · seen ${fmtDateTimeSec(visit.seenAt)}${visit.seenBy ? ` by ${visit.seenBy}` : ''}`
+                          : ' · waiting'}
+                      </p>
                     </div>
-                    <StatusBadge status={visit.status} />
+                    <UrgencyBadge level={visit.urgencyLevel} />
                   </div>
-                  <p className="mk-patient-history__summary">{visit.primaryValue} · {visit.summary}</p>
+                  <p className="mk-patient-history__summary">
+                    {visit.incomplete
+                      ? `Incomplete check-in – missing ${visit.missingVitals.length} step(s), risk check not run.`
+                      : visit.urgencyReasons.join(' · ')}
+                  </p>
                   <div className="mk-patient-history__metrics">
-                    {Object.entries(visit.readings).map(([key, value]) => (
-                      <div key={key} className="mk-patient-history__metric">
-                        <strong>{formatMetricLabel(key)}</strong>
-                        <span>{formatMetricValue(value)}</span>
-                      </div>
-                    ))}
+                    <Metric label="Temperature" value={fmtVital(visit.vitals.temperature, '°C', 1)} />
+                    <Metric label="Blood pressure" value={visit.vitals.systolic ? `${fmtBp(visit.vitals)} mmHg` : '—'} />
+                    <Metric label="Heart rate" value={fmtVital(visit.vitals.heartRate, 'bpm')} />
+                    <Metric label="SpO₂" value={fmtVital(visit.vitals.spo2, '%')} />
+                    <Metric label="Respiration" value={fmtVital(visit.vitals.respiration, '/min')} />
+                    <Metric label="Weight" value={fmtVital(visit.vitals.weight, 'kg', 1)} />
+                    <Metric label="Height" value={fmtVital(visit.vitals.height, 'cm', 1)} />
+                    <Metric
+                      label="BMI"
+                      value={`${fmtVital(visit.vitals.bmi, '', 1)}${visit.bmiCategory ? ` · ${visit.bmiCategory}` : ''}`}
+                    />
                   </div>
                 </div>
               ))}
@@ -178,7 +242,14 @@ export default function PatientDetailScreen() {
       </div>
 
       {editing && patient && (
-        <PatientFormModal patient={patient} onClose={() => setEditing(false)} onSaved={() => setEditing(false)} />
+        <PatientFormModal
+          patient={patient}
+          onClose={() => setEditing(false)}
+          onSaved={(saved) => {
+            setPatient(saved);
+            setEditing(false);
+          }}
+        />
       )}
 
       {showNewQr && patient?.qrToken && (
@@ -238,8 +309,10 @@ export default function PatientDetailScreen() {
           >
             <h2 id="mk-delete-patient-title">Delete patient?</h2>
             <p className="mk-patients__confirm-text">
-              This permanently deletes <strong>{fullName}</strong> ({patient.id}) and all{' '}
-              <strong>{patient.visitHistory?.length || 0}</strong> of their vitals / check-in records. This cannot be undone.
+              Use this for a data privacy request. It permanently deletes <strong>{fullName}</strong>{' '}
+              ({patient.id}) and all <strong>{patient.history.length}</strong> of their check-in records.
+              The audit trail keeps a note that the record was deleted. This cannot be undone. To only hide
+              an old record, archive it instead.
             </p>
             <div className="mk-patients__form-actions">
               <Button variant="secondary" disabled={deleting} onClick={() => setConfirmingDelete(false)}>
@@ -253,6 +326,15 @@ export default function PatientDetailScreen() {
         </div>
       )}
     </AdminLayout>
+  );
+}
+
+function Metric({ label, value }) {
+  return (
+    <div className="mk-patient-history__metric">
+      <strong>{label}</strong>
+      <span>{value}</span>
+    </div>
   );
 }
 
