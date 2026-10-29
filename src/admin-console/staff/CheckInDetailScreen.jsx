@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import { AdminHeader } from '../../components/Sidebar';
 import Button from '../../components/Button';
@@ -26,6 +26,10 @@ function VitalCard({ label, value, note, warn }) {
 export default function CheckInDetailScreen() {
   const { checkInId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // opened from Patient records (/admin/records/:id) or the queue (/admin/queue/:id)
+  const fromRecords = location.pathname.startsWith('/admin/records');
+  const base = fromRecords ? '/admin/records' : '/admin/queue';
   const now = useNow();
   const [c, setC] = useState(null);
   const [error, setError] = useState('');
@@ -72,7 +76,9 @@ export default function CheckInDetailScreen() {
     <AdminLayout>
       <AdminHeader showSearch={false} />
       <div className="mk-page">
-        <Link to="/admin/queue" className="mk-back">← Patient queue</Link>
+        <Link to={base} className="mk-back">
+          ← {fromRecords ? 'Patient records' : 'Patient queue'}
+        </Link>
 
         {!c && !error && <p className="mk-staff-muted">Loading…</p>}
         {error && <p className="mk-staff-error">{error}</p>}
@@ -159,16 +165,41 @@ export default function CheckInDetailScreen() {
               />
               <VitalCard label="SpO₂ (blood oxygen)" value={fmtVital(r.spo2?.value, '%')} />
               <VitalCard label="Respiration" value={fmtVital(r.respiration?.value, 'breaths/min')} />
-              <VitalCard
-                label="Weight · Height"
-                value={`${fmtVital(r.weight?.value, 'kg', 1)} · ${fmtVital(r.height?.value, 'cm', 1)}`}
-              />
+              <VitalCard label="Weight" value={fmtVital(r.weight?.value, 'kg', 1)} />
+              <VitalCard label="Height" value={fmtVital(r.height?.value, 'cm', 1)} />
               <VitalCard
                 label="BMI"
                 value={fmtVital(r.bmi?.value, '', 1)}
                 note={c.bmiCategory ? `${c.bmiCategory.label} (${c.bmiCategory.standardName})` : null}
               />
             </div>
+
+            <h2 className="mk-staff-h2">Timeline</h2>
+            <ol className="mk-timeline">
+              <li>
+                <span className="mk-timeline__time">{fmtDateTime(c.createdAt)}</span>
+                Checked in at {c.kioskName}
+              </li>
+              {c.alert && c.alertAcknowledged && (
+                <li>
+                  <span className="mk-timeline__time">{fmtDateTime(c.acknowledgedAt)}</span>
+                  High Risk alert acknowledged{c.acknowledgedBy ? ` by ${c.acknowledgedBy}` : ''}
+                </li>
+              )}
+              {c.queueStatus === 'seen' ? (
+                <li>
+                  <span className="mk-timeline__time">{fmtDateTime(c.seenAt)}</span>
+                  Seen{c.seenBy ? ` by ${c.seenBy}` : ''} · waited{' '}
+                  {waitingFor(c.createdAt, (c.seenAt || 0) * 1000)}
+                </li>
+              ) : (
+                <li className="mk-timeline__open">
+                  <span className="mk-timeline__time">now</span>
+                  Still waiting · {waitingFor(c.createdAt, now)} so far
+                  {c.alert && !c.alertAcknowledged ? ' · alert not acknowledged' : ''}
+                </li>
+              )}
+            </ol>
 
             <h2 className="mk-staff-h2">Results history</h2>
             {c.isGuest ? (
@@ -194,7 +225,7 @@ export default function CheckInDetailScreen() {
                       <tr
                         key={h.id}
                         className={`mk-queue__row${h.id === c.id ? ' is-current' : ''}`}
-                        onClick={() => h.id !== c.id && navigate(`/admin/queue/${h.id}`)}
+                        onClick={() => h.id !== c.id && navigate(`${base}/${h.id}`)}
                       >
                         <td>
                           {fmtDateTime(h.createdAt)}

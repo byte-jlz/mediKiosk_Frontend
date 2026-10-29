@@ -27,6 +27,7 @@ import ComingNextScreen from './admin-console/ComingNextScreen';
 import LiveDashboardScreen from './admin-console/staff/LiveDashboardScreen';
 import PatientQueueScreen from './admin-console/staff/PatientQueueScreen';
 import CheckInDetailScreen from './admin-console/staff/CheckInDetailScreen';
+import PatientRecordsLogScreen from './admin-console/staff/PatientRecordsLogScreen';
 import RequireStaff from './components/RequireStaff';
 import { CLINIC_STAFF, SUPER_ADMIN } from './admin-console/adminRoles';
 
@@ -68,6 +69,8 @@ export default function App() {
         <Route path="/admin/live" element={staffOnly(<LiveDashboardScreen />)} />
         <Route path="/admin/queue" element={staffOnly(<PatientQueueScreen />)} />
         <Route path="/admin/queue/:checkInId" element={staffOnly(<CheckInDetailScreen />)} />
+        <Route path="/admin/records" element={staffOnly(<PatientRecordsLogScreen />)} />
+        <Route path="/admin/records/:checkInId" element={staffOnly(<CheckInDetailScreen />)} />
 
         {/* Super Admin (Figure 3.5) */}
         <Route path="/admin/dashboard" element={adminOnly(<DashboardScreen />)} />

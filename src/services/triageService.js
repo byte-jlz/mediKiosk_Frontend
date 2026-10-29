@@ -12,10 +12,21 @@
 import { API_BASE_URL, AUTH_EVENT, getStaffToken, request } from './apiClient';
 
 export const getQueue = () => request('GET', '/admin/queue');
+/** Patient records: every check-in (waiting + seen), the same list for every staff account. */
+export const getRecords = (search = '') =>
+  request('GET', `/admin/records${search ? `?search=${encodeURIComponent(search)}` : ''}`);
 export const getCheckIn = (id) => request('GET', `/admin/queue/${encodeURIComponent(id)}`);
-export const markSeen = (id) => request('POST', `/admin/queue/${encodeURIComponent(id)}/seen`);
+// after an action, refresh the shared queue right away (don't wait for the live event)
+export const markSeen = (id) =>
+  request('POST', `/admin/queue/${encodeURIComponent(id)}/seen`).then(async (r) => {
+    await refreshQueue();
+    return r;
+  });
 export const acknowledgeAlert = (id) =>
-  request('POST', `/admin/queue/${encodeURIComponent(id)}/acknowledge`);
+  request('POST', `/admin/queue/${encodeURIComponent(id)}/acknowledge`).then(async (r) => {
+    await refreshQueue();
+    return r;
+  });
 
 // ------------------------------------------------------------ shared state
 const POLL_MS = 15000;
@@ -35,15 +46,40 @@ function setState(patch) {
   stateListeners.forEach((fn) => fn(state));
 }
 
-export async function refreshQueue() {
-  if (fetching) return fetching;          // one request at a time
+let refetch = false;
+let settled = null;      // promise that resolves when the queue is up to date
+let resolveSettled = null;
+
+function runFetch() {
   fetching = getQueue()
     .then((data) => setState({ data, error: '' }))
     .catch((err) => setState({ error: err.message }))
     .finally(() => {
       fetching = null;
+      if (refetch) {            // something changed while we were loading: load once more
+        refetch = false;
+        runFetch();
+      } else {
+        resolveSettled();
+      }
     });
-  return fetching;
+}
+
+/**
+ * Re-load the queue. One request at a time; a refresh asked for while one is
+ * loading runs once more afterwards. The returned promise resolves when the
+ * queue on screen includes every change made before the call.
+ */
+export function refreshQueue() {
+  if (fetching) {
+    refetch = true;
+    return settled;
+  }
+  settled = new Promise((resolve) => {
+    resolveSettled = resolve;
+  });
+  runFetch();
+  return settled;
 }
 
 function liveUrl() {

@@ -17,10 +17,12 @@ export const ROLE_LABELS = {
 
 // Clinic Staff: View prioritized patient queue (+ filtered by urgency),
 // View patient vital signs details (+ results/history), Receive priority
-// alerts (the bell in the header), Monitor real-time dashboard.
+// alerts (the bell in the header), Monitor real-time dashboard,
+// Patient records (every check-in the clinic handled - shared by all staff).
 const CLINIC_STAFF_MENU = [
   { to: '/admin/live', label: 'Live dashboard', icon: '◉', end: true },
   { to: '/admin/queue', label: 'Patient queue', icon: '☰' },
+  { to: '/admin/records', label: 'Patient records', icon: '🗂' },
 ];
 
 // Super Admin: Manage clinic staff accounts, Manage patient records

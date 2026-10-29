@@ -451,3 +451,59 @@
   .mk-live-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .mk-live-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------- patient records ---------- */
+.mk-records__bar { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.mk-records__search {
+  flex: 1;
+  max-width: 420px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+.mk-records__search:focus { outline: none; border-color: var(--brand-blue); }
+.mk-records__table th, .mk-records__table td { padding-left: 12px; padding-right: 12px; }
+.mk-records__seen { font-weight: 600; color: #1f6b3f; }
+.mk-records__waiting { font-weight: 700; color: #8a611a; }
+.mk-records__table .mk-queue__name { white-space: nowrap; }
+.mk-records__open { text-align: right; color: var(--brand-blue-dark); font-weight: 600; font-size: 13px; }
+.mk-records__table tr:focus-visible td { outline: 2px solid var(--brand-blue); outline-offset: -2px; }
+
+/* ---------- details timeline ---------- */
+.mk-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 16px 20px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.mk-timeline li {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding: 8px 0 8px 18px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.mk-timeline li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand-blue);
+}
+.mk-timeline__open::before { background: var(--amber) !important; }
+.mk-timeline__time {
+  width: 130px;
+  flex-shrink: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
