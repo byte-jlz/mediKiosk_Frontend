@@ -124,6 +124,23 @@ than 10 bpm, the BP pulse is still used but both values and a `mismatch` flag ar
 saved for staff (`heartRateCheck` on the check-in). If there is no BP pulse, the
 finger sensor's value is used (`source: "finger_sensor"`).
 
+## Staff login and roles
+
+`app/security.py`: passwords are **bcrypt** hashes, login returns a **JWT**
+(`POST /api/staff/login`), and the admin console sends it as
+`Authorization: Bearer <token>`. Two roles, from the use-case diagrams:
+
+| Role | `accessRole` | May open |
+|---|---|---|
+| Clinic Staff | `clinic_staff` | patient queue (`/api/admin/kiosk-sessions`), check-ins, patients |
+| Super Admin | `super_admin` | staff accounts, patients, kiosks, kiosk status, audit logs, dashboard, check-ins |
+
+The kiosk tablet's endpoints (`/api/kiosk-sessions...`) stay open. Demo accounts
+(in `app/data.py`, change before real use): `superadmin@clinic.io` / `Admin@1234`,
+and every clinic staff account / `Staff@1234` (S-1027 is suspended).
+Set `JWT_SECRET` in the environment for real use; without it a random secret is
+made at startup, so everyone has to sign in again after a backend restart.
+
 ## BMI category (staff + phone app only)
 
 `app/vitals_rules.py` labels the BMI with **WHO Asia-Pacific** cut-offs by default

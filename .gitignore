@@ -22,3 +22,9 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Python (backend/)
+__pycache__/
+*.py[cod]
+.venv/
+venv/

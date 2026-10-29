@@ -9,7 +9,7 @@
 // be switched off in dev by setting VITE_DEV_AUTH_BYPASS=false in .env.
 // ============================================================
 
-import { savePatientProfile, setCurrentStaff } from './authService';
+import { savePatientProfile, staffLogin } from './authService';
 
 export const DEV_AUTH_BYPASS =
   import.meta.env.DEV && import.meta.env.VITE_DEV_AUTH_BYPASS !== 'false';
@@ -28,15 +28,11 @@ export const DEV_PATIENT = {
   gender: 'Other',
 };
 
-export const DEV_STAFF = {
-  id: 'S-DEV-0001',
-  name: 'Dev Admin',
-  email: 'dev.admin@medikiosk.dev',
-  role: 'Admin',
-  clinic: 'Dev Clinic',
-  status: 'Online',
-  lastActive: 'Just now',
-  initials: 'DA',
+// Demo staff accounts that exist in backend/app/data.py. "Skip login" really
+// signs in with them, so the backend's role checks are exercised too.
+export const DEV_STAFF_ACCOUNTS = {
+  super_admin: { email: 'superadmin@clinic.io', password: 'Admin@1234' },
+  clinic_staff: { email: 'marcus.reyes@clinic.io', password: 'Staff@1234' },
 };
 
 /** Signs in the dev test patient (mobile app + kiosk share this session). */
@@ -46,9 +42,10 @@ export function devLoginPatient() {
   return DEV_PATIENT;
 }
 
-/** Signs in the dev test staff account for the admin console. */
-export function devLoginStaff() {
+/** Signs in a demo staff account (role: 'super_admin' | 'clinic_staff'). */
+export async function devLoginStaff(role = 'clinic_staff') {
   if (!DEV_AUTH_BYPASS) return null;
-  setCurrentStaff(DEV_STAFF);
-  return DEV_STAFF;
+  const account = DEV_STAFF_ACCOUNTS[role];
+  const { staff } = await staffLogin(account.email, account.password);
+  return staff;
 }

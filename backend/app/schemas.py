@@ -38,20 +38,27 @@ class StaffBase(BaseModel):
     status: Optional[str] = 'Online'
     lastActive: Optional[str] = 'just now'
     initials: Optional[str] = None
+    accessRole: Optional[str] = None        # "super_admin" | "clinic_staff" (app/security.py)
+    accessRoleLabel: Optional[str] = None   # "Super Admin" | "Clinic Staff"
+    # passwordHash is never part of this model, so it is never sent out
 
 class StaffCreate(BaseModel):
     name: str
     email: EmailStr
-    role: str
+    role: str                                # job title, e.g. Nurse
     clinic: str
+    accessRole: str = "clinic_staff"
+    password: str = Field(..., min_length=8)
 
 class StaffUpdate(BaseModel):
-    name: Optional[str]
-    email: Optional[EmailStr]
-    role: Optional[str]
-    clinic: Optional[str]
-    status: Optional[str]
-    lastActive: Optional[str]
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[str] = None
+    clinic: Optional[str] = None
+    status: Optional[str] = None
+    lastActive: Optional[str] = None
+    accessRole: Optional[str] = None
+    password: Optional[str] = Field(None, min_length=8)   # set a new password
 
 class KioskBase(BaseModel):
     id: str

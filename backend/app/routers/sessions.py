@@ -20,20 +20,25 @@ The readings in a session come ONLY from the kiosk agent (via MQTT ->
 mqtt_bridge.py -> store.py). The tablet passes the sessionId along with
 every scan command and never sends the numbers itself.
 
-NOTE: "staff only" is a promise of these routes, not yet a lock - there is
-no staff login check on the backend yet. That comes with the security step.
+Locks (app/security.py): the kiosk endpoints stay open for the kiosk tablet;
+/admin/kiosk-sessions* = Clinic Staff, /admin/check-ins = Clinic Staff + Super
+Admin, /kiosks/{id}/agent and /results = Super Admin (kiosk monitoring).
 """
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from app import store
 from app.data import add_check_in, append_audit_event, check_ins, find_kiosk
 from app.mqtt_bridge import bridge, _activity
+from app.security import CLINIC_STAFF, SUPER_ADMIN, require_roles
 
 router = APIRouter()
+clinic_staff = [Depends(require_roles(CLINIC_STAFF))]
+any_staff = [Depends(require_roles(CLINIC_STAFF, SUPER_ADMIN))]
+super_admin = [Depends(require_roles(SUPER_ADMIN))]
 
 
 class SessionCreate(BaseModel):
@@ -154,18 +159,18 @@ async def complete_session(session_id: str, payload: Optional[SessionComplete] =
 
 
 # ---------------------------------------------------------------- staff
-@router.get("/admin/kiosk-sessions")
+@router.get("/admin/kiosk-sessions", dependencies=clinic_staff)
 async def list_sessions(kioskId: Optional[str] = Query(None), status: Optional[str] = Query(None),
                         limit: int = Query(50, ge=1, le=500)):
     return [_staff_view(s) for s in store.list_sessions(kioskId, status, limit)]
 
 
-@router.get("/admin/kiosk-sessions/{session_id}")
+@router.get("/admin/kiosk-sessions/{session_id}", dependencies=clinic_staff)
 async def get_session_staff(session_id: str):
     return _staff_view(_get_or_404(session_id))
 
 
-@router.post("/admin/kiosk-sessions/{session_id}/urgency")
+@router.post("/admin/kiosk-sessions/{session_id}/urgency", dependencies=clinic_staff)
 async def rerun_urgency(session_id: str):
     session = _get_or_404(session_id)
     if store.missing_vitals(session):
@@ -175,13 +180,13 @@ async def rerun_urgency(session_id: str):
     return _staff_view(_get_or_404(session_id))
 
 
-@router.get("/admin/check-ins")
+@router.get("/admin/check-ins", dependencies=any_staff)
 async def list_check_ins(limit: int = Query(50, ge=1, le=500)):
     return list(reversed(check_ins[-limit:]))
 
 
 # ---------------------------------------------------------------- kiosks
-@router.get("/kiosks/{kiosk_id}/agent")
+@router.get("/kiosks/{kiosk_id}/agent", dependencies=super_admin)
 async def get_agent_status(kiosk_id: str):
     if not find_kiosk(kiosk_id):
         raise HTTPException(status_code=404, detail="Kiosk not found")
@@ -190,7 +195,7 @@ async def get_agent_status(kiosk_id: str):
             "agent": status, "online": bool(status and status.get("online"))}
 
 
-@router.get("/kiosks/{kiosk_id}/results")
+@router.get("/kiosks/{kiosk_id}/results", dependencies=super_admin)
 async def get_kiosk_results(kiosk_id: str, limit: int = Query(20, ge=1, le=200)):
     if not find_kiosk(kiosk_id):
         raise HTTPException(status_code=404, detail="Kiosk not found")

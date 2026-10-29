@@ -75,7 +75,30 @@ current_patient = {
     "email": "",
 }
 
+# Staff accounts (in memory, like the rest of data.py).
+#   accessRole  = what the account may open in the admin console:
+#                 "super_admin" or "clinic_staff" (see app/security.py)
+#   role        = job title shown in the staff list (Doctor, Nurse, ...)
+#   passwordHash = bcrypt hash - the plain password is never stored.
+# DEMO PASSWORDS (change before real use):
+#   superadmin@clinic.io   Admin@1234   (Super Admin)
+#   every clinic staff      Staff@1234   (Clinic Staff; S-1027 is Suspended)
+ADMIN_DEMO_HASH = "$2b$12$NnQZakqeTfLAomgBCacw3OCMcvdMb7UH8DrCrRzUi.6lt6Cpv9q56"   # Admin@1234
+STAFF_DEMO_HASH = "$2b$12$4HNlktSIT819EDvup7QmEeOnsRipPvG.d2sOQW2h9lnLM8Io8dpQi"   # Staff@1234
+
 staff = [
+    {
+        "id": "S-1000",
+        "name": "System Admin",
+        "email": "superadmin@clinic.io",
+        "role": "Super Admin",
+        "clinic": "All clinics",
+        "status": "Online",
+        "lastActive": "just now",
+        "initials": "SA",
+        "accessRole": "super_admin",
+        "passwordHash": ADMIN_DEMO_HASH,
+    },
     {
         "id": "S-1024",
         "name": "Dr. Amelia Chen",
@@ -85,6 +108,8 @@ staff = [
         "status": "Online",
         "lastActive": "2 mins ago",
         "initials": "DA",
+        "accessRole": "clinic_staff",
+        "passwordHash": STAFF_DEMO_HASH,
     },
     {
         "id": "S-1025",
@@ -95,6 +120,8 @@ staff = [
         "status": "Online",
         "lastActive": "14 mins ago",
         "initials": "MR",
+        "accessRole": "clinic_staff",
+        "passwordHash": STAFF_DEMO_HASH,
     },
     {
         "id": "S-1026",
@@ -105,6 +132,8 @@ staff = [
         "status": "Online",
         "lastActive": "1 hr ago",
         "initials": "PN",
+        "accessRole": "clinic_staff",
+        "passwordHash": STAFF_DEMO_HASH,
     },
     {
         "id": "S-1027",
@@ -115,6 +144,8 @@ staff = [
         "status": "Suspended",
         "lastActive": "3 days ago",
         "initials": "DH",
+        "accessRole": "clinic_staff",
+        "passwordHash": STAFF_DEMO_HASH,
     },
     {
         "id": "S-1028",
@@ -125,6 +156,8 @@ staff = [
         "status": "Online",
         "lastActive": "27 mins ago",
         "initials": "SM",
+        "accessRole": "clinic_staff",
+        "passwordHash": STAFF_DEMO_HASH,
     },
 ]
 
@@ -344,6 +377,11 @@ def find_patient(patient_id: str):
 
 def find_staff(member_id: str):
     return next((member for member in staff if member["id"] == member_id), None)
+
+
+def find_staff_by_email(email: str):
+    email = (email or "").strip().lower()
+    return next((member for member in staff if member["email"].lower() == email), None)
 
 
 def find_kiosk(kiosk_id: str):

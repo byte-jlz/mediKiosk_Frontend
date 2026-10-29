@@ -1,17 +1,27 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import DevSkipLogin from '../components/DevSkipLogin';
-import { staffLogin } from '../services/authService';
+import { getCurrentStaff, staffLogin } from '../services/authService';
+import { getStaffToken } from '../services/apiClient';
+import { CLINIC_STAFF, SUPER_ADMIN, homeFor } from './adminRoles';
 import LobbyArtPanel from '../kiosk-app/LobbyArtPanel';
 import './AdminLoginScreen.css';
 
 export default function AdminLoginScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(
+    location.state?.expired ? 'Your session ended. Please sign in again.' : '');
   const [loading, setLoading] = useState(false);
+
+  // Already signed in -> straight to this role's home page.
+  const current = getCurrentStaff();
+  if (getStaffToken() && current.accessRole) {
+    return <Navigate to={homeFor(current.accessRole)} replace />;
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -22,8 +32,8 @@ export default function AdminLoginScreen() {
     }
     setLoading(true);
     try {
-      await staffLogin(email, password);
-      navigate('/admin/dashboard');
+      const { staff } = await staffLogin(email, password);
+      navigate(homeFor(staff.accessRole), { replace: true });
     } catch (err) {
       setError(err.message || 'Sign in failed. Please try again.');
     } finally {
@@ -58,16 +68,11 @@ export default function AdminLoginScreen() {
           </Button>
 
           <p className="mk-alogin__hint">
-            Demo tip: any email + password combination signs you in.
-          </p>
-          <p className="mk-alogin__hint">
-            New admin?{' '}
-            <button type="button" className="mk-alogin__link" onClick={() => navigate('/admin/signup')}>
-              Sign up here
-            </button>
+            No account? Ask your Super Admin to create one for you.
           </p>
 
-          <DevSkipLogin as="staff" to="/admin/dashboard" />
+          <DevSkipLogin as="staff" role={CLINIC_STAFF} onError={setError} />
+          <DevSkipLogin as="staff" role={SUPER_ADMIN} onError={setError} />
         </form>
       </div>
     </div>

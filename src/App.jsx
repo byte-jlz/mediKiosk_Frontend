@@ -16,7 +16,6 @@ import KioskTofMonitorScreen from './kiosk-app/KioskTofMonitorScreen';
 
 import AppSwitcher from './AppSwitcher';
 import AdminLoginScreen from './admin-console/AdminLoginScreen';
-import AdminSignUpScreen from './admin-console/AdminSignUpScreen';
 import DashboardScreen from './admin-console/DashboardScreen';
 import StaffAccountsScreen from './admin-console/StaffAccountsScreen';
 import PatientRecordsScreen from './admin-console/PatientRecordsScreen';
@@ -24,6 +23,13 @@ import PatientDetailScreen from './admin-console/PatientDetailScreen';
 import KiosksScreen from './admin-console/KiosksScreen';
 import KiosksActivityScreen from './admin-console/KiosksActivityScreen';
 import AuditLogsScreen from './admin-console/AuditLogsScreen';
+import ComingNextScreen from './admin-console/ComingNextScreen';
+import RequireStaff from './components/RequireStaff';
+import { CLINIC_STAFF, SUPER_ADMIN } from './admin-console/adminRoles';
+
+// Page guards: which role may open which admin page (use-case diagrams 3.4 / 3.5)
+const staffOnly = (page) => <RequireStaff roles={[CLINIC_STAFF]}>{page}</RequireStaff>;
+const adminOnly = (page) => <RequireStaff roles={[SUPER_ADMIN]}>{page}</RequireStaff>;
 
 export default function App() {
   return (
@@ -51,16 +57,27 @@ export default function App() {
         <Route path="/kiosk/vitals" element={<KioskVitalsWizard />} />
         <Route path="/kiosk/tof-live" element={<KioskTofMonitorScreen />} />
 
-        {/* ---------- Admin console (desktop web) ---------- */}
+        {/* ---------- Admin console (desktop web): one login, menu per role ---------- */}
         <Route path="/admin" element={<AdminLoginScreen />} />
-        <Route path="/admin/signup" element={<AdminSignUpScreen />} />
-        <Route path="/admin/dashboard" element={<DashboardScreen />} />
-        <Route path="/admin/staff" element={<StaffAccountsScreen />} />
-        <Route path="/admin/patients" element={<PatientRecordsScreen />} />
-        <Route path="/admin/patients/:patientId" element={<PatientDetailScreen />} />
-        <Route path="/admin/kiosks" element={<KiosksScreen />} />
-        <Route path="/admin/kiosks-activity" element={<KiosksActivityScreen />} />
-        <Route path="/admin/audit-logs" element={<AuditLogsScreen />} />
+        <Route path="/admin/signup" element={<Navigate to="/admin" replace />} />
+
+        {/* Clinic Staff (Figure 3.4) */}
+        <Route path="/admin/live" element={staffOnly(
+          <ComingNextScreen title="Live dashboard" useCase="Monitor real-time dashboard" part={2} />)} />
+        <Route path="/admin/queue" element={staffOnly(
+          <ComingNextScreen title="Patient queue" useCase="View prioritized patient queue (filtered by urgency level)" part={2} />)} />
+
+        {/* Super Admin (Figure 3.5) */}
+        <Route path="/admin/dashboard" element={adminOnly(<DashboardScreen />)} />
+        <Route path="/admin/staff" element={adminOnly(<StaffAccountsScreen />)} />
+        <Route path="/admin/patients" element={adminOnly(<PatientRecordsScreen />)} />
+        <Route path="/admin/patients/:patientId" element={adminOnly(<PatientDetailScreen />)} />
+        <Route path="/admin/kiosks" element={adminOnly(<KiosksScreen />)} />
+        <Route path="/admin/kiosks-activity" element={adminOnly(<KiosksActivityScreen />)} />
+        <Route path="/admin/reports" element={adminOnly(
+          <ComingNextScreen title="Reports" useCase="Generate reports (+ export report)" part={3} />)} />
+        <Route path="/admin/audit-logs" element={adminOnly(<AuditLogsScreen />)} />
+        <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
 
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>

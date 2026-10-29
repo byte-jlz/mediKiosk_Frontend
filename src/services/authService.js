@@ -9,7 +9,7 @@
 // ============================================================
 
 import { mockCurrentPatient } from '../mocks/mockPatients';
-import { getStaffByEmail } from './staffService';
+import { AUTH_EVENT, request, setStaffToken } from './apiClient';
 import { findPatientByQrToken } from './adminStore';
 import { parseQrPayload } from './patientQr';
 
@@ -25,7 +25,7 @@ function saveCurrentStaff(staff) {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(staff));
-    window.dispatchEvent(new CustomEvent('mk-admin-auth-updated'));
+    window.dispatchEvent(new CustomEvent(AUTH_EVENT));
   } catch {
     // ignore storage failures in demo mode
   }
@@ -110,7 +110,8 @@ function clearCurrentStaff() {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.removeItem(AUTH_STORAGE_KEY);
-    window.dispatchEvent(new CustomEvent('mk-admin-auth-updated'));
+    setStaffToken('');
+    window.dispatchEvent(new CustomEvent(AUTH_EVENT));
   } catch {
     // ignore
   }
@@ -214,34 +215,46 @@ export async function patientLoginWithQr(qrToken) {
 }
 
 /**
- * EXPECTED BACKEND ENDPOINT: POST /api/staff/login
- * REQUEST BODY:  { email: string, password: string }
- * RESPONSE:      { token: string, staff: { name, role, initials, ... } }
- * ERRORS:        401 if credentials are invalid
+ * REAL BACKEND: POST /api/staff/login  { email, password }
+ *   -> { token (JWT), staff: { id, name, email, accessRole, accessRoleLabel, ... } }
+ * 401 = wrong email/password, 403 = account suspended.
+ * accessRole decides the menu: 'super_admin' or 'clinic_staff' (adminRoles.js).
  */
 export async function staffLogin(email, password) {
-  await delay(FAKE_DELAY_MS);
   if (!email || !password) {
     throw new Error('Email and password are required.');
   }
-
-  const staff = await getStaffByEmail(email);
-  if (!staff) {
-    throw new Error('No staff account found for that email.');
-  }
-
+  const { token, staff } = await request(
+    'POST', '/staff/login', { email: email.trim(), password }, { auth: false });
+  setStaffToken(token);
   saveCurrentStaff(staff);
-  return { token: 'mock-staff-token', staff };
+  return { token, staff };
+}
+
+/** GET /api/staff/me - re-checks the saved token (and picks up role changes). */
+export async function refreshCurrentStaff() {
+  const staff = await request('GET', '/staff/me');
+  saveCurrentStaff(staff);
+  return staff;
 }
 
 /**
- * EXPECTED BACKEND ENDPOINT: POST /api/logout
- * Clears the session on the server (e.g. blacklist token / clear cookie).
+ * POST /api/logout (logged in the audit trail), then forget the token.
+ * The token is forgotten even if the server can't be reached.
  */
 export async function logout() {
-  await delay(200);
+  try {
+    await request('POST', '/logout');
+  } catch {
+    // already expired / server down - still sign out locally
+  }
   clearCurrentStaff();
   return { success: true };
+}
+
+/** Forget the staff session without calling the server (e.g. token expired). */
+export function clearStaffSession() {
+  clearCurrentStaff();
 }
 
 export function setCurrentStaff(staff) {
