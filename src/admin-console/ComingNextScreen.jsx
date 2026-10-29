@@ -5,7 +5,7 @@ import { AdminHeader } from '../components/Sidebar';
 export default function ComingNextScreen({ title, useCase, part }) {
   return (
     <AdminLayout>
-      <AdminHeader />
+      <AdminHeader showSearch={false} />
       <div className="mk-page">
         <div className="mk-page__title-row">
           <div>

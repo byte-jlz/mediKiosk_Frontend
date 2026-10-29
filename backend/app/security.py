@@ -80,12 +80,20 @@ def _unauthorized(detail: str):
 
 def current_staff(creds: Optional[HTTPAuthorizationCredentials] = Depends(_bearer)) -> dict:
     """The signed-in staff account (raises 401 if not signed in)."""
-    from app.data import find_staff          # late import: data.py imports nothing from here
-
     if creds is None or creds.scheme.lower() != "bearer":
         raise _unauthorized("Not signed in")
+    return account_from_token(creds.credentials)
+
+
+def account_from_token(token: str) -> dict:
+    """JWT -> staff account. Raises 401/403 HTTPException. (Also used by the
+    live WebSocket, where the browser sends the token as ?token=...)"""
+    from app.data import find_staff          # late import: data.py imports nothing from here
+
+    if not token:
+        raise _unauthorized("Not signed in")
     try:
-        payload = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:
         raise _unauthorized("Session expired - please sign in again")
     except jwt.InvalidTokenError:

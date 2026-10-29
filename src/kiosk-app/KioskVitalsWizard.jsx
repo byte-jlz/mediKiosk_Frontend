@@ -32,6 +32,7 @@ export default function KioskVitalsWizard() {
   const patient = getCurrentPatientProfile();
   const patientId = patient?.id || null;
   const patientName = patient?.firstName || 'Guest';
+  const fullName = [patient?.firstName, patient?.lastName].filter(Boolean).join(' ');
 
   const { agent, connection, agentOnline } = useKioskAgent();
 
@@ -54,10 +55,10 @@ export default function KioskVitalsWizard() {
   // ---- 1. backend session
   const openSession = useCallback(() => {
     setSessionError(null);
-    startKioskSession(KIOSK_ID, patientId)
+    startKioskSession(KIOSK_ID, patientId, fullName)
       .then((s) => setSessionId(s.sessionId))
       .catch((e) => setSessionError(e.message));
-  }, [patientId]);
+  }, [patientId, fullName]);
 
   useEffect(openSession, [openSession]);
 

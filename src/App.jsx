@@ -24,6 +24,9 @@ import KiosksScreen from './admin-console/KiosksScreen';
 import KiosksActivityScreen from './admin-console/KiosksActivityScreen';
 import AuditLogsScreen from './admin-console/AuditLogsScreen';
 import ComingNextScreen from './admin-console/ComingNextScreen';
+import LiveDashboardScreen from './admin-console/staff/LiveDashboardScreen';
+import PatientQueueScreen from './admin-console/staff/PatientQueueScreen';
+import CheckInDetailScreen from './admin-console/staff/CheckInDetailScreen';
 import RequireStaff from './components/RequireStaff';
 import { CLINIC_STAFF, SUPER_ADMIN } from './admin-console/adminRoles';
 
@@ -62,10 +65,9 @@ export default function App() {
         <Route path="/admin/signup" element={<Navigate to="/admin" replace />} />
 
         {/* Clinic Staff (Figure 3.4) */}
-        <Route path="/admin/live" element={staffOnly(
-          <ComingNextScreen title="Live dashboard" useCase="Monitor real-time dashboard" part={2} />)} />
-        <Route path="/admin/queue" element={staffOnly(
-          <ComingNextScreen title="Patient queue" useCase="View prioritized patient queue (filtered by urgency level)" part={2} />)} />
+        <Route path="/admin/live" element={staffOnly(<LiveDashboardScreen />)} />
+        <Route path="/admin/queue" element={staffOnly(<PatientQueueScreen />)} />
+        <Route path="/admin/queue/:checkInId" element={staffOnly(<CheckInDetailScreen />)} />
 
         {/* Super Admin (Figure 3.5) */}
         <Route path="/admin/dashboard" element={adminOnly(<DashboardScreen />)} />

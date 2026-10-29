@@ -24,9 +24,16 @@ async function request(method, path, body) {
   return data;
 }
 
-/** POST /api/kiosk-sessions -> { sessionId, readings, missingVitals, ... } */
-export function startKioskSession(kioskId, patientId) {
-  return request('POST', '/kiosk-sessions', { kioskId, patientId: patientId || null });
+/**
+ * POST /api/kiosk-sessions -> { sessionId, readings, missingVitals, ... }
+ * patientName is only shown to clinic staff in the patient queue.
+ */
+export function startKioskSession(kioskId, patientId, patientName) {
+  return request('POST', '/kiosk-sessions', {
+    kioskId,
+    patientId: patientId || null,
+    patientName: patientId ? patientName || null : null,
+  });
 }
 
 /** GET /api/kiosk-sessions/{id} -> readings so far + official heart rate */

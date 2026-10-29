@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { getCurrentStaff, logout } from '../services/authService';
 import { AUTH_EVENT } from '../services/apiClient';
 import { CLINIC_STAFF, ROLE_LABELS, SUPER_ADMIN, menuFor } from '../admin-console/adminRoles';
+import AlertsBell from '../admin-console/staff/AlertsBell';
 import './Sidebar.css';
 
 /** Re-reads the signed-in staff whenever login / logout / role refresh happens. */
@@ -46,7 +47,7 @@ export default function Sidebar() {
   );
 }
 
-export function AdminHeader({ searchValue, onSearchChange, searchPlaceholder = 'Search patients, kiosks, alert..' }) {
+export function AdminHeader({ searchValue, onSearchChange, searchPlaceholder = 'Search patients, kiosks, alert..', showSearch = true }) {
   const navigate = useNavigate();
   const staff = useCurrentStaff();
   const [showMenu, setShowMenu] = useState(false);
@@ -73,18 +74,18 @@ export function AdminHeader({ searchValue, onSearchChange, searchPlaceholder = '
 
   return (
     <header className="mk-admin-header">
-      <input
-        className="mk-admin-header__search"
-        placeholder={searchPlaceholder}
-        value={searchValue}
-        onChange={(e) => onSearchChange?.(e.target.value)}
-      />
-      {/* "Receive priority alerts" is a Clinic Staff use case (wired up in part 2) */}
-      {staff.accessRole === CLINIC_STAFF && (
-        <button className="mk-admin-header__bell" aria-label="Priority alerts">
-          🔔
-        </button>
+      {showSearch ? (
+        <input
+          className="mk-admin-header__search"
+          placeholder={searchPlaceholder}
+          value={searchValue}
+          onChange={(e) => onSearchChange?.(e.target.value)}
+        />
+      ) : (
+        <div className="mk-admin-header__spacer" />
       )}
+      {/* "Receive priority alerts" is a Clinic Staff use case (Figure 3.4) */}
+      {staff.accessRole === CLINIC_STAFF && <AlertsBell />}
       <div className="mk-admin-header__user">
         <button
           type="button"

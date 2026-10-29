@@ -48,11 +48,13 @@ def _copy(doc):
 
 
 # ---------------------------------------------------------------- sessions
-def create_session(kiosk_id: str, patient_id: Optional[str]) -> dict:
+def create_session(kiosk_id: str, patient_id: Optional[str],
+                   patient_name: Optional[str] = None) -> dict:
     doc = {
         "_id": f"SES-{uuid4().hex[:10].upper()}",
         "kioskId": kiosk_id,
         "patientId": patient_id,
+        "patientName": patient_name,
         "status": "open",               # open -> completed
         "createdAt": _now(),
         "updatedAt": _now(),

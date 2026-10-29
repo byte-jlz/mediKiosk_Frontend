@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, patients, staff, kiosks, vitals, audit, dashboard, sessions
+from app.routers import auth, patients, staff, kiosks, vitals, audit, dashboard, sessions, triage
 from app.mqtt_bridge import bridge
 from app.security import CLINIC_STAFF, SUPER_ADMIN, require_roles
 
@@ -40,5 +40,6 @@ app.include_router(staff.router, prefix="/api", tags=["Staff"])                 
 app.include_router(kiosks.router, prefix="/api", tags=["Kiosks"], dependencies=admin_only)
 app.include_router(vitals.router, prefix="/api", tags=["Vitals"])                # phone app (patient login comes later)
 app.include_router(sessions.router, prefix="/api", tags=["Kiosk sessions"])      # kiosk routes open, /admin routes locked
+app.include_router(triage.router, prefix="/api", tags=["Clinic Staff queue"])   # Clinic Staff (in triage.py)
 app.include_router(audit.router, prefix="/api", tags=["Audit"], dependencies=admin_only)
 app.include_router(dashboard.router, prefix="/api", tags=["Dashboard"], dependencies=admin_only)

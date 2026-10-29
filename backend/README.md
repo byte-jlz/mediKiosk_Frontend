@@ -141,6 +141,18 @@ and every clinic staff account / `Staff@1234` (S-1027 is suspended).
 Set `JWT_SECRET` in the environment for real use; without it a random secret is
 made at startup, so everyone has to sign in again after a backend restart.
 
+## Clinic Staff queue, alerts and live dashboard
+
+`app/triage.py` + `app/routers/triage.py` (Clinic Staff only). Every finished
+check-in joins the **prioritized queue** (`GET /api/admin/queue`), ordered
+High Risk → Medium Risk → Not rated (incomplete, risk check didn't run) →
+Normal, longest wait first inside each level. `GET /api/admin/queue/{id}` gives
+the vital signs details plus the patient's earlier check-ins (and is written
+to the audit trail). `POST .../seen` takes the patient out of the queue;
+`POST .../acknowledge` clears a High Risk **priority alert**.
+Live updates go out over the WebSocket `/api/admin/live?token=<JWT>`
+(needs the `websockets` package from requirements.txt).
+
 ## BMI category (staff + phone app only)
 
 `app/vitals_rules.py` labels the BMI with **WHO Asia-Pacific** cut-offs by default

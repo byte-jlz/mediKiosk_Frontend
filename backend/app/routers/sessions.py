@@ -25,12 +25,13 @@ Locks (app/security.py): the kiosk endpoints stay open for the kiosk tablet;
 Admin, /kiosks/{id}/agent and /results = Super Admin (kiosk monitoring).
 """
 
+import time
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from app import store
+from app import store, triage
 from app.data import add_check_in, append_audit_event, check_ins, find_kiosk
 from app.mqtt_bridge import bridge, _activity
 from app.security import CLINIC_STAFF, SUPER_ADMIN, require_roles
@@ -44,6 +45,7 @@ super_admin = [Depends(require_roles(SUPER_ADMIN))]
 class SessionCreate(BaseModel):
     kioskId: str
     patientId: Optional[str] = None      # None / "guest" = not signed in
+    patientName: Optional[str] = None    # shown to staff in the queue
 
 
 class SessionComplete(BaseModel):
@@ -91,7 +93,8 @@ async def create_session(payload: SessionCreate):
     if not find_kiosk(payload.kioskId):
         raise HTTPException(status_code=404, detail="Kiosk not found")
     patient_id = None if payload.patientId in (None, "", "guest") else payload.patientId
-    session = store.create_session(payload.kioskId, patient_id)
+    name = ((payload.patientName or "").strip()[:80] or None) if patient_id else None
+    session = store.create_session(payload.kioskId, patient_id, name)
     _activity(payload.kioskId, "Check-in started", patient_id)
     return _kiosk_view(session)
 
@@ -147,12 +150,22 @@ async def complete_session(session_id: str, payload: Optional[SessionComplete] =
         bmiCategory=(session.get("derived") or {}).get("bmiCategory"),    # staff + phone, NOT kiosk
         urgency=urgency,                                                    # staff only
         simulated=any(x.get("simulated") for x in session["readings"].values()),
+        # Clinic Staff queue (app/triage.py)
+        createdAt=round(time.time(), 3),
+        patientName=session.get("patientName"),
+        queueStatus="waiting",           # waiting -> seen
+        alertAcknowledged=False,         # High Risk alerts until a staff member acknowledges
     )
     store.complete_session(session_id, check_in["id"])
     append_audit_event("CHECK-IN COMPLETE" + (" (INCOMPLETE)" if missing else ""),
                        f"{check_in['id']} ({session['kioskId']})")
     _activity(session["kioskId"], "Check-in completed" + (" - incomplete" if missing else ""),
               session["patientId"])
+    level = (urgency or {}).get("level")
+    triage.hub.publish({"type": "checkin", "id": check_in["id"], "urgencyLevel": level,
+                        "checkIn": triage.summary(check_in)})
+    if level == "high":
+        triage.hub.publish({"type": "alert", "checkIn": triage.summary(check_in)})
     # The kiosk gets its readings back - no risk level, no cross-check details.
     return {"success": True, "checkInId": check_in["id"], "incomplete": bool(missing),
             "missingVitals": missing, "readings": check_in["readings"]}
