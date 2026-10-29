@@ -10,6 +10,9 @@ const q = (s) => (s ? `?search=${encodeURIComponent(s)}` : '');
 /** GET /api/staff -> [{ id, name, email, role, clinic, status, accessRole, accessRoleLabel, ... }] */
 export const getStaff = (search = '') => request('GET', `/staff${q(search)}`);
 
+/** GET /api/staff/clinics -> [{ clinic, kiosks: ['K-01', ...] }]  (clinics that have a kiosk) */
+export const getClinics = () => request('GET', '/staff/clinics');
+
 /** POST /api/staff { name, email, role (job title), clinic, accessRole, password } */
 export const addStaff = (account) => request('POST', '/staff', account);
 

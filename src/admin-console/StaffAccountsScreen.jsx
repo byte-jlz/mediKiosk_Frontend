@@ -4,7 +4,7 @@ import { AdminHeader } from '../components/Sidebar';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import Button from '../components/Button';
-import { getStaff, addStaff, updateStaff, removeStaff } from '../services/staffService';
+import { getClinics, getStaff, addStaff, updateStaff, removeStaff } from '../services/staffService';
 import { getCurrentStaff } from '../services/authService';
 import { CLINIC_STAFF, ROLE_LABELS, SUPER_ADMIN } from './adminRoles';
 import { fmtAgo } from './kioskFormat';
@@ -167,7 +167,25 @@ function StaffFormModal({ account, isMe, onClose, onSaved }) {
       : emptyForm);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [clinics, setClinics] = useState(null);   // clinics of the existing kiosks
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  useEffect(() => {
+    getClinics()
+      .then((rows) => {
+        setClinics(rows);
+        // new account: pre-select the clinic when there is only one
+        if (!isEdit && rows.length === 1) setForm((f) => ({ ...f, clinic: f.clinic || rows[0].clinic }));
+      })
+      .catch((err) => setError(err.message));
+  }, [isEdit]);
+
+  // keep an older clinic selectable when editing (it may not have a kiosk any more)
+  const clinicOptions = clinics
+    ? (isEdit && account.clinic && !clinics.some((c) => c.clinic === account.clinic)
+        ? [{ clinic: account.clinic, kiosks: [], legacy: true }, ...clinics]
+        : clinics)
+    : [];
   const positions = form.role && !POSITIONS.includes(form.role) ? [form.role, ...POSITIONS] : POSITIONS;
 
   async function handleSubmit(e) {
@@ -186,7 +204,7 @@ function StaffFormModal({ account, isMe, onClose, onSaved }) {
       name: form.name.trim(),
       email: form.email.trim(),
       role: form.role,
-      clinic: form.clinic.trim(),
+      clinic: form.clinic,
       accessRole: form.accessRole,
       ...(changingPassword ? { password: form.password } : {}),
       ...(isEdit ? { status: form.status } : {}),
@@ -226,7 +244,17 @@ function StaffFormModal({ account, isMe, onClose, onSaved }) {
             </select>
           </Field>
           <Field label="Clinic" required wide>
-            <input value={form.clinic} onChange={set('clinic')} required placeholder="e.g. Northgate Clinic" />
+            <select value={form.clinic} onChange={set('clinic')} required disabled={!clinics}>
+              <option value="" disabled>
+                {!clinics ? 'Loading…' : clinics.length ? 'Select a clinic…' : 'No kiosks yet – add a kiosk first'}
+              </option>
+              {clinicOptions.map((c) => (
+                <option key={c.clinic} value={c.clinic}>
+                  {c.clinic}
+                  {c.legacy ? ' (no kiosk)' : ` – ${c.kiosks.join(', ')}`}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Access role" required full>

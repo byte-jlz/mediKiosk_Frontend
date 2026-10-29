@@ -8,12 +8,28 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.data import append_audit_event, find_staff, find_staff_by_email, staff
+from app.data import append_audit_event, find_staff, find_staff_by_email, kiosks, staff
 from app.schemas import StaffBase, StaffCreate, StaffUpdate
 from app.security import ROLES, SUPER_ADMIN, hash_password, public_account, require_roles
 
 router = APIRouter()
 only_admin = require_roles(SUPER_ADMIN)
+
+
+def kiosk_clinics():
+    """Clinics a staff account can belong to = clinics that have at least one kiosk."""
+    return sorted({k["clinic"] for k in kiosks if k.get("clinic")})
+
+
+def _check_clinic(clinic, current=None):
+    """New / changed clinic must be one of the kiosks' clinics. (An account may keep a
+    clinic it already had, e.g. after that clinic's last kiosk was renamed.)"""
+    if clinic is None or clinic == current:
+        return
+    if clinic not in kiosk_clinics():
+        raise HTTPException(status_code=422,
+                            detail="Clinic must be one of the clinics that have a kiosk: "
+                                   + (", ".join(kiosk_clinics()) or "none yet - add a kiosk first"))
 
 
 def _check_role(role):
@@ -39,9 +55,17 @@ async def get_staff(search: str = Query("", alias="search"), me: dict = Depends(
     ]
 
 
+@router.get("/staff/clinics")
+async def get_clinics(me: dict = Depends(only_admin)):
+    """Options for the Clinic dropdown: clinics of the existing kiosks."""
+    return [{"clinic": c, "kiosks": [k["id"] for k in kiosks if k.get("clinic") == c]}
+            for c in kiosk_clinics()]
+
+
 @router.post("/staff", response_model=StaffBase)
 async def add_staff(payload: StaffCreate, me: dict = Depends(only_admin)):
     _check_role(payload.accessRole)
+    _check_clinic(payload.clinic)
     if find_staff_by_email(payload.email):
         raise HTTPException(status_code=409, detail="An account with that email already exists")
     number = max([int(m["id"].split("-")[1]) for m in staff if m["id"].split("-")[1].isdigit()] or [1000]) + 1
@@ -70,6 +94,7 @@ async def update_staff(staff_id: str, updates: StaffUpdate, me: dict = Depends(o
         raise HTTPException(status_code=404, detail="Staff member not found")
     changes = updates.model_dump(exclude_unset=True)
     _check_role(changes.get("accessRole"))
+    _check_clinic(changes.get("clinic"), current=member.get("clinic"))
     if "email" in changes:
         other = find_staff_by_email(changes["email"])
         if other and other["id"] != staff_id:
