@@ -12,7 +12,6 @@ import KioskSignInScreen from './kiosk-app/KioskSignInScreen';
 import KioskQrScanScreen from './kiosk-app/KioskQrScanScreen';
 import KioskQrDisplayScreen from './kiosk-app/KioskQrDisplayScreen';
 import KioskVitalsWizard from './kiosk-app/KioskVitalsWizard';
-import KioskTofMonitorScreen from './kiosk-app/KioskTofMonitorScreen';
 
 import AppSwitcher from './AppSwitcher';
 import AdminLoginScreen from './admin-console/AdminLoginScreen';
@@ -59,7 +58,6 @@ export default function App() {
         <Route path="/kiosk/qr-scan" element={<KioskQrScanScreen />} />
         <Route path="/kiosk/qr-display" element={<KioskQrDisplayScreen />} />
         <Route path="/kiosk/vitals" element={<KioskVitalsWizard />} />
-        <Route path="/kiosk/tof-live" element={<KioskTofMonitorScreen />} />
 
         {/* ---------- Admin console (desktop web): one login, menu per role ---------- */}
         <Route path="/admin" element={<AdminLoginScreen />} />

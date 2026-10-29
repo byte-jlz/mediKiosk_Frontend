@@ -18,7 +18,9 @@
 //   VITE_KIOSK_ID=K-01
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
-import { MQTT_URL } from './mqttSensorFeed';
+// MQTT broker over WebSockets (Mosquitto port 9001). Default: the same host as the page.
+export const MQTT_URL =
+  import.meta.env.VITE_MQTT_URL || `ws://${window.location.hostname || 'localhost'}:9001`;
 
 export const KIOSK_ID = import.meta.env.VITE_KIOSK_ID || 'K-01';
 const BASE = `medikiosk/${KIOSK_ID}`;

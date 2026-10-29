@@ -34,9 +34,6 @@ src/
 │   ├── kioskAgentService.js   (MQTT: sends scans to the kiosk agent, follows its progress)
 │   ├── kioskSessionService.js (REST: start / read / complete a kiosk check-in session)
 │   ├── vitalsService.js       (patient history)
-│   ├── mqttSensorFeed.js      (shared MQTT-over-WebSocket hook for live sensor feeds)
-│   ├── tofLiveService.js      (live ToF sensor feed over MQTT — useTofLiveFeed hook)
-│   ├── temperatureLiveService.js (live MLX90614 temperature feed — useTemperatureLiveFeed hook)
 │   ├── patientsService.js
 │   ├── staffService.js
 │   ├── kiosksService.js
@@ -67,9 +64,6 @@ src/
 │   │   ├── WizardProgress.jsx    The progress bar + step circles
 │   │   ├── KioskResults.jsx      Final summary (readings only - no risk level)
 │   │   └── wizard.css
-│   ├── KioskTofMonitorScreen.jsx Live sensor monitor: ToF + temperature (/kiosk/tof-live)
-│   ├── TofLiveFeed.jsx           Live ToF card (used on the monitor screen)
-│   └── TemperatureLiveFeed.jsx   Live IR temperature card (used on the monitor screen)
 │
 └── admin-console/               💻 The staff/admin web dashboard
     ├── AdminLoginScreen.jsx
