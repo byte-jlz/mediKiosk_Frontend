@@ -57,7 +57,7 @@ def create_session(kiosk_id: str, patient_id: Optional[str]) -> dict:
         "createdAt": _now(),
         "updatedAt": _now(),
         "readings": {},                 # vital -> latest good reading (+ resultId, ts, simulated)
-        "derived": {"heartRate": None},  # worked out from several readings (vitals_rules.py)
+        "derived": {"heartRate": None, "bmiCategory": None},  # worked out from the readings (vitals_rules.py)
         "failures": {},                 # vital -> latest error text (cleared by a good reading)
         "urgency": None,
         "checkInId": None,

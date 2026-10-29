@@ -124,6 +124,15 @@ than 10 bpm, the BP pulse is still used but both values and a `mismatch` flag ar
 saved for staff (`heartRateCheck` on the check-in). If there is no BP pulse, the
 finger sensor's value is used (`source: "finger_sensor"`).
 
+## BMI category (staff + phone app only)
+
+`app/vitals_rules.py` labels the BMI with **WHO Asia-Pacific** cut-offs by default
+(Underweight < 18.5, Normal 18.5–22.9, Overweight (at risk) 23–24.9, Obese I
+25–29.9, Obese II ≥ 30). The international WHO/CDC cut-offs are kept too — start
+the backend with `BMI_STANDARD=international` to use them. The label is saved as
+`bmiCategory` on the session (`derived`) and on the check-in. The kiosk endpoints
+never return it: the kiosk screen shows only the BMI number.
+
 ## Storage
 
 Everything is still **in memory** (`app/data.py`, `app/store.py`), so restarting

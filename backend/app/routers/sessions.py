@@ -139,6 +139,7 @@ async def complete_session(session_id: str, payload: Optional[SessionComplete] =
         missingVitals=missing,
         failures=session["failures"],
         heartRateCheck=(session.get("derived") or {}).get("heartRate"),   # staff only
+        bmiCategory=(session.get("derived") or {}).get("bmiCategory"),    # staff + phone, NOT kiosk
         urgency=urgency,                                                    # staff only
         simulated=any(x.get("simulated") for x in session["readings"].values()),
     )
