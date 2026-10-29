@@ -74,6 +74,9 @@ def summary(c: dict) -> dict:
         "queueStatus": c.get("queueStatus", "waiting"),
         "seenAt": c.get("seenAt"),
         "seenBy": c.get("seenBy"),
+        "acknowledgedBy": c.get("acknowledgedBy"),
+        "acknowledgedAt": c.get("acknowledgedAt"),
+        "bmiCategory": (c.get("bmiCategory") or {}).get("label"),
         "alert": is_alert(c),
         "alertAcknowledged": bool(c.get("alertAcknowledged")),
         "simulated": bool(c.get("simulated")),
@@ -85,6 +88,7 @@ def summary(c: dict) -> dict:
             "spo2": val("spo2"),
             "respiration": val("respiration"),
             "weight": val("weight"),
+            "height": val("height"),
             "bmi": val("bmi"),
         },
     }
@@ -116,6 +120,23 @@ def queue_counts(rows: Optional[List[dict]] = None) -> Dict[str, int]:
                          if c.get("queueStatus") == "seen" and (c.get("seenAt") or 0) >= start_of_day),
         "checkInsToday": sum(1 for c in check_ins if (c.get("createdAt") or 0) >= start_of_day),
     }
+
+
+def all_records(search: str = "") -> List[dict]:
+    """PATIENT RECORDS: every check-in, newest first - waiting AND seen.
+
+    Shared by the whole clinic: every Clinic Staff account sees the same list,
+    whoever is logged in. "seenBy" only says who handled the patient.
+    """
+    term = (search or "").strip().lower()
+    rows = [summary(c) for c in check_ins]
+    if term:
+        rows = [r for r in rows
+                if term in (r["patientName"] or "").lower()
+                or term in (r["patientId"] or "").lower()
+                or term in r["id"].lower()]
+    rows.sort(key=lambda r: r["createdAt"] or 0, reverse=True)
+    return rows
 
 
 def open_alerts() -> List[dict]:

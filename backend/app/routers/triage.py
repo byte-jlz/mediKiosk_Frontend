@@ -2,6 +2,8 @@
 Clinic Staff endpoints (use-case diagram, Figure 3.4). All CLINIC STAFF only.
 
     GET  /api/admin/queue                          prioritized queue + counts + open alerts
+    GET  /api/admin/records?search=                patient records: EVERY check-in, newest first,
+                                                   the same list for every staff account
     GET  /api/admin/queue/{checkInId}              vital signs details + the patient's history
     POST /api/admin/queue/{checkInId}/seen         patient was called in -> leaves the queue
     POST /api/admin/queue/{checkInId}/acknowledge  staff saw the High Risk alert
@@ -46,6 +48,12 @@ async def get_queue(me: dict = Depends(only_staff)):
     }
 
 
+@router.get("/admin/records")
+async def get_records(search: str = "", me: dict = Depends(only_staff)):
+    """Patient records: every check-in (waiting + seen), the same for every staff account."""
+    return triage.all_records(search)
+
+
 @router.get("/admin/queue/{check_in_id}")
 async def get_check_in(check_in_id: str, request: Request, me: dict = Depends(only_staff)):
     c = _get(check_in_id)
@@ -59,9 +67,10 @@ async def mark_seen(check_in_id: str, me: dict = Depends(only_staff)):
     c = _get(check_in_id)
     if c.get("queueStatus", "waiting") != "waiting":
         raise HTTPException(status_code=409, detail="This patient was already marked as seen")
-    c.update(queueStatus="seen", seenAt=round(time.time(), 3), seenBy=me["name"])
+    c.update(queueStatus="seen", seenAt=round(time.time(), 3), seenBy=me["name"],
+             seenById=me["id"])
     if triage.is_alert(c) and not c.get("alertAcknowledged"):
-        c.update(alertAcknowledged=True, acknowledgedBy=me["name"])
+        c.update(alertAcknowledged=True, acknowledgedBy=me["name"], acknowledgedAt=c["seenAt"])
     append_audit_event("QUEUE: PATIENT SEEN", check_in_id, role=me["email"])
     triage.hub.publish({"type": "queue", "id": check_in_id, "queueStatus": "seen",
                         "patientName": triage.summary(c)["patientName"], "by": me["name"]})
