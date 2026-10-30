@@ -6,6 +6,7 @@ import QrLoginScreen from './patient-app/QrLoginScreen';
 import VitalsHomeScreen from './patient-app/VitalsHomeScreen';
 import ProfileScreen from './patient-app/ProfileScreen';
 import SettingsScreen from './patient-app/SettingsScreen';
+import MyQrScreen from './patient-app/MyQrScreen';
 
 import KioskLandingScreen from './kiosk-app/KioskLandingScreen';
 import KioskSignInScreen from './kiosk-app/KioskSignInScreen';
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/app/vitals-home" element={<VitalsHomeScreen />} />
         <Route path="/app/profile" element={<ProfileScreen />} />
         <Route path="/app/settings" element={<SettingsScreen />} />
+        <Route path="/app/my-qr" element={<MyQrScreen />} />
 
         {/* ---------- Physical kiosk (landscape / Surface Pro) ---------- */}
         <Route path="/kiosk" element={<KioskLandingScreen />} />

@@ -7,8 +7,8 @@ from pydantic import BaseModel, EmailStr, Field
 from app import patients_db
 from app.schemas import LoginRequest, LoginResponse, LogoutResponse, StaffBase
 from app.data import append_audit_event, find_patient_by_email, find_patient_by_qr, find_staff_by_email
-from app.security import (create_patient_token, create_token, current_staff, public_account,
-                          verify_password)
+from app.security import (create_patient_token, create_token, current_patient, current_staff,
+                          public_account, verify_password)
 
 router = APIRouter()
 
@@ -77,6 +77,20 @@ async def patient_login_qr(payload: QrLogin, request: Request):
         raise HTTPException(status_code=403, detail="This patient record is archived - please ask the clinic staff")
     append_audit_event("PATIENT QR LOGIN", p["id"], role=p["email"], ip=_ip(request))
     return _patient_reply(p)
+
+
+@router.get("/patient/me/qr")
+async def patient_my_qr(me: dict = Depends(current_patient)):
+    """Phone app: the signed-in patient's OWN kiosk-login QR token - the same one
+    the Super Admin sees on the patient's record. Read fresh on every call, so if
+    the admin generates a new code, the phone shows the new one too."""
+    return {
+        "patientId": me["id"],
+        "firstName": me.get("firstName", ""),
+        "middleName": me.get("middleName", ""),
+        "lastName": me.get("lastName", ""),
+        "qrToken": me["qrToken"],
+    }
 
 
 # ---------------------------------------------------------------- staff

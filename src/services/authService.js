@@ -15,6 +15,7 @@ const AUTH_STORAGE_KEY = 'mkAdminCurrentStaff';
 const PATIENT_PROFILE_KEY = 'mkPatientProfile';
 const PATIENT_PROFILES_KEY = 'mkPatientProfiles';
 const PATIENT_ACTIVE_PROFILE_ID_KEY = 'mkPatientActiveProfileId';
+const PATIENT_TOKEN_KEY = 'mkPatientToken';
 const FAKE_DELAY_MS = 500;
 const DEMO_QR_TOKEN = 'demo-qr-token';
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -78,6 +79,55 @@ export function savePatientProfile(profile) {
   }
 }
 
+/** The phone app's patient sign-in token (JWT, role "patient"). */
+export function getPatientToken() {
+  if (typeof window === 'undefined') return '';
+  try {
+    return window.localStorage.getItem(PATIENT_TOKEN_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function setPatientToken(token) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (token) window.localStorage.setItem(PATIENT_TOKEN_KEY, token);
+    else window.localStorage.removeItem(PATIENT_TOKEN_KEY);
+  } catch {
+    // storage blocked - the patient just has to sign in again after a refresh
+  }
+}
+
+/**
+ * REAL BACKEND: GET /api/patient/me/qr (patient token)
+ *   -> { patientId, firstName, middleName, lastName, qrToken }
+ * The SAME QR token the Super Admin sees on the patient's record. Fetched fresh
+ * each time, so a code the admin regenerated shows up on the phone too.
+ */
+export async function getMyKioskQr() {
+  const token = getPatientToken();
+  if (!token) {
+    const err = new Error('Please sign in to see your kiosk QR code.');
+    err.status = 401;
+    throw err;
+  }
+  try {
+    return await request('GET', '/patient/me/qr', undefined, { token });
+  } catch (err) {
+    if (err.status === 401) {
+      setPatientToken('');
+      err.message = 'Your session has ended. Please sign in again to see your QR code.';
+    }
+    throw err;
+  }
+}
+
+/** Phone app sign-out: forget the patient token (no server call needed for a JWT). */
+export function patientLogout() {
+  setPatientToken('');
+}
+
 export function getCurrentPatientProfile() {
   if (typeof window === 'undefined') return null;
 
@@ -139,6 +189,7 @@ export async function patientLogin(email, password) {
   }
   const { token, patient } = await request(
     'POST', '/patient/login', { email: email.trim(), password }, { auth: false });
+  setPatientToken(token);
   savePatientProfile(patient);
   return { token, patient };
 }
@@ -150,6 +201,7 @@ export async function patientLogin(email, password) {
  */
 export async function patientSignup(formData) {
   const { token, patient } = await request('POST', '/patient/signup', formData, { auth: false });
+  setPatientToken(token);
   savePatientProfile(patient);
   return { token, patient };
 }
@@ -171,6 +223,7 @@ export async function patientLoginWithQr(qrToken) {
     throw new Error('QR code not recognized. Please ask the clinic staff for a new code.');
   }
   const res = await request('POST', '/patient/login-qr', { qrToken: token }, { auth: false });
+  setPatientToken(res.token);
   savePatientProfile(res.patient);
   return res;
 }

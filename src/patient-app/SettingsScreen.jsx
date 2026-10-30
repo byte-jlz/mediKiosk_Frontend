@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentPatientProfile, logout, savePatientProfile } from '../services/authService';
+import { getCurrentPatientProfile, patientLogout, savePatientProfile } from '../services/authService';
 import PhoneShell from './PhoneShell';
 import './SettingsScreen.css';
 
@@ -42,7 +42,7 @@ export default function SettingsScreen() {
   }
 
   async function handleLogout() {
-    await logout();
+    patientLogout();
     navigate('/app');
   }
 
@@ -124,7 +124,7 @@ export default function SettingsScreen() {
               setFeedback('');
               setShowPasswordForm((prev) => !prev);
             }} />
-            <LinkRow icon="▦" label="Scan QR code" onClick={() => navigate('/app/qr-login')} />
+            <LinkRow icon="▦" label="My kiosk QR code" onClick={() => navigate('/app/my-qr')} />
             <LinkRow icon="📄" label="Privacy policy" />
           </Section>
 

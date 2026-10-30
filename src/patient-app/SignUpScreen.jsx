@@ -47,7 +47,8 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       await patientSignup(form);
-      navigate('/app/vitals-home');
+      // Show the new patient their kiosk QR right away (same code the admin sees).
+      navigate('/app/my-qr', { state: { justCreated: true } });
     } catch (err) {
       setError(err.message || 'Could not create account. Please try again.');
     } finally {

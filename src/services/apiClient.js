@@ -32,11 +32,14 @@ export function setStaffToken(token) {
  * request('GET', '/staff')            -> parsed JSON
  * request('POST', '/staff', {...})
  * options.auth = false  -> don't send the token (used by the login call)
+ * options.token = '...' -> send THIS token instead of the staff one (phone app
+ *                          patient routes); a 401 then doesn't log out the admin console
  */
-export async function request(method, path, body, { auth = true } = {}) {
+export async function request(method, path, body, { auth = true, token: tokenOverride } = {}) {
   const headers = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  const token = auth ? getStaffToken() : '';
+  const usesStaffToken = auth && tokenOverride === undefined;
+  const token = !auth ? '' : usesStaffToken ? getStaffToken() : tokenOverride;
   if (token) headers.Authorization = `Bearer ${token}`;
 
   let res;
@@ -52,7 +55,7 @@ export async function request(method, path, body, { auth = true } = {}) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401 && auth) {
+    if (res.status === 401 && usesStaffToken) {
       // token missing / expired / account deleted -> back to login
       window.dispatchEvent(new CustomEvent('mk-admin-session-expired'));
     }

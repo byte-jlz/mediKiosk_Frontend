@@ -116,6 +116,29 @@ def account_from_token(token: str) -> dict:
     return account
 
 
+def current_patient(creds: Optional[HTTPAuthorizationCredentials] = Depends(_bearer)) -> dict:
+    """The signed-in PATIENT (phone app). Staff tokens are rejected here, and
+    patient tokens are rejected by every staff route (account_from_token)."""
+    from app.data import find_patient        # late import, same reason as above
+
+    if creds is None or creds.scheme.lower() != "bearer":
+        raise _unauthorized("Not signed in")
+    try:
+        payload = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise _unauthorized("Session expired - please sign in again")
+    except jwt.InvalidTokenError:
+        raise _unauthorized("Invalid session - please sign in again")
+    if payload.get("role") != "patient":
+        raise _unauthorized("Not a patient session")
+    patient = find_patient(payload.get("sub", ""))
+    if patient is None:
+        raise _unauthorized("Account no longer exists")
+    if patient.get("status") == "archived":
+        raise HTTPException(status_code=403, detail="This patient record is archived - please ask the clinic staff")
+    return patient
+
+
 def require_roles(*roles: str):
     """Dependency: only these roles may call the route (403 for the others)."""
     def check(account: dict = Depends(current_staff)) -> dict:
