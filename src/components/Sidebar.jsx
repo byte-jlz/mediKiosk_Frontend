@@ -1,28 +1,37 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { getCurrentStaff, logout } from '../services/authService';
+import { AUTH_EVENT } from '../services/apiClient';
+import { CLINIC_STAFF, ROLE_LABELS, SUPER_ADMIN, menuFor } from '../admin-console/adminRoles';
+import AlertsBell from '../admin-console/staff/AlertsBell';
 import './Sidebar.css';
 
-const NAV_ITEMS = [
-  { to: '/admin/dashboard', label: 'Overview', icon: '▦', end: true },
-  { to: '/admin/staff', label: 'Staff accounts', icon: '👥' },
-  { to: '/admin/patients', label: 'Patients', icon: '📄' },
-  { to: '/admin/kiosks', label: 'Kiosks', icon: '🖥' },
-  { to: '/admin/kiosks-activity', label: 'Kiosks Activity', icon: '📈' },
-  { to: '/admin/audit-logs', label: 'Audit Logs', icon: '📋' },
-];
+/** Re-reads the signed-in staff whenever login / logout / role refresh happens. */
+function useCurrentStaff() {
+  const [staff, setStaff] = useState(getCurrentStaff());
+  useEffect(() => {
+    const update = () => setStaff(getCurrentStaff());
+    window.addEventListener(AUTH_EVENT, update);
+    return () => window.removeEventListener(AUTH_EVENT, update);
+  }, []);
+  return staff;
+}
 
 export default function Sidebar() {
+  const staff = useCurrentStaff();
+  const role = staff.accessRole;
+  const items = menuFor(role);
+
   return (
     <aside className="mk-sidebar">
       <div className="mk-sidebar__brand">
         <h1>Medi-Kiosk</h1>
-        <p>Clinical Console</p>
+        <p>{role === SUPER_ADMIN ? 'Administration Console' : 'Clinical Console'}</p>
       </div>
 
       <nav className="mk-sidebar__nav">
-        <p className="mk-sidebar__section">Management</p>
-        {NAV_ITEMS.map((item) => (
+        <p className="mk-sidebar__section">{ROLE_LABELS[role] || 'Menu'}</p>
+        {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -38,17 +47,10 @@ export default function Sidebar() {
   );
 }
 
-export function AdminHeader({ searchValue, onSearchChange, searchPlaceholder = 'Search patients, kiosks, alert..' }) {
+export function AdminHeader({ searchValue, onSearchChange, searchPlaceholder = 'Search patients, kiosks, alert..', showSearch = true }) {
   const navigate = useNavigate();
-  const [staff, setStaff] = useState(getCurrentStaff());
+  const staff = useCurrentStaff();
   const [showMenu, setShowMenu] = useState(false);
-
-  useEffect(() => {
-    const updateStaff = () => setStaff(getCurrentStaff());
-
-    window.addEventListener('mk-admin-auth-updated', updateStaff);
-    return () => window.removeEventListener('mk-admin-auth-updated', updateStaff);
-  }, []);
 
   useEffect(() => {
     if (!showMenu) return undefined;
@@ -72,15 +74,18 @@ export function AdminHeader({ searchValue, onSearchChange, searchPlaceholder = '
 
   return (
     <header className="mk-admin-header">
-      <input
-        className="mk-admin-header__search"
-        placeholder={searchPlaceholder}
-        value={searchValue}
-        onChange={(e) => onSearchChange?.(e.target.value)}
-      />
-      <button className="mk-admin-header__bell" aria-label="Notifications">
-        🔔<span className="mk-admin-header__bell-dot" />
-      </button>
+      {showSearch ? (
+        <input
+          className="mk-admin-header__search"
+          placeholder={searchPlaceholder}
+          value={searchValue}
+          onChange={(e) => onSearchChange?.(e.target.value)}
+        />
+      ) : (
+        <div className="mk-admin-header__spacer" />
+      )}
+      {/* "Receive priority alerts" is a Clinic Staff use case (Figure 3.4) */}
+      {staff.accessRole === CLINIC_STAFF && <AlertsBell />}
       <div className="mk-admin-header__user">
         <button
           type="button"
@@ -90,7 +95,10 @@ export function AdminHeader({ searchValue, onSearchChange, searchPlaceholder = '
         >
           <div className="mk-admin-header__user-text">
             <p className="mk-admin-header__user-name">{staff.name?.toUpperCase()}</p>
-            <p className="mk-admin-header__user-role">{staff.email || staff.role}</p>
+            <p className="mk-admin-header__user-role">
+              {ROLE_LABELS[staff.accessRole] || staff.role}
+              {staff.email ? ` · ${staff.email}` : ''}
+            </p>
           </div>
           <div className="mk-admin-header__avatar">{staff.initials}</div>
         </button>

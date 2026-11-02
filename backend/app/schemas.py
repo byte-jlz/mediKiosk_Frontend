@@ -35,23 +35,31 @@ class StaffBase(BaseModel):
     email: EmailStr
     role: str
     clinic: str
-    status: Optional[str] = 'Online'
-    lastActive: Optional[str] = 'just now'
+    status: Optional[str] = 'Active'
+    lastActive: Optional[str] = None
     initials: Optional[str] = None
+    accessRole: Optional[str] = None        # "super_admin" | "clinic_staff" (app/security.py)
+    accessRoleLabel: Optional[str] = None   # "Super Admin" | "Clinic Staff"
+    lastLoginAt: Optional[float] = None     # epoch seconds of the last successful sign-in
+    # passwordHash is never part of this model, so it is never sent out
 
 class StaffCreate(BaseModel):
     name: str
     email: EmailStr
-    role: str
+    role: str                                # job title, e.g. Nurse
     clinic: str
+    accessRole: str = "clinic_staff"
+    password: str = Field(..., min_length=8)
 
 class StaffUpdate(BaseModel):
-    name: Optional[str]
-    email: Optional[EmailStr]
-    role: Optional[str]
-    clinic: Optional[str]
-    status: Optional[str]
-    lastActive: Optional[str]
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[str] = None
+    clinic: Optional[str] = None
+    status: Optional[str] = None
+    lastActive: Optional[str] = None
+    accessRole: Optional[str] = None
+    password: Optional[str] = Field(None, min_length=8)   # set a new password
 
 class KioskBase(BaseModel):
     id: str
@@ -61,6 +69,11 @@ class KioskBase(BaseModel):
     uptime: str
     today: int
     firmware: str
+    # filled in from the kiosk agent's MQTT status (see app/mqtt_bridge.py)
+    agentOnline: Optional[bool] = None
+    agentBusy: Optional[bool] = None
+    agentSimulated: Optional[bool] = None
+    lastSeen: Optional[float] = None
 
 class KioskCreate(BaseModel):
     name: str

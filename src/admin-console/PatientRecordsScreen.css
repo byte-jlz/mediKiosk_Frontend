@@ -406,3 +406,15 @@
     flex-direction: column;
   }
 }
+
+.mk-patient-record__archived {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin: 0 0 20px;
+  border-radius: var(--radius-md);
+  background: #f3f4f6;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}

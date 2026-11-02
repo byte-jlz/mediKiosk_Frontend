@@ -26,3 +26,8 @@
 .mk-tabs__icon {
   font-size: 18px;
 }
+
+/* Dark mode: navy-on-navy made the selected tab invisible */
+body.dark-mode .mk-tabs__tab.is-active {
+  color: var(--ink);
+}

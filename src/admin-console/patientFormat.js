@@ -46,3 +46,22 @@ export function formatMetricValue(value) {
   }
   return String(value);
 }
+
+/** Age in whole years from a YYYY-MM-DD birthday ('' if unknown). */
+export function calculateAge(birthday) {
+  if (!birthday) return '';
+  const dob = new Date(`${birthday}T00:00:00`);
+  if (Number.isNaN(dob.getTime())) return '';
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const beforeBirthday =
+    today.getMonth() < dob.getMonth() ||
+    (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate());
+  if (beforeBirthday) age -= 1;
+  return age >= 0 ? age : '';
+}
+
+/** epoch seconds (from the backend) -> "October 29, 2026" */
+export function formatEpochDate(epochSec) {
+  return epochSec ? formatDate(new Date(epochSec * 1000).toISOString()) : '—';
+}

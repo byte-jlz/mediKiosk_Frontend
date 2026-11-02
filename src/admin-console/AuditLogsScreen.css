@@ -8,3 +8,9 @@
   letter-spacing: 0.3px;
   font-size: 12px;
 }
+
+.mk-audit__action {
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.2px;
+}

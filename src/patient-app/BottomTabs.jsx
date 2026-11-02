@@ -6,6 +6,7 @@ export default function BottomTabs() {
 
   const tabs = [
     { key: 'vitals', label: 'Vitals', icon: '⤳', path: '/app/vitals-home' },
+    { key: 'qr', label: 'My QR', icon: '▦', path: '/app/my-qr' },
     { key: 'profile', label: 'Profile', icon: '☺', path: '/app/profile' },
   ];
 
