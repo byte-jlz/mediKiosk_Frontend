@@ -23,8 +23,11 @@ const IDLE = { phase: 'idle' };
  *  2. For each step, send a scan to the kiosk agent over MQTT and follow its
  *     `state` messages: "I'm ready" prompts, countdowns, then the result.
  *  3. Failed?  Try again, or "Skip for now" ONCE (the step moves to the end).
- *     Failed again after skipping -> "Continue without it" (saved as
- *     incomplete and flagged for staff; the risk model is not run).
+ *     Failed again after skipping:
+ *       - registered patient -> must try again (or ask staff / cancel); their
+ *         record only takes a COMPLETE check-in
+ *       - guest -> may "Continue without it" (saved as incomplete and flagged
+ *         for staff; the risk model is not run)
  *  4. Results: the patient's own readings only - the risk level is staff-only.
  */
 export default function KioskVitalsWizard() {
@@ -32,6 +35,7 @@ export default function KioskVitalsWizard() {
   const patient = getCurrentPatientProfile();
   const patientId = patient?.id || null;
   const patientName = patient?.firstName || 'Guest';
+  const isGuest = !patientId;
   const fullName = [patient?.firstName, patient?.lastName].filter(Boolean).join(' ');
 
   const { agent, connection, agentOnline } = useKioskAgent();
@@ -141,6 +145,7 @@ export default function KioskVitalsWizard() {
   }
 
   function giveUp() {
+    if (!isGuest) return; // registered patients must complete every reading
     setMissing((m) => [...m, currentKey]);
     next();
   }
@@ -155,7 +160,7 @@ export default function KioskVitalsWizard() {
     setFinishing(true);
     setFinishError(null);
     try {
-      const saved = await completeKioskSession(sessionId, missing.length > 0);
+      const saved = await completeKioskSession(sessionId, isGuest && missing.length > 0);
       if (patientId) {
         // Until the admin console reads check-ins from the backend (step 4b),
         // also keep its local demo store up to date.
@@ -185,18 +190,15 @@ export default function KioskVitalsWizard() {
     <KioskShell>
       <div className="mk-kwizard">
         {!isResults && (
-          <div className="mk-kwizard__top">
-            <WizardProgress
-              order={order}
-              position={position}
-              done={done}
-              missing={missing}
-              patientName={patientName}
-            />
+          <header className="mk-kwizard__top">
+            <div>
+              <p className="mk-kwizard__welcome">Welcome, {patientName}</p>
+              <p className="mk-kwizard__subtitle">Health check-in</p>
+            </div>
             <button type="button" className="mk-kwizard__cancel" onClick={cancelCheckIn}>
               ✕ Cancel check-in
             </button>
-          </div>
+          </header>
         )}
 
         {sessionError && (
@@ -208,34 +210,43 @@ export default function KioskVitalsWizard() {
           </div>
         )}
 
-        <div className="mk-kwizard__content">
-          {isResults ? (
-            <KioskResults
-              session={session}
-              missing={missing}
-              isGuest={!patientId}
-              finishing={finishing}
-              error={finishError}
-              onFinish={finish}
-            />
-          ) : (
-            <ScanStepScreen
-              key={currentKey}
-              step={step}
-              run={run}
-              reading={readings[currentKey]}
-              sensorsReady={sensorsReady}
-              sensorsMessage={sensorsMessage}
-              canSkip={!skipped[currentKey] && !isLast && !runActive}
-              canGiveUp={(Boolean(skipped[currentKey]) || isLast) && run.phase === 'failed'}
-              onStart={startScan}
-              onConfirm={confirmStep}
-              onContinue={next}
-              onRetry={startScan}
-              onSkip={skipForNow}
-              onGiveUp={giveUp}
-            />
+        <div className="mk-kwizard__body">
+          {!isResults && (
+            <aside className="mk-kwizard__rail">
+              <WizardProgress order={order} position={position} done={done} missing={missing} />
+            </aside>
           )}
+
+          <div className="mk-kwizard__content">
+            {isResults ? (
+              <KioskResults
+                session={session}
+                missing={missing}
+                isGuest={isGuest}
+                finishing={finishing}
+                error={finishError}
+                onFinish={finish}
+              />
+            ) : (
+              <ScanStepScreen
+                key={currentKey}
+                step={step}
+                run={run}
+                reading={readings[currentKey]}
+                sensorsReady={sensorsReady}
+                sensorsMessage={sensorsMessage}
+                canSkip={!skipped[currentKey] && !isLast && !runActive}
+                canGiveUp={isGuest && (Boolean(skipped[currentKey]) || isLast) && run.phase === 'failed'}
+              mustComplete={!isGuest && (Boolean(skipped[currentKey]) || isLast)}
+                onStart={startScan}
+                onConfirm={confirmStep}
+                onContinue={next}
+                onRetry={startScan}
+                onSkip={skipForNow}
+                onGiveUp={giveUp}
+              />
+            )}
+          </div>
         </div>
       </div>
     </KioskShell>

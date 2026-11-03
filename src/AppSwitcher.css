@@ -47,3 +47,11 @@
 .mk-switcher__btn:hover:not(.is-active) {
   background: rgba(255,255,255,0.08);
 }
+
+/* Hide the demo switcher on the real portrait kiosk touchscreen (1080 x 1920),
+   where it would cover the top of the kiosk screens. Phones are narrower. */
+@media (orientation: portrait) and (min-width: 1000px) {
+  .mk-switcher {
+    display: none;
+  }
+}

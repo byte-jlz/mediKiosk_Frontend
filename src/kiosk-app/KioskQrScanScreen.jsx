@@ -121,8 +121,10 @@ export default function KioskQrScanScreen() {
     <KioskShell>
       <div className="mk-kqr mk-kqr--dark">
         <button className="mk-kqr__back" onClick={() => navigate('/kiosk')} aria-label="Go back">
-          ←
+          ← Back
         </button>
+
+        <h2 className="mk-kqr__title">Scan your QR code</h2>
 
         <div className={`mk-kqr__camera${cameraState === 'live' ? ' is-scanning' : ''}`}>
           <video ref={videoRef} className="mk-kqr__video" muted playsInline />

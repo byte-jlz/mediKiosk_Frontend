@@ -1,3 +1,7 @@
+/* Kiosk check-in on the PORTRAIT touchscreen (1080 x 1920 canvas).
+   Top to bottom: progress header -> step panel (instructions, big dial,
+   then the action buttons at the bottom, where they are easy to reach). */
+
 .mk-kwizard {
   height: 100%;
   display: flex;
@@ -7,152 +11,185 @@
 
 .mk-kwizard__content {
   flex: 1;
+  min-width: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
-/* Wider progress bar step labels get more room in the kiosk shell */
-.mk-kwizard .mk-wizard-progress {
-  padding: 24px 40px 18px;
-}
-
-.mk-kwizard .mk-wizard-progress__steps {
-  overflow-x: visible;
-  justify-content: space-between;
-}
-
-.mk-kwizard .mk-wizard-progress__step {
-  width: auto;
-}
-
-.mk-kwizard .mk-wizard-progress__label {
-  font-size: 12px;
-}
-
-/* Landscape step layout: colored panel on top (wide), readout centered below,
-   matching the Surface Pro screens exactly */
-.mk-kwizard .mk-vital-step__panel {
-  padding: 40px 48px;
-}
-
-.mk-kwizard .mk-vital-step__desc {
-  max-width: 520px;
-}
-
-.mk-kwizard .mk-vital-step__dial {
-  width: 170px;
-  height: 170px;
-}
-
-.mk-kwizard .mk-vital-step__value {
-  font-size: 34px;
-}
-
-/* Results grid: 3 columns instead of 2, since there's more width to use */
-.mk-kwizard .mk-results {
-  padding: 32px 48px 40px;
-}
-
-.mk-kwizard .mk-results__grid {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.mk-kwizard .mk-results__title {
-  font-size: 26px;
-}
-
-/* The readout column sits in the right half of the colored panel */
-.mk-kwizard .mk-vital-step__panel--with-extra {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  column-gap: 32px;
-  align-items: start;
-}
-
-.mk-kwizard .mk-vital-step__panel--with-extra > * {
-  grid-column: 1;
-}
-
-.mk-kwizard .mk-vital-step__panel--with-extra > .mk-vital-step__extra {
-  grid-column: 2;
-  grid-row: 1 / span 4;
-  align-self: center;
-  width: 340px;
-}
-
-.mk-kwizard .mk-vital-step__extra .mk-tof--compact {
-  margin-top: 0;
-}
-
-/* Result dial lives in the panel's side column (above the live feed, if any),
-   so the panel fills the whole step instead of leaving an empty area below */
-.mk-kwizard .mk-vital-step--readout-in-panel .mk-vital-step__panel {
-  flex: 1;
-  align-content: center;
-}
-
-.mk-kwizard .mk-vital-step__extra {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.mk-kwizard .mk-vital-step__extra .mk-vital-step__readout {
-  flex: none;
-  width: 100%;
-  padding: 20px;
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-}
-
-/* Share the column with a live feed: shrink the dial so both fit on screen */
-.mk-kwizard .mk-vital-step__extra .mk-vital-step__readout:not(:only-child) {
-  padding: 14px 16px;
-}
-
-.mk-kwizard .mk-vital-step__extra .mk-vital-step__readout:not(:only-child) .mk-vital-step__dial {
-  width: 120px;
-  height: 120px;
-}
-
-.mk-kwizard .mk-vital-step__extra .mk-vital-step__readout:not(:only-child) .mk-vital-step__value {
-  font-size: 28px;
-}
-
-@media (max-width: 900px) {
-  .mk-kwizard .mk-vital-step__panel--with-extra {
-    grid-template-columns: 1fr;
-  }
-  .mk-kwizard .mk-vital-step__panel--with-extra > .mk-vital-step__extra {
-    grid-column: 1;
-    grid-row: auto;
-    width: 100%;
-    margin-top: 20px;
-  }
-}
-
-/* Top bar: progress + "Cancel check-in" */
+/* ---------- Header: welcome + cancel ---------- */
 .mk-kwizard__top {
-  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 48px 64px 40px;
+  border-bottom: 2px solid var(--border-soft);
+}
+
+.mk-kwizard__welcome {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 1.1;
+}
+
+.mk-kwizard__subtitle {
+  margin: 8px 0 0;
+  font-size: 26px;
+  color: var(--muted);
+  letter-spacing: 0.4px;
 }
 
 .mk-kwizard__cancel {
-  position: absolute;
-  top: 22px;
-  right: 40px;
-  padding: 8px 14px;
-  border: 1px solid var(--border);
+  flex-shrink: 0;
+  padding: 18px 28px;
+  border: 2px solid var(--border);
   border-radius: 999px;
   background: var(--white);
   color: var(--muted);
-  font: 600 13px var(--font-body);
+  font: 600 26px var(--font-body);
 }
 
 .mk-kwizard__cancel:hover {
   color: var(--ink);
+}
+
+/* ---------- Body: vertical progress rail | step ---------- */
+.mk-kwizard__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.mk-kwizard__rail {
+  width: 300px;
+  flex-shrink: 0;
+  border-right: 2px solid var(--border-soft);
+  background: var(--white);
+}
+
+.mk-vprogress {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 56px 20px 72px 32px;
+}
+
+.mk-vprogress__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 56px;
+}
+
+.mk-vprogress__percent {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--navy-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-vprogress__count {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Steps spread evenly down the rail, joined by a line that fills as you go */
+.mk-vprogress__steps {
+  --circle: 64px;
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mk-vprogress__track {
+  position: absolute;
+  top: calc(var(--circle) / 2);
+  bottom: calc(var(--circle) / 2);
+  left: calc(var(--circle) / 2 - 4px);
+  width: 8px;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.mk-vprogress__fill {
+  display: block;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--navy);
+  transition: height 400ms ease;
+}
+
+.mk-vprogress__step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mk-vprogress__circle {
+  width: var(--circle);
+  height: var(--circle);
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 4px solid var(--border);
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--muted-light);
+  transition: transform 200ms ease;
+}
+
+.mk-vprogress__label {
+  font-size: 22px;
+  line-height: 1.25;
+  color: var(--muted-light);
+}
+
+.mk-vprogress__step.is-done .mk-vprogress__circle {
+  background: var(--green-bg);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.mk-vprogress__step.is-done .mk-vprogress__label {
+  color: var(--ink-soft);
+}
+
+.mk-vprogress__step.is-missing .mk-vprogress__circle {
+  background: var(--amber-bg);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.mk-vprogress__step.is-active .mk-vprogress__circle {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #ffffff;
+  transform: scale(1.12);
+  box-shadow: 0 0 0 10px rgba(30, 58, 95, 0.12);
+}
+
+.mk-vprogress__step.is-active .mk-vprogress__label {
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 24px;
 }
 
 /* Server / sensor problem banner */
@@ -160,11 +197,243 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin: 12px 40px 0;
-  padding: 10px 16px;
-  border-radius: var(--radius-sm);
+  gap: 24px;
+  margin: 24px 64px 0;
+  padding: 20px 28px;
+  border-radius: 16px;
   background: var(--red-bg);
   color: var(--ink);
-  font-size: 14px;
+  font-size: 26px;
+}
+
+/* ---------- Step panel: one tall column ---------- */
+.mk-kwizard .mk-vital-step {
+  flex: 1;
+}
+
+.mk-kwizard .mk-vital-step__panel,
+.mk-kwizard .mk-vital-step__panel--with-extra {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 56px 56px 64px;
+}
+
+.mk-kwizard .mk-vital-step__icon {
+  width: 112px;
+  height: 112px;
+  border-radius: 30px;
+  font-size: 56px;
+  margin-bottom: 32px;
+}
+
+.mk-kwizard .mk-vital-step__title {
+  font-size: 68px;
+  margin: 0 0 24px;
+}
+
+.mk-kwizard .mk-vital-step__desc {
+  max-width: none;
+  font-size: 34px;
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+.mk-kwizard .mk-scan__instruction {
+  font-size: 42px;
+  line-height: 1.4;
+}
+
+.mk-kwizard .mk-scan__hint {
+  margin: 0 0 24px;
+  font-size: 28px;
+}
+
+.mk-kwizard .mk-scan__error {
+  max-width: none;
+  margin: 8px 0 24px;
+  padding: 24px 30px;
+  gap: 8px;
+  border-left-width: 8px;
+  border-radius: 16px;
+  font-size: 28px;
+  line-height: 1.4;
+}
+
+/* Reading card (dial + values) in the middle of the screen */
+.mk-kwizard .mk-vital-step__extra {
+  order: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 32px 0 0;
+}
+
+.mk-kwizard .mk-vital-step__extra .mk-vital-step__readout {
+  flex: none;
+  width: 100%;
+  padding: 40px 48px;
+  gap: 10px;
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: 32px;
+  box-shadow: var(--shadow-md);
+}
+
+.mk-kwizard .mk-vital-step__dial {
+  width: 300px;
+  height: 300px;
+  border-width: 6px;
+}
+
+.mk-kwizard .mk-vital-step__value {
+  font-size: 96px;
+  line-height: 1;
+}
+
+.mk-kwizard .mk-scan__countdown {
+  font-size: 120px;
+}
+
+.mk-kwizard .mk-scan__countdown small {
+  margin-top: 10px;
+  font-size: 26px;
+}
+
+.mk-kwizard .mk-vital-step__spinner {
+  width: 96px;
+  height: 96px;
+  border-width: 8px;
+}
+
+.mk-kwizard .mk-vital-step__unit {
+  font-size: 34px;
+  margin: 20px 0 0;
+}
+
+.mk-kwizard .mk-vital-step__unit-label {
+  font-size: 22px;
+  letter-spacing: 1.2px;
+}
+
+.mk-kwizard .mk-scan__values {
+  gap: 20px 40px;
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top-width: 2px;
+}
+
+.mk-kwizard .mk-scan__values dt {
+  font-size: 22px;
+}
+
+.mk-kwizard .mk-scan__values dd {
+  margin-top: 6px;
+  font-size: 44px;
+}
+
+.mk-kwizard .mk-scan__values dd span {
+  font-size: 24px;
+}
+
+/* Action buttons: full width, stacked, pinned to the bottom of the panel */
+.mk-kwizard .mk-vital-step__actions {
+  order: 2;
+  margin-top: auto;
+  padding-top: 40px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 20px;
+}
+
+/* One button = full width; two (e.g. Try again + Skip) share the row */
+.mk-kiosk-shell .mk-kwizard .mk-vital-step__actions .mk-btn {
+  flex: 1;
+  min-width: 0;
+  white-space: normal;
+  padding: 36px 44px;
+  font-size: 36px;
+}
+
+/* ---------- Results ---------- */
+.mk-kwizard .mk-results {
+  flex: 1;
+  padding: 96px 80px 72px;
+  gap: 48px;
+}
+
+.mk-kwizard .mk-results__header {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 28px;
+}
+
+.mk-kwizard .mk-results__check {
+  width: 140px;
+  height: 140px;
+  font-size: 68px;
+}
+
+.mk-kwizard .mk-results__title {
+  font-size: 72px;
+  margin: 0 0 16px;
+}
+
+.mk-kwizard .mk-results__subtitle {
+  font-size: 32px;
+  line-height: 1.45;
+}
+
+.mk-kwizard .mk-results__grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.mk-kwizard .mk-results__card {
+  border-width: 2px;
+  border-radius: 28px;
+  padding: 32px;
+}
+
+.mk-kwizard .mk-results__card-top {
+  margin-bottom: 20px;
+}
+
+.mk-kwizard .mk-results__card-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  font-size: 34px;
+}
+
+.mk-kwizard .mk-results__card-label {
+  font-size: 26px;
+  margin-bottom: 10px;
+}
+
+.mk-kwizard .mk-results__card-value {
+  font-size: 44px;
+}
+
+.mk-kwizard .mk-results__card-sub {
+  font-size: 24px;
+  margin-top: 8px;
+}
+
+.mk-kwizard .mk-results > .mk-btn {
+  margin-top: auto;
+}
+
+.mk-kiosk-shell .mk-kwizard .mk-results > .mk-btn {
+  padding: 36px 44px;
+  font-size: 36px;
+}
+
+/* Registered patient can't skip this step any more */
+.mk-kwizard .mk-scan__must-complete {
+  margin-top: 8px;
+  font-weight: 600;
+  color: var(--navy-ink);
 }

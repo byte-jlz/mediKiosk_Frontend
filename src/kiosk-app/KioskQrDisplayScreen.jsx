@@ -15,7 +15,7 @@ export default function KioskQrDisplayScreen() {
     <KioskShell>
       <div className="mk-kqr mk-kqr--dark">
         <button className="mk-kqr__back" onClick={() => navigate('/kiosk')} aria-label="Go back">
-          ←
+          ← Back
         </button>
 
         <div className="mk-kqr__code" onClick={handleConfirm} role="button" tabIndex={0}>

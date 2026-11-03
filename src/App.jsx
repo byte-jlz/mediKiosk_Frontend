@@ -54,7 +54,7 @@ export default function App() {
         <Route path="/app/settings" element={<SettingsScreen />} />
         <Route path="/app/my-qr" element={<MyQrScreen />} />
 
-        {/* ---------- Physical kiosk (landscape / Surface Pro) ---------- */}
+        {/* ---------- Physical kiosk (portrait touchscreen, 1080 x 1920) ---------- */}
         <Route path="/kiosk" element={<KioskLandingScreen />} />
         <Route path="/kiosk/sign-in" element={<KioskSignInScreen />} />
         <Route path="/kiosk/qr-scan" element={<KioskQrScanScreen />} />

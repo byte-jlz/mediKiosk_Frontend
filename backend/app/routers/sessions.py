@@ -49,7 +49,7 @@ class SessionCreate(BaseModel):
 
 
 class SessionComplete(BaseModel):
-    allowIncomplete: bool = False        # "Finish without it": save with missing steps
+    allowIncomplete: bool = False        # GUESTS only: "Continue without it" saves with missing steps
 
 
 def _kiosk_view(session: dict) -> dict:
@@ -139,6 +139,10 @@ async def complete_session(session_id: str, payload: Optional[SessionComplete] =
     if not session["readings"]:
         raise HTTPException(status_code=409, detail="No readings yet")
     missing = store.missing_vitals(session)
+    if missing and session["patientId"]:
+        # A registered patient's check-in goes into their record, so it must be complete.
+        raise HTTPException(status_code=409,
+                            detail=f"A registered patient's check-in needs every reading. Missing vitals: {missing}")
     if missing and not (payload and payload.allowIncomplete):
         raise HTTPException(status_code=409, detail=f"Missing vitals: {missing}")
 

@@ -43,7 +43,8 @@ export function getKioskSession(sessionId) {
 
 /**
  * POST /api/kiosk-sessions/{id}/complete
- * allowIncomplete: true = "Finish without it" (saved as incomplete, flagged for staff)
+ * allowIncomplete: true = "Continue without it" (saved as incomplete, flagged for staff).
+ *   GUESTS ONLY - the backend refuses an incomplete check-in for a registered patient.
  * -> { success, checkInId, incomplete, missingVitals, readings }
  */
 export function completeKioskSession(sessionId, allowIncomplete = false) {

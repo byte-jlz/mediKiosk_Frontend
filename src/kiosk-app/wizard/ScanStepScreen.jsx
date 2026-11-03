@@ -10,7 +10,10 @@ import { CONFIRM_PROMPTS, formatLive } from './kioskSteps';
  *   'awaiting'  agent waits for the person -> instruction + "I'm ready" button
  *   'running'   measuring                  -> countdown + live value
  *   'done'      got a reading              -> values + Continue
- *   'failed'    no reading                 -> reason + Try again (+ Skip / Continue without it)
+ *   'failed'    no reading                 -> reason + Try again (+ Skip, or for guests: Continue without it)
+ *
+ * mustComplete: registered patient on a step they can't skip any more -> no way
+ * past it without a reading, so tell them to try again or ask the staff.
  */
 export default function ScanStepScreen({
   step,
@@ -20,6 +23,7 @@ export default function ScanStepScreen({
   sensorsMessage,
   canSkip,
   canGiveUp,
+  mustComplete = false,
   onStart,
   onConfirm,
   onContinue,
@@ -55,6 +59,11 @@ export default function ScanStepScreen({
           <div className="mk-scan__error" role="alert">
             <strong>We couldn't get a reading.</strong>
             <span>{run.error}</span>
+            {mustComplete && (
+              <span className="mk-scan__must-complete">
+                Every reading is needed to save your check-in. Please try again, or ask the clinic staff for help.
+              </span>
+            )}
           </div>
         )}
 

@@ -1,6 +1,25 @@
+/* Portrait layout: navy banner on top, sign-in choices stacked below. */
+
 .mk-klanding__art {
-  width: 42%;
+  height: 720px;
   flex-shrink: 0;
+}
+
+.mk-klanding__logo {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 120px;
+  line-height: 1;
+  margin: 0 0 28px;
+}
+
+.mk-klanding__tagline {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 34px;
+  line-height: 1.5;
+  max-width: 820px;
+  margin: 0;
 }
 
 .mk-klanding__body {
@@ -8,76 +27,67 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 56px;
+  padding: 72px 80px 64px;
 }
 
-.mk-klanding__logo {
+.mk-klanding__heading {
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 700;
-  font-size: 48px;
-  margin: 0 0 16px;
-}
-
-.mk-klanding__tagline {
-  color: var(--muted);
-  font-size: 16px;
-  line-height: 1.6;
-  max-width: 440px;
-  margin: 0 0 36px;
+  font-size: 52px;
+  color: var(--navy-ink);
+  margin: 0 0 48px;
 }
 
 .mk-klanding__actions {
   display: flex;
-  gap: 14px;
-  max-width: 420px;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.mk-klanding__actions .mk-btn {
-  flex: 1;
-  padding: 16px 20px;
+.mk-kiosk-shell .mk-klanding__body .mk-btn {
+  padding: 36px 44px;
+  font-size: 36px;
 }
 
 .mk-klanding__divider {
   display: flex;
   align-items: center;
-  gap: 14px;
-  max-width: 420px;
-  margin: 24px 0;
+  gap: 24px;
+  margin: 44px 0;
 }
 
 .mk-klanding__divider span {
   flex: 1;
-  height: 1px;
+  height: 2px;
   background: var(--border);
 }
 
 .mk-klanding__divider p {
   margin: 0;
-  font-size: 12px;
+  font-size: 24px;
+  font-weight: 600;
   color: var(--muted-light);
 }
 
-.mk-klanding__guest {
-  background: none;
-  border: none;
-  align-self: flex-start;
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  letter-spacing: 0.3px;
-}
-
-.mk-klanding__guest:hover {
-  color: var(--navy);
+.mk-klanding__footer {
+  margin-top: auto;
+  padding-top: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
 }
 
 .mk-klanding__staff-link {
   background: none;
   border: none;
-  align-self: flex-start;
-  margin-top: 28px;
-  font-size: 13px;
+  padding: 20px 32px;
+  font-size: 28px;
   color: var(--brand-blue-dark);
   font-weight: 600;
+}
+
+.mk-kiosk-shell .mk-devskip {
+  font-size: 22px;
+  padding: 14px 24px;
 }

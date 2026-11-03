@@ -11,22 +11,24 @@ export default function KioskLandingScreen() {
   return (
     <KioskShell split>
       <div className="mk-klanding__art">
-        <LobbyArtPanel />
+        <LobbyArtPanel>
+          <h1 className="mk-klanding__logo">Medi-Kiosk</h1>
+          <p className="mk-klanding__tagline">
+            Step up, sign in, and let the kiosk guide you through a complete vital
+            signs scan — one reading at a time.
+          </p>
+        </LobbyArtPanel>
       </div>
 
       <div className="mk-klanding__body">
-        <h1 className="mk-klanding__logo">Medi-Kiosk</h1>
-        <p className="mk-klanding__tagline">
-          Step up, sign in, and let the kiosk guide you through a complete vital
-          signs scan — one reading at a time.
-        </p>
+        <h2 className="mk-klanding__heading">How would you like to sign in?</h2>
 
         <div className="mk-klanding__actions">
-          <Button variant="secondary" onClick={() => navigate('/kiosk/qr-scan')}>
-            QR Code
+          <Button variant="secondary" fullWidth onClick={() => navigate('/kiosk/qr-scan')}>
+            ▦ QR Code
           </Button>
-          <Button variant="secondary" onClick={() => navigate('/kiosk/qr-scan')}>
-            QR ID
+          <Button variant="secondary" fullWidth onClick={() => navigate('/kiosk/qr-scan')}>
+            ▤ QR ID
           </Button>
         </div>
 
@@ -36,15 +38,16 @@ export default function KioskLandingScreen() {
           <span />
         </div>
 
-        <button className="mk-klanding__guest" onClick={() => navigate('/kiosk/vitals')}>
-          Continue as guest
-        </button>
+        <Button fullWidth onClick={() => navigate('/kiosk/vitals')}>
+          Continue as guest →
+        </Button>
 
-        <button className="mk-klanding__staff-link" onClick={() => navigate('/kiosk/sign-in')}>
-          Sign in with email instead
-        </button>
-
-        <DevSkipLogin as="patient" to="/kiosk/vitals" />
+        <div className="mk-klanding__footer">
+          <button className="mk-klanding__staff-link" onClick={() => navigate('/kiosk/sign-in')}>
+            Sign in with email instead
+          </button>
+          <DevSkipLogin as="patient" to="/kiosk/vitals" />
+        </div>
       </div>
     </KioskShell>
   );

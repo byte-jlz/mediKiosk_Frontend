@@ -1,38 +1,36 @@
+/* Portrait kiosk. All sizes inside .mk-kiosk-shell are in px on the
+   1080 x 1920 canvas (see KioskShell.jsx) - the whole canvas is scaled to fit. */
+
 .mk-kiosk-outer {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 28px;
-  background:
-    radial-gradient(1200px 600px at 80% -10%, #eef4fa 0%, transparent 60%),
-    var(--bg-page);
+  overflow: hidden;
+  background: #0c1626;
+}
+
+.mk-kiosk-frame {
+  position: relative;
+  flex-shrink: 0;
 }
 
 .mk-kiosk-shell {
-  width: 100%;
-  max-width: 1180px;
-  aspect-ratio: 16 / 10;
-  min-height: 680px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
   background: var(--white);
-  border-radius: 20px;
-  box-shadow: var(--shadow-lg), 0 0 0 10px #1a1a1a, 0 0 0 12px #333;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  position: relative;
+  font-size: 26px;
 }
 
-.mk-kiosk-shell--split {
-  flex-direction: row;
-}
-
-@media (max-width: 900px) {
-  .mk-kiosk-shell {
-    aspect-ratio: auto;
-    min-height: 80vh;
-  }
-  .mk-kiosk-shell--split {
-    flex-direction: column;
-  }
+/* Bigger touch targets everywhere on the kiosk */
+.mk-kiosk-shell .mk-btn {
+  padding: 28px 44px;
+  font-size: 30px;
+  gap: 14px;
 }

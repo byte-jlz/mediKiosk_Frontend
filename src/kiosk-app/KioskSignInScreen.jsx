@@ -34,20 +34,16 @@ export default function KioskSignInScreen() {
   return (
     <KioskShell split>
       <div className="mk-ksignin__art">
-        <LobbyArtPanel />
+        <LobbyArtPanel>
+          <button className="mk-ksignin__back" onClick={() => navigate('/kiosk')} aria-label="Go back">
+            ← Back
+          </button>
+          <h1 className="mk-ksignin__logo">Medi-Kiosk</h1>
+          <p className="mk-ksignin__tagline">Sign in with your email and password.</p>
+        </LobbyArtPanel>
       </div>
 
       <div className="mk-ksignin__body">
-        <button className="mk-ksignin__back" onClick={() => navigate('/kiosk')} aria-label="Go back">
-          ←
-        </button>
-
-        <h1 className="mk-ksignin__logo">Medi-Kiosk</h1>
-        <p className="mk-ksignin__tagline">
-          Step up, sign in, and let the kiosk guide you through a complete vital
-          signs scan — one reading at a time.
-        </p>
-
         <form className="mk-ksignin__form" onSubmit={handleSubmit}>
           <label className="mk-ksignin__field">
             <span>EMAIL</span>
@@ -62,7 +58,7 @@ export default function KioskSignInScreen() {
           {error && <p className="mk-ksignin__error">{error}</p>}
 
           <div className="mk-ksignin__actions">
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" fullWidth disabled={loading}>
               {loading ? 'SIGNING IN…' : 'SIGN IN'}
             </Button>
           </div>
