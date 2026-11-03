@@ -1,0 +1,10 @@
+.mk-audit__timestamp {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.mk-audit__actor {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  font-size: 12px;
+}

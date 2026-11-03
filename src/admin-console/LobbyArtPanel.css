@@ -1,0 +1,17 @@
+.mk-kiosk-art {
+  position: relative;
+  height: 100%;
+  min-height: 100vh;
+  background: linear-gradient(155deg, #0b3843 0%, var(--sidebar) 45%, #187782 100%);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.mk-kiosk-art__glow { position: absolute; border-radius: 50%; filter: blur(50px); }
+.mk-kiosk-art__glow--1 { width: 420px; height: 420px; background: rgba(61, 190, 205, 0.20); top: -120px; right: -120px; }
+.mk-kiosk-art__glow--2 { width: 360px; height: 360px; background: rgba(59, 130, 196, 0.16); bottom: -120px; left: -100px; }
+
+.mk-kiosk-art__content { position: relative; text-align: center; padding: 0 40px; }
+.mk-kiosk-art__logo { width: min(380px, 80%); height: auto; }
+.mk-kiosk-art__tagline { margin: 22px auto 0; max-width: 320px; color: rgba(255, 255, 255, 0.78); font-size: 15px; line-height: 1.55; }

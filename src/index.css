@@ -1,0 +1,124 @@
+/* ============================================================
+   MEDI-KIOSK — GLOBAL DESIGN TOKENS
+   Colors/typography derived directly from the Figma screens.
+   ============================================================ */
+
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/montserrat';
+
+:root {
+  /* --- Brand: taken from the Medi-Kiosk logo --- */
+  --teal: #1f8c99;            /* logo teal */
+  --teal-deep: #1a5660;       /* logo, darkest part of the wordmark */
+  --sidebar: #0f4955;         /* sidebar panel */
+  --sidebar-2: #0b3843;
+  --navy: #0f4955;            /* (older screens) dark surfaces */
+  --navy-ink: #0d2f38;        /* headings / strongest text */
+  --brand-blue: #1f8c99;      /* (older name) primary accent */
+  --brand-blue-dark: #187782; /* primary buttons */
+  --brand-blue-light: #e8f4f6;/* inputs, soft panels */
+
+  /* --- Neutrals --- */
+  --ink: #12303a;
+  --ink-soft: #2f4a54;
+  --muted: #5f7780;
+  --muted-light: #8fa3aa;
+  --border: #dbe7ea;
+  --border-soft: #e9f1f3;
+  --bg-page: #eef5f6;
+  --white: #ffffff;
+
+  /* --- Urgency tiers (fixed meaning everywhere) --- */
+  --tier-high: #e0463a;    --tier-high-bg: #fde8e6;    --tier-high-ink: #a52a20;
+  --tier-medium: #f2b418;  --tier-medium-bg: #fff4cc;  --tier-medium-ink: #7a5a00;
+  --tier-low: #3b82c4;     --tier-low-bg: #e3effa;     --tier-low-ink: #1f5a94;
+  --tier-normal: #2e9e57;  --tier-normal-bg: #e1f5e8;  --tier-normal-ink: #1b6b3a;
+
+  /* --- General status (older names) --- */
+  --green: #2e9e57;  --green-bg: #e1f5e8;
+  --red: #e0463a;    --red-bg: #fde8e6;
+  --amber: #f2b418;  --amber-bg: #fff4cc;
+  --blue-status: #3b82c4;
+
+  /* --- Vital identity colors (patient app) --- */
+  --vital-heart: #e0463a;      --vital-heart-bg: #fde8e6;
+  --vital-bmi: #2e9e57;        --vital-bmi-bg: #e1f5e8;
+  --vital-temp: #f2a516;       --vital-temp-bg: #fff0c2;
+  --vital-bp: #e0463a;         --vital-bp-bg: #fde8e6;
+  --vital-spo2: #3b82c4;       --vital-spo2-bg: #e3effa;
+  --vital-resp: #1f8c99;       --vital-resp-bg: #e0f1f3;
+
+  /* --- Type --- */
+  --font-display: 'Montserrat Variable', 'Montserrat', system-ui, sans-serif;
+  --font-body: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* --- Shape and depth --- */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --shadow-sm: 0 1px 2px rgba(15, 73, 85, 0.06);
+  --shadow-md: 0 6px 20px rgba(15, 73, 85, 0.08);
+  --shadow-lg: 0 14px 36px rgba(15, 73, 85, 0.16);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--bg-page);
+  background-image: radial-gradient(1100px 600px at 85% -10%, rgba(31,140,153,.14), transparent 60%), radial-gradient(900px 500px at 0% 100%, rgba(59,130,196,.08), transparent 60%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.dark-mode {
+  --bg-page: #0f172a;
+  --white: #14243a;
+  --brand-blue-light: #1e2f4f;
+  --border: #314155;
+  --border-soft: #25304b;
+  --ink: #e2e8f0;
+  --ink-soft: #cbd5e1;
+  --muted: #94a3b8;
+  --muted-light: #a0aec0;
+  --navy: #0f172a;
+  --navy-ink: #e2e8f0;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::placeholder {
+  color: var(--muted-light);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

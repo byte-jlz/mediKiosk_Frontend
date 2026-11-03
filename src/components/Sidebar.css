@@ -1,0 +1,155 @@
+/* Floating icon sidebar */
+.mk-sidebar {
+  position: sticky;
+  top: 16px;
+  align-self: flex-start;
+  width: 96px;
+  height: calc(100vh - 32px);
+  margin: 16px 0 16px 16px;
+  padding: 22px 8px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  background: linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-2) 100%);
+  border-radius: 26px;
+  box-shadow: var(--shadow-lg);
+  flex-shrink: 0;
+}
+
+.mk-sidebar__logo {
+  width: 46px;
+  height: auto;
+}
+
+.mk-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.mk-sidebar__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  transition: color 120ms ease;
+}
+
+.mk-sidebar__icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.07);
+  transition: background-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.mk-sidebar__link:hover { color: #fff; }
+.mk-sidebar__link:hover .mk-sidebar__icon { background: rgba(255, 255, 255, 0.16); }
+
+.mk-sidebar__link.is-active { color: #fff; }
+.mk-sidebar__link.is-active .mk-sidebar__icon {
+  background: #fff;
+  color: var(--sidebar);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+}
+
+/* top bar */
+.mk-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 40px 0;
+}
+
+.mk-admin-header__lead { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.mk-admin-header__wordmark { height: 34px; width: auto; }
+.mk-admin-header__title { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 28px; letter-spacing: -0.3px; color: var(--navy-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk-admin-header__right { display: flex; align-items: center; gap: 16px; margin-left: auto; flex-shrink: 0; }
+.mk-admin-header__divider { width: 1px; height: 28px; background: var(--border); }
+.mk-admin-header__clock { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.mk-admin-header__time { font-size: 15px; font-weight: 700; color: var(--navy-ink); }
+.mk-admin-header__date { font-size: 11.5px; color: var(--muted); }
+
+.mk-admin-header__user { position: relative; flex-shrink: 0; }
+
+.mk-admin-header__user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.mk-admin-header__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--teal);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mk-admin-header__user-text { text-align: left; }
+.mk-admin-header__user-name { margin: 0; font-size: 13px; font-weight: 700; color: var(--navy-ink); line-height: 1.2; }
+.mk-admin-header__user-role { margin: 1px 0 0; font-size: 11.5px; color: var(--muted); }
+
+.mk-admin-header__user-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 190px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  z-index: 20;
+}
+
+.mk-admin-header__user-menu button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-align: left;
+}
+.mk-admin-header__user-menu button:hover { background: var(--brand-blue-light); }
+.mk-admin-header__user-menu .mk-admin-header__logout { color: var(--tier-high-ink); }
+.mk-admin-header__user-menu .mk-admin-header__logout:hover { background: var(--tier-high-bg); }
+
+@media (max-width: 760px) {
+  .mk-sidebar { width: 72px; margin-left: 8px; }
+  .mk-sidebar__icon { width: 42px; height: 42px; }
+  .mk-sidebar__label { display: none; }
+  .mk-admin-header { padding: 14px 16px 0; }
+  .mk-admin-header__user-text { display: none; }
+  .mk-admin-header__divider, .mk-admin-header__wordmark { display: none; }
+  .mk-admin-header__title { font-size: 22px; }
+}

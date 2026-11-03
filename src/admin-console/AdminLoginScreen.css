@@ -1,0 +1,138 @@
+.mk-alogin {
+  min-height: 100vh;
+  display: flex;
+  background: #fff;
+}
+
+.mk-alogin__art {
+  width: 46%;
+  min-width: 380px;
+}
+
+.mk-alogin__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px 64px;
+  max-width: 560px;
+  background: transparent;
+}
+
+.mk-alogin__logo { margin: 0 0 6px; }
+.mk-alogin__logo img { width: 230px; height: auto; display: block; }
+.mk-alogin__welcome { margin: 0 0 30px; color: var(--muted); font-size: 14.5px; }
+
+.mk-alogin__form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 420px;
+}
+
+.mk-alogin__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  color: var(--ink-soft);
+}
+
+.mk-alogin__field input {
+  border: 1px solid var(--border);
+  background: var(--brand-blue-light);
+  border-radius: 12px;
+  padding: 13px 16px;
+  background: #fff;
+  font-size: 14px;
+  outline: none;
+}
+
+.mk-alogin__field input:focus {
+  border-color: var(--brand-blue);
+}
+
+.mk-alogin__error {
+  color: var(--tier-high-ink);
+  font-size: 13px;
+  margin: -8px 0 0;
+}
+
+.mk-alogin__hint {
+  font-size: 12px;
+  color: var(--muted-light);
+  margin: 4px 0 0;
+}
+
+.mk-alogin__link {
+  background: none;
+  border: none;
+  color: var(--teal);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.mk-alogin__link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 800px) {
+  .mk-alogin__art {
+    display: none;
+  }
+}
+
+/* ---- staff sign-in: glassy card on a soft teal wash ---- */
+.mk-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, #f4fafb 0%, #e3f1f3 55%, #d5ebee 100%);
+}
+.mk-login::before, .mk-login::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+}
+.mk-login::before { width: 460px; height: 460px; left: -120px; top: -120px; background: rgba(31, 140, 153, 0.28); }
+.mk-login::after { width: 520px; height: 520px; right: -160px; bottom: -180px; background: rgba(58, 166, 179, 0.26); }
+
+.mk-login__card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  max-width: 640px;
+  min-height: 420px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 24px 60px rgba(15, 73, 85, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.mk-login__art { width: 170px; flex-shrink: 0; align-self: stretch; height: auto; background: rgba(255, 255, 255, 0.5); }
+
+.mk-login__form { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 40px 44px; }
+.mk-login__brand { margin-bottom: 6px; padding-bottom: 18px; border-bottom: 1px solid rgba(31, 140, 153, 0.18); }
+.mk-login__logo { margin: 0 0 10px; }
+.mk-login__tagline { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink-soft); line-height: 1.45; color: var(--muted); }
+.mk-login__logo img { width: 200px; height: auto; display: block; }
+.mk-login__field { display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
+.mk-login__field input { border: 1px solid var(--border); background: rgba(255, 255, 255, 0.85); border-radius: 12px; padding: 12px 14px; font-size: 14px; outline: none; }
+.mk-login__field input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(31, 140, 153, 0.15); }
+.mk-login__error { margin: -4px 0 0; color: var(--tier-high-ink); background: var(--tier-high-bg); border-radius: 10px; font-size: 13px; padding: 9px 12px; }
+
+@media (max-width: 560px) {
+  .mk-login__art { display: none; }
+  .mk-login__form { padding: 32px 24px; }
+}
