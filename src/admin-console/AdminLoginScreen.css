@@ -132,6 +132,22 @@
 .mk-login__field input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(31, 140, 153, 0.15); }
 .mk-login__error { margin: -4px 0 0; color: var(--tier-high-ink); background: var(--tier-high-bg); border-radius: 10px; font-size: 13px; padding: 9px 12px; }
 
+/* two-step sign-in */
+.mk-login__step-title { margin: 0 0 8px; font-size: 20px; font-weight: 700; color: var(--ink); }
+.mk-login__hint { margin: -6px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.mk-login__hint code, .mk-login__codes code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.mk-login__note { margin: -4px 0 0; color: var(--ink-soft); background: rgba(31, 140, 153, 0.1); border-radius: 10px; font-size: 13px; padding: 9px 12px; }
+.mk-login__code { letter-spacing: 0.18em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 18px !important; text-align: center; }
+.mk-login__links { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.mk-login__link { background: none; border: 0; padding: 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--teal); cursor: pointer; }
+.mk-login__link:hover { text-decoration: underline; }
+.mk-login__steps { margin: -6px 0 0; padding-left: 20px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; }
+.mk-login__qr { align-self: center; width: 180px; height: 180px; border-radius: 14px; background: #fff; border: 1px solid var(--border); display: grid; place-items: center; overflow: hidden; font-size: 13px; color: var(--muted); }
+.mk-login__qr img { width: 100%; height: 100%; display: block; }
+.mk-login__secret { display: inline-block; word-break: break-all; user-select: all; background: rgba(255, 255, 255, 0.8); border-radius: 6px; padding: 2px 6px; }
+.mk-login__codes { list-style: none; margin: 0; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--ink); }
+.mk-login__check { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-soft); }
+
 @media (max-width: 560px) {
   .mk-login__art { display: none; }
   .mk-login__form { padding: 32px 24px; }

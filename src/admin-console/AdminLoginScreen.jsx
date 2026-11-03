@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
-import { staffLogin, homeFor } from '../services/authService';
+import { staffLogin, homeFor, completeStaffSignIn } from '../services/authService';
+import { CodeStep, RecoveryStep, SetupStep } from './TwoFactorSteps';
 import logoFull from '../assets/logo-full.png';
 import './AdminLoginScreen.css';
 
@@ -46,6 +47,11 @@ export default function AdminLoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // which part of the sign-in we are on: password -> code (or setup -> recovery) -> signed in
+  const [step, setStep] = useState({ name: 'password' });
+
+  const goHome = (staff) => navigate(staff.mustChangePassword ? '/change-password' : homeFor(staff));
+  const backToPassword = () => { setPassword(''); setStep({ name: 'password' }); };
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -56,8 +62,10 @@ export default function AdminLoginScreen() {
     }
     setLoading(true);
     try {
-      const staff = await staffLogin(email, password);
-      navigate(staff.mustChangePassword ? '/change-password' : homeFor(staff));
+      const r = await staffLogin(email, password);
+      if (r.step === 'done') goHome(r.staff);
+      else if (r.step === 'code') setStep({ name: 'code', mfaToken: r.mfaToken });
+      else setStep({ name: 'setup', setupToken: r.setupToken });
     } catch (err) {
       setError(err.message || 'Sign in failed. Please try again.');
     } finally {
@@ -69,26 +77,32 @@ export default function AdminLoginScreen() {
     <div className="mk-login">
       <div className="mk-login__card">
         <ArtStrip />
-        <form className="mk-login__form" onSubmit={handleSubmit}>
-          <div className="mk-login__brand">
-            <h1 className="mk-login__logo"><img src={logoFull} alt="MediKiosk" /></h1>
-            <p className="mk-login__tagline">Welcome to MediKiosk</p>
-          </div>
+        {step.name === 'code' && <CodeStep mfaToken={step.mfaToken} onSignedIn={goHome} onBack={backToPassword} />}
+        {step.name === 'setup' && <SetupStep setupToken={step.setupToken} onEnabled={(data) => setStep({ name: 'recovery', data })} onBack={backToPassword} />}
+        {/* the session is saved only after the person confirms they saved the codes */}
+        {step.name === 'recovery' && <RecoveryStep codes={step.data.recoveryCodes} onDone={() => goHome(completeStaffSignIn(step.data))} />}
+        {step.name === 'password' && (
+          <form className="mk-login__form" onSubmit={handleSubmit}>
+            <div className="mk-login__brand">
+              <h1 className="mk-login__logo"><img src={logoFull} alt="MediKiosk" /></h1>
+              <p className="mk-login__tagline">Welcome to MediKiosk</p>
+            </div>
 
-          <label className="mk-login__field">
-            <span>Email</span>
-            <input type="email" value={email} autoComplete="username" onChange={(e) => setEmail(e.target.value)} />
-          </label>
+            <label className="mk-login__field">
+              <span>Email</span>
+              <input type="email" value={email} autoComplete="username" onChange={(e) => setEmail(e.target.value)} />
+            </label>
 
-          <label className="mk-login__field">
-            <span>Password</span>
-            <input type="password" value={password} autoComplete="current-password" onChange={(e) => setPassword(e.target.value)} />
-          </label>
+            <label className="mk-login__field">
+              <span>Password</span>
+              <input type="password" value={password} autoComplete="current-password" onChange={(e) => setPassword(e.target.value)} />
+            </label>
 
-          {error && <p className="mk-login__error" role="alert">{error}</p>}
+            {error && <p className="mk-login__error" role="alert">{error}</p>}
 
-          <Button type="submit" disabled={loading}>{loading ? 'SIGNING IN…' : 'SIGN IN'}</Button>
-        </form>
+            <Button type="submit" disabled={loading}>{loading ? 'SIGNING IN…' : 'SIGN IN'}</Button>
+          </form>
+        )}
       </div>
     </div>
   );
