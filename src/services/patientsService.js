@@ -13,6 +13,9 @@ export const getPatientQr = (id) => api(`/api/patients/${encodeURIComponent(id)}
 /** Issues a new QR; the old one stops working. */
 export const regenerateQrToken = (id) => api(`/api/patients/${encodeURIComponent(id)}/qr-token`, { as: 'staff', method: 'POST' }).then((r) => r.qrToken);
 
+/** Patient lost their phone (check who they are first): turns their two-step sign-in off and signs them out of the app. */
+export const resetPatientMfa = (id) => api(`/api/patients/${encodeURIComponent(id)}/reset-mfa`, { as: 'staff', method: 'POST' });
+
 function toBody(p) {
   const body = { ...p };
   for (const k of Object.keys(body)) if (body[k] === '' || body[k] === undefined) delete body[k];

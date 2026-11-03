@@ -4,7 +4,7 @@ import { AdminHeader } from '../components/Sidebar';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import Button from '../components/Button';
-import { getStaff, addStaff, removeStaff, updateStaff, resetStaffPassword } from '../services/staffService';
+import { getStaff, addStaff, removeStaff, updateStaff, resetStaffPassword, resetStaffMfa } from '../services/staffService';
 import { getCurrentStaff } from '../services/authService';
 import './StaffAccountsScreen.css';
 
@@ -81,6 +81,14 @@ export default function StaffAccountsScreen() {
     if (password) {
       setSelectedStaff(null);
       setSecret({ name: row.name, email: row.email, password });
+    }
+  }
+
+  async function handleResetMfa(row) {
+    if (!window.confirm(`Reset ${row.name}'s two-step sign-in? They are signed out and must set up their authenticator app again at their next sign-in. Only do this after confirming it is really them.`)) return;
+    if (await act(() => resetStaffMfa(row.id))) {
+      setSelectedStaff(null);
+      window.alert(`${row.name}'s two-step sign-in was reset.`);
     }
   }
 
@@ -198,6 +206,7 @@ export default function StaffAccountsScreen() {
             </div>
             <div className="mk-staff__modal-actions">
               <Button variant="secondary" onClick={() => handleReset(selectedStaff)}>Reset password</Button>
+              <Button variant="secondary" onClick={() => handleResetMfa(selectedStaff)}>Reset 2-step sign-in</Button>
               <Button variant="secondary" onClick={() => handleSuspend(selectedStaff)}>
                 {selectedStaff.status === 'Suspended' ? 'Reactivate' : 'Suspend'}
               </Button>

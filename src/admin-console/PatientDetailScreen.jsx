@@ -6,7 +6,7 @@ import StatusBadge from '../components/StatusBadge';
 import Button from '../components/Button';
 import PatientFormModal from './PatientFormModal';
 import PatientQrCode from './PatientQrCode';
-import { getPatientById, deletePatient, regenerateQrToken, getPatientQr } from '../services/patientsService';
+import { getPatientById, deletePatient, regenerateQrToken, getPatientQr, resetPatientMfa } from '../services/patientsService';
 import { getPatientVisits } from '../services/clinicalService';
 import { getCurrentStaff, staffPath } from '../services/authService';
 import { formatDate, formatDateTime } from './patientFormat';
@@ -68,6 +68,16 @@ export default function PatientDetailScreen() {
     }
     setRegenerating(false);
     setConfirmingRegenerate(false);
+  }
+
+  async function handleResetMfa() {
+    if (!window.confirm(`Reset ${fullName}'s two-step sign-in? They are signed out of the app and can turn it on again themselves. Only do this after confirming it is really them.`)) return;
+    try {
+      await resetPatientMfa(patient.id);
+      window.alert(`${fullName}'s two-step sign-in was reset.`);
+    } catch (e) {
+      setError(e.message);
+    }
   }
 
   function closeNewQr() {
@@ -137,6 +147,7 @@ export default function PatientDetailScreen() {
               </div>
               <div className="mk-page__actions">
                 <Button variant="secondary" onClick={() => setEditing(true)}>✎ Edit</Button>
+                <Button variant="secondary" onClick={handleResetMfa}>Reset 2-step sign-in</Button>
                 {canDelete && <Button variant="danger" onClick={() => setConfirmingDelete(true)}>🗑 Delete</Button>}
               </div>
             </div>
