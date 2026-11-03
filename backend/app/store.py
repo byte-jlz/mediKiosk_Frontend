@@ -29,6 +29,7 @@ _lock = threading.Lock()
 _sessions: Dict[str, dict] = {}     # "kiosk_sessions" collection
 _results: List[dict] = []           # "scan_results" collection (every agent result, as received)
 _agents: Dict[str, dict] = {}       # "kiosk_agents" collection (last status per kiosk)
+_edge_visits: Dict[str, dict] = {}  # "edge_visits" collection (classified visits from each Pi's sync_worker)
 
 MAX_RESULTS = 2000                  # in-memory only: keep the newest N results
 
@@ -144,6 +145,30 @@ def recent_results(kiosk_id: Optional[str] = None, limit: int = 50) -> List[dict
     with _lock:
         docs = [d for d in _results if kiosk_id is None or d.get("kiosk") == kiosk_id]
     return [_copy(d) for d in reversed(docs[-limit:])]
+
+
+# ---------------------------------------------------------------- edge visits
+def save_edge_visit(visit: dict) -> bool:
+    """Keep one classified visit sent by a kiosk's sync_worker.
+    Keyed by message_id, so a re-sent visit is stored ONCE.
+    Returns True if it is new, False if we already had it (a duplicate)."""
+    with _lock:
+        mid = visit["message_id"]
+        if mid in _edge_visits:
+            return False
+        _edge_visits[mid] = {"_id": mid, **_copy(visit), "receivedAt": _now()}
+        session = _sessions.get(visit.get("external_session_id") or "")
+        if session is not None:                   # link it to the kiosk wizard's session
+            session["edgeVisitId"] = mid
+            session["updatedAt"] = _now()
+        return True
+
+
+def list_edge_visits(kiosk_id: Optional[str] = None, limit: int = 50) -> List[dict]:
+    with _lock:
+        docs = [d for d in _edge_visits.values() if kiosk_id is None or d.get("kiosk_id") == kiosk_id]
+    docs.sort(key=lambda d: d["receivedAt"], reverse=True)
+    return [_copy(d) for d in docs[:limit]]
 
 
 # ---------------------------------------------------------------- kiosk agents

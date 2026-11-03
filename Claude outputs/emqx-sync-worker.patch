@@ -1,0 +1,180 @@
+diff --git a/.gitignore b/.gitignore
+index fe7ef6f..b66c19f 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -11,3 +11,6 @@ hardware/bp_errors.csv
+ hardware/scale_calibration.json
+ sensor_test/rr_logs/
+ venv/
++
++# cloud broker login - never commit
++edge/sync.env
+diff --git a/edge/README.md b/edge/README.md
+index a5e2f77..7a7cac3 100644
+--- a/edge/README.md
++++ b/edge/README.md
+@@ -52,6 +52,29 @@ sudo systemctl daemon-reload && sudo systemctl enable --now medikiosk-edge
+ journalctl -u medikiosk-edge -f
+ ```
+ 
++## Connect to EMQX Cloud (the backend broker)
++1. In the EMQX console create a **Serverless** deployment (set the spend limit to 0 = free quota only).
++2. Access Control -> Authentication: add one login per kiosk (e.g. `K-01`) and one for the backend (`backend`).
++3. Put this kiosk's login in `/etc/medikiosk/sync.env`, **not** in `edge_config.json` (the repo is public):
++   ```
++   sudo mkdir -p /etc/medikiosk
++   sudo cp edge/sync.env.example /etc/medikiosk/sync.env
++   sudo nano /etc/medikiosk/sync.env        # address from EMQX Overview, port 8883, K-01 + password
++   sudo chown root:medi_kiosk /etc/medikiosk/sync.env && sudo chmod 640 /etc/medikiosk/sync.env
++   ```
++   The `MEDIKIOSK_BROKER_*` variables override `broker` in `edge_config.json`. TLS turns on by itself on
++   port 8883, and EMQX Cloud needs no CA file.
++4. Re-copy the service file (it now reads that env file), then start the worker:
++   ```
++   sudo cp edge/medikiosk-sync.service /etc/systemd/system/ && sudo systemctl daemon-reload
++   sudo systemctl enable --now medikiosk-sync
++   journalctl -u medikiosk-sync -f       # expect: "connected to xxxx.emqxsl.com:8883"
++   ```
++   `broker refused the connection: Not authorized` = wrong username/password.
++   `could not reach ...` = wrong address/port or no internet (visits wait in SQLite meanwhile).
++
++`local_broker` stays the Pi's own Mosquitto - only `sync_worker.py` talks to EMQX.
++
+ ## Tests (on any computer with mosquitto installed)
+ ```
+ python3 edge/selftest.py            # 20 checks: classifier, QR, offline buffer, order, outage, crash, duplicates
+diff --git a/edge/medikiosk-sync.service b/edge/medikiosk-sync.service
+index 61b598e..ec5ff28 100644
+--- a/edge/medikiosk-sync.service
++++ b/edge/medikiosk-sync.service
+@@ -10,6 +10,8 @@ Group=medi_kiosk
+ WorkingDirectory=/home/medi_kiosk/MediKiosk_hardware/edge
+ ExecStart=/home/medi_kiosk/MediKiosk_hardware/venv/bin/python sync_worker.py edge_config.json
+ Environment=PYTHONUNBUFFERED=1
++# Cloud broker login (EMQX). Kept out of git - see sync.env.example. The "-" = optional file.
++EnvironmentFile=-/etc/medikiosk/sync.env
+ Restart=always
+ RestartSec=3
+ 
+diff --git a/edge/sync_worker.py b/edge/sync_worker.py
+index fb7143e..c4a40d2 100644
+--- a/edge/sync_worker.py
++++ b/edge/sync_worker.py
+@@ -1,10 +1,46 @@
+ """Store-and-forward worker: sends outbox rows to the MQTT broker, highest tier first,
+-and marks a row 'synced' only when the backend's application-level ack arrives."""
+-import json, queue, random, signal, ssl, sys, threading, time
++and marks a row 'synced' only when the backend's application-level ack arrives.
++
++The broker is the CLOUD broker (EMQX Cloud when deployed). Its settings come from
++edge_config.json -> "broker", and any of them can be overridden by environment
++variables, so the real password never has to be committed to git:
++
++    MEDIKIOSK_BROKER_HOST      e.g. xxxx.ala.ap-southeast-1.emqxsl.com
++    MEDIKIOSK_BROKER_PORT      8883 for EMQX (TLS)
++    MEDIKIOSK_BROKER_USERNAME  this kiosk's login, e.g. K-01
++    MEDIKIOSK_BROKER_PASSWORD
++    MEDIKIOSK_BROKER_TLS       1 / 0 (default: on when the port is 8883)
++    MEDIKIOSK_BROKER_CA_FILE   only for a self-signed broker; EMQX Cloud needs none
++
++On the Pi the service reads them from /etc/medikiosk/sync.env (see sync.env.example).
++"""
++import json, os, queue, random, signal, ssl, sys, threading, time
+ import paho.mqtt.client as mqtt
+ import edge_db
+ 
+ 
++def log(msg):
++    print(f"{time.strftime('%H:%M:%S')} [sync] {msg}", flush=True)
++
++
++def broker_settings(cfg):
++    """edge_config.json's "broker", with MEDIKIOSK_BROKER_* environment variables on top."""
++    b = dict(cfg.get("broker") or {})
++    env = lambda k: os.environ.get(f"MEDIKIOSK_BROKER_{k}")
++    if env("HOST"): b["host"] = env("HOST")
++    if env("PORT"): b["port"] = int(env("PORT"))
++    if env("USERNAME") is not None: b["username"] = env("USERNAME")
++    if env("PASSWORD") is not None: b["password"] = env("PASSWORD")
++    if env("CA_FILE") is not None: b["ca_file"] = env("CA_FILE") or None
++    b.setdefault("host", "localhost")
++    b["port"] = int(b.get("port") or 1883)
++    if env("TLS") is not None:
++        b["tls"] = env("TLS").strip().lower() in ("1", "true", "yes", "on")
++    elif "tls" not in b:
++        b["tls"] = b["port"] == 8883
++    return b
++
++
+ class SyncWorker:
+     def __init__(self, cfg):
+         self.cfg = cfg
+@@ -17,7 +53,7 @@ class SyncWorker:
+         self.acks = queue.Queue()
+         self.stop = False
+ 
+-        b = cfg["broker"]
++        b = self.broker = broker_settings(cfg)
+         # fixed client_id + clean_session=False: the broker remembers this kiosk's subscription
+         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"{self.kiosk}-sync", clean_session=False)
+         if b.get("username"):
+@@ -29,15 +65,22 @@ class SyncWorker:
+         self.client.on_connect = self._on_connect
+         self.client.on_disconnect = self._on_disconnect
+         self.client.on_message = self._on_message
++        self.client.on_connect_fail = lambda *_: log(
++            f"could not reach {self.broker['host']}:{self.broker['port']} - check the address, the port and TLS; retrying...")
+ 
+     # --- network callbacks run in paho's thread: they never touch SQLite ---
+     def _on_connect(self, client, userdata, flags, reason_code, properties):
+-        if not reason_code.is_failure:
+-            client.subscribe(self.ack_topic, qos=1)
+-            client.publish(self.status_topic, "online", qos=1, retain=True)
+-            self.connected.set()
++        if reason_code.is_failure:                 # e.g. "Not authorized" = wrong username / password
++            log(f"broker refused the connection: {reason_code}")
++            return
++        client.subscribe(self.ack_topic, qos=1)
++        client.publish(self.status_topic, "online", qos=1, retain=True)
++        self.connected.set()
++        log(f"connected to {self.broker['host']}:{self.broker['port']} - waiting for acks on {self.ack_topic}")
+ 
+     def _on_disconnect(self, client, userdata, flags, reason_code, properties):
++        if self.connected.is_set() and not self.stop:
++            log(f"disconnected ({reason_code}) - visits stay in SQLite until the broker is back")
+         self.connected.clear()
+ 
+     def _on_message(self, client, userdata, msg):
+@@ -60,7 +103,8 @@ class SyncWorker:
+         return False
+ 
+     def run(self):
+-        b = self.cfg["broker"]
++        b = self.broker
++        log(f"connecting to {b['host']}:{b['port']}{' (TLS)' if b['tls'] else ''} as {b.get('username') or 'anonymous'}...")
+         self.client.connect_async(b["host"], b["port"], keepalive=30)
+         self.client.loop_start()
+         last_purge = 0
+diff --git a/edge/sync.env.example b/edge/sync.env.example
+new file mode 100644
+index 0000000..09b26bc
+--- /dev/null
++++ b/edge/sync.env.example
+@@ -0,0 +1,17 @@
++# Cloud broker (EMQX Cloud) settings for sync_worker.py.
++# On the Pi:
++#   sudo mkdir -p /etc/medikiosk
++#   sudo cp edge/sync.env.example /etc/medikiosk/sync.env
++#   sudo nano /etc/medikiosk/sync.env          (fill in the real values)
++#   sudo chown root:medi_kiosk /etc/medikiosk/sync.env && sudo chmod 640 /etc/medikiosk/sync.env
++#   sudo systemctl restart medikiosk-sync
++# NEVER commit the filled-in file - the repo is public.
++
++# EMQX console -> your deployment -> Overview -> "Address" (MQTT over TLS/SSL port is 8883)
++MEDIKIOSK_BROKER_HOST=xxxx.ala.ap-southeast-1.emqxsl.com
++MEDIKIOSK_BROKER_PORT=8883
++MEDIKIOSK_BROKER_TLS=1
++
++# EMQX console -> Access Control -> Authentication: one login per kiosk
++MEDIKIOSK_BROKER_USERNAME=K-01
++MEDIKIOSK_BROKER_PASSWORD=change-me

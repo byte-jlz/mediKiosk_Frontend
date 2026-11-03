@@ -80,6 +80,39 @@ Every topic and message is documented in `MediKiosk_hardware/agent/README.md`.
   `agentBusy`, `agentSimulated` and `lastSeen` are always there in `GET /api/kiosks`.
 * Readings only get into a session from the agent, never from the browser.
 
+## Visits from the Pi over EMQX Cloud (deployed)
+
+When deployed, the Pi's `edge/sync_worker.py` (hardware repo) sends each
+classified visit to the **cloud broker** (EMQX Cloud), and this backend picks
+it up there:
+
+```
+Pi: sync_worker.py --medikiosk/K-01/vitals/<tier>--> EMQX Cloud --> backend (mqtt_bridge.py)
+                   <--medikiosk/K-01/ack {message_id}--            (stored, THEN acked)
+```
+
+* The visit is stored once per `message_id` (`app/store.py`), and only then
+  acked. A re-sent visit is acked again as `duplicate`, not stored twice.
+* A visit is ignored if its `kiosk_id` doesn't match the topic it came on.
+* If its `external_session_id` matches a kiosk session, the session gets `edgeVisitId`.
+* Staff can list them: `GET /api/admin/edge-visits` (Clinic Staff login).
+* The client ID is fixed (`medikiosk-backend`) with a persistent session, so
+  visits sent while the backend restarts are delivered when it is back.
+  Run only ONE backend per client ID.
+
+Set these on the server (e.g. in the systemd service's `EnvironmentFile`,
+see `emqx.env.example` - never commit the real password):
+
+```
+MQTT_HOST=<your-deployment>.emqxsl.com    # EMQX console -> Overview -> Address
+MQTT_PORT=8883                            # MQTT over TLS (TLS turns on automatically on 8883)
+MQTT_USER=backend
+MQTT_PASSWORD=<from EMQX Access Control>
+```
+
+No CA file is needed for EMQX Cloud. `MQTT_CA_FILE` is only for a broker
+with a self-signed certificate.
+
 ### Test it on one laptop (no Pi)
 
 ```bash
