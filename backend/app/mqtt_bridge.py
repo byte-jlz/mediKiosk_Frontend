@@ -9,11 +9,6 @@ Started/stopped with the app (see main.py). It listens to EVERY kiosk:
                             the kiosk tablet must not subscribe to it)
     medikiosk/+/status   -> remember the agent's online/busy state and keep
                             the kiosk's Online/Offline status in data.kiosks
-    medikiosk/+/vitals/# -> a classified visit from a Pi's edge/sync_worker.py
-                            (sent over the CLOUD broker, e.g. EMQX). Stored once
-                            per message_id, then answered with an ack on
-                            medikiosk/<kiosk>/ack - the Pi only deletes the
-                            visit from its SQLite buffer after that ack.
 
 The agent's topics and messages are documented in the hardware repo:
 MediKiosk_hardware/agent/README.md
@@ -22,17 +17,6 @@ Settings (environment variables, all optional):
     MQTT_ENABLED=0               don't connect at all (UI-only work)
     MQTT_HOST / MQTT_PORT        broker (default localhost:1883)
     MQTT_USER / MQTT_PASSWORD    broker login, once it has a password file
-    MQTT_TLS=1                   encrypt the connection (default: on when MQTT_PORT is 8883)
-    MQTT_CA_FILE                 CA certificate file; leave empty for EMQX Cloud
-                                 (its certificate is trusted by the system already)
-    MQTT_CLIENT_ID               default "medikiosk-backend". Fixed on purpose: with
-                                 clean_session=False the broker keeps visits that
-                                 arrive while the backend restarts. Run ONE backend
-                                 per client id (two with the same id kick each other off).
-
-EMQX Cloud (deployed):
-    MQTT_HOST=<your-deployment>.emqxsl.com  MQTT_PORT=8883
-    MQTT_USER=backend  MQTT_PASSWORD=<from the EMQX console>
 
 If the broker isn't running, the backend still starts and keeps retrying
 in the background - the REST API works either way.
@@ -40,7 +24,6 @@ in the background - the REST API works either way.
 
 import json
 import os
-import ssl
 import threading
 import time
 from typing import Optional
@@ -58,14 +41,9 @@ MQTT_HOST = os.getenv("MQTT_HOST", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 MQTT_USER = os.getenv("MQTT_USER")
 MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
-_tls_env = os.getenv("MQTT_TLS")
-MQTT_TLS = (_tls_env.strip().lower() in ("1", "true", "yes", "on")) if _tls_env else MQTT_PORT == 8883
-MQTT_CA_FILE = os.getenv("MQTT_CA_FILE") or None
-MQTT_CLIENT_ID = os.getenv("MQTT_CLIENT_ID", "medikiosk-backend")
 
 T_RESULTS = "medikiosk/+/result"
 T_STATUS = "medikiosk/+/status"
-T_VISITS = "medikiosk/+/vitals/#"   # edge sync_worker: medikiosk/<kiosk>/vitals/<tier>
 
 VITAL_LABELS = {
     "bmi": "BMI", "height": "Height", "weight": "Weight", "heartRateSpo2": "Heart rate & SpO2",
@@ -92,21 +70,17 @@ class MqttBridge:
         if mqtt is None:
             log("paho-mqtt not installed (pip install paho-mqtt) - no live kiosk data")
             return
-        c = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=MQTT_CLIENT_ID, clean_session=False)
+        c = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"medikiosk-backend-{os.getpid()}")
         if MQTT_USER:
             c.username_pw_set(MQTT_USER, MQTT_PASSWORD)
-        if MQTT_TLS:
-            c.tls_set(ca_certs=MQTT_CA_FILE, tls_version=ssl.PROTOCOL_TLS_CLIENT)
         c.on_connect = self._on_connect
         c.on_disconnect = self._on_disconnect
         c.on_message = self._on_message
-        c.on_connect_fail = lambda *_: log(
-            f"could not reach {MQTT_HOST}:{MQTT_PORT} - check MQTT_HOST, MQTT_PORT and MQTT_TLS; retrying...")
         c.reconnect_delay_set(min_delay=1, max_delay=15)
         c.connect_async(MQTT_HOST, MQTT_PORT, keepalive=30)
         c.loop_start()
         self.client = c
-        log(f"connecting to {MQTT_HOST}:{MQTT_PORT}{' (TLS)' if MQTT_TLS else ''}...")
+        log(f"connecting to {MQTT_HOST}:{MQTT_PORT}...")
 
     def stop(self):
         if self.client is not None:
@@ -124,8 +98,8 @@ class MqttBridge:
             log(f"connect failed: {reason_code}")
             return
         self.connected = True
-        client.subscribe([(T_RESULTS, 1), (T_STATUS, 1), (T_VISITS, 1)])
-        log(f"connected - listening to {T_RESULTS}, {T_STATUS} and {T_VISITS}")
+        client.subscribe([(T_RESULTS, 1), (T_STATUS, 1)])
+        log(f"connected - listening to {T_RESULTS} and {T_STATUS}")
 
     def _on_disconnect(self, *_a):
         if self.connected:
@@ -137,11 +111,9 @@ class MqttBridge:
             payload = json.loads(msg.payload.decode())
             if not isinstance(payload, dict):
                 return
-            parts = msg.topic.split("/")          # medikiosk/<kiosk>/<kind>[/...]
+            parts = msg.topic.split("/")          # medikiosk/<kiosk>/<kind>
             kiosk_id, kind = parts[1], parts[2]
-            if kind == "vitals":
-                self.handle_visit(kiosk_id, payload)
-            elif kind == "result":
+            if kind == "result":
                 self.handle_result(kiosk_id, payload)
             elif kind == "status":
                 self.handle_status(kiosk_id, payload)
@@ -162,26 +134,6 @@ class MqttBridge:
             return
         if not store.missing_vitals(session):
             self.run_urgency(session)
-
-    def handle_visit(self, kiosk_id: str, visit: dict):
-        """A classified visit from the Pi's sync_worker. Save it, THEN ack it -
-        the Pi keeps re-sending until the ack arrives, so an ack must never be
-        sent for something that was not stored."""
-        message_id = visit.get("message_id")
-        if not message_id:
-            log(f"visit from {kiosk_id} without a message_id - ignored")
-            return
-        if visit.get("kiosk_id") != kiosk_id:     # a kiosk may only send its own visits
-            log(f"visit {message_id} says kiosk {visit.get('kiosk_id')!r} but came on {kiosk_id}'s topic - ignored")
-            return
-        is_new = store.save_edge_visit(visit)
-        self.publish(f"medikiosk/{kiosk_id}/ack",
-                     {"message_id": message_id, "status": "stored" if is_new else "duplicate"})
-        if is_new:
-            _activity(kiosk_id, "Visit received from the kiosk", visit.get("patient_ref"))
-            log(f"visit {message_id[:8]} from {kiosk_id} stored and acked")
-        else:
-            log(f"visit {message_id[:8]} from {kiosk_id} was a duplicate - acked again")
 
     def run_urgency(self, session: dict) -> Optional[dict]:
         result = urgency.classify(session["readings"])

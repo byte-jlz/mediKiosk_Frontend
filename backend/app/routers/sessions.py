@@ -11,7 +11,6 @@ Staff endpoints (admin console - includes the risk level and HR cross-check):
     GET  /api/admin/kiosk-sessions/{id}      one session, everything
     POST /api/admin/kiosk-sessions/{id}/urgency   re-run the risk check
     GET  /api/admin/check-ins                saved check-ins (newest first)
-    GET  /api/admin/edge-visits              visits sent by each Pi's sync_worker (newest first)
 
 Other:
     GET  /api/kiosks/{id}/agent              the kiosk agent's last status (online / busy)
@@ -204,12 +203,6 @@ async def rerun_urgency(session_id: str):
                             detail=f"Missing vitals: {store.missing_vitals(session)}")
     bridge.run_urgency(session)
     return _staff_view(_get_or_404(session_id))
-
-
-@router.get("/admin/edge-visits", dependencies=clinic_staff)
-async def list_edge_visits(kioskId: Optional[str] = Query(None), limit: int = Query(50, ge=1, le=500)):
-    """Classified visits the kiosks' sync_worker sent over the cloud broker (newest first)."""
-    return store.list_edge_visits(kioskId, limit)
 
 
 @router.get("/admin/check-ins", dependencies=any_staff)
