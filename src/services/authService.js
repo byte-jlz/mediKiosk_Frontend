@@ -3,12 +3,38 @@ import { api, clearSession, getSession, saveSession } from './api';
 
 // ---------------- staff (one login for all three staff roles) ----------------
 
-/** POST /api/staff/login → { token, staff: { name, role, accessRole, mustChangePassword, ... } } */
+/**
+ * POST /api/staff/login. Staff sign in in two steps, so this does not always finish the sign-in:
+ *   { step: 'done', staff }                 signed in (two-step sign-in is switched off on the server)
+ *   { step: 'code', mfaToken }              ask for the code from the authenticator app (or a recovery code)
+ *   { step: 'setup', setupToken }           first sign-in: the person must set up the authenticator app first
+ */
 export async function staffLogin(email, password) {
   const data = await api('/api/staff/login', { method: 'POST', body: { email: email.trim(), password } });
+  if (data.mfaRequired) return { step: 'code', mfaToken: data.mfaToken };
+  if (data.mfaSetupRequired) return { step: 'setup', setupToken: data.setupToken };
+  return { step: 'done', staff: completeStaffSignIn(data) };
+}
+
+/** Saves a finished sign-in ({ token, staff }) and returns the staff member. */
+export function completeStaffSignIn(data) {
   saveSession('staff', { token: data.token, staff: data.staff });
   return data.staff;
 }
+
+/** POST /api/staff/login/mfa: the code from the app, or one of the recovery codes. */
+export async function staffLoginCode(mfaToken, code) {
+  return completeStaffSignIn(await api('/api/staff/login/mfa', { method: 'POST', body: { mfaToken, code: code.trim() } }));
+}
+
+/** POST /api/staff/login/mfa/email: emails a one-time code (only when the clinic has turned that on). */
+export const staffEmailCode = (mfaToken) => api('/api/staff/login/mfa/email', { method: 'POST', body: { mfaToken } });
+
+/** POST /api/mfa/setup: returns { secret, otpauthUri } to show as a QR code. */
+export const mfaStart = (setupToken) => api('/api/mfa/setup', { method: 'POST', token: setupToken });
+
+/** POST /api/mfa/enable: checks the first code. Returns { token, staff, recoveryCodes }; call completeStaffSignIn() once the codes are saved. */
+export const mfaFinish = (setupToken, code) => api('/api/mfa/enable', { method: 'POST', token: setupToken, body: { code: code.trim() } });
 
 /** The signed-in staff member (or null). Includes accessRole: clinic_staff | admin | super_admin. */
 export function getCurrentStaff() {

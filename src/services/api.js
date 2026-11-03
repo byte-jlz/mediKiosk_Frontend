@@ -71,11 +71,14 @@ function messageFrom(body, status) {
 /**
  * api('/api/patients', { as: 'staff', method: 'POST', body: {...} })
  * as: 'staff' | 'patient' | undefined (no login needed)
+ * token: send this exact token instead of the saved session (used while setting up two-step sign-in)
  */
-export async function api(path, { as, method = 'GET', body } = {}) {
+export async function api(path, { as, method = 'GET', body, token } = {}) {
   const headers = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (as) {
+  if (token) {
+    headers.Authorization = `Bearer ${token}`; // a short-lived two-step token (setup), not a saved session
+  } else if (as) {
     const session = getSession(as);
     if (session?.token) headers.Authorization = `Bearer ${session.token}`;
   }
