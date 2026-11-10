@@ -27,8 +27,7 @@ export const KIOSK_STEPS = [
       'Gently place your index fingertip on the sensor pad.',
       'Breathe normally and avoid talking or moving until the measurement is complete.',
     ],
-    timerSeconds: 30,
-    timerLabel: 'of 30 seconds',
+    timerSeconds: 30, // RR_SECONDS in measurements.py (the ring itself uses the agent's countdown)
     measuring: 'Measuring…',
     measuringHint: 'Keep your finger still, breathe normally and avoid talking or moving.',
     recheckTip: 'Relax for a moment, then gently place your fingertip on the pad and keep still.',
@@ -67,14 +66,13 @@ export const KIOSK_STEPS = [
     color: 'temp',
     description:
       'Your body temperature will be measured automatically using the infrared sensor integrated into the kiosk. Follow the on-screen instructions and remain still while the reading is taken.',
-    duration: 'Takes up to 30 seconds',
+    duration: 'Takes about 5 seconds', // TEMP_SECONDS in measurements.py
     tips: [
       'Locate the temperature sensor on the kiosk.',
       'Position the required body part near the sensor as indicated on the screen.',
       'Remain still until the temperature reading is complete.',
     ],
-    timerSeconds: 30,
-    timerLabel: 'seconds left · max 30',
+    timerSeconds: 5, // TEMP_SECONDS in measurements.py (the ring itself uses the agent's countdown)
     measuring: 'Measuring…',
     measuringHint: 'Hold still in front of the sensor until the reading is complete.',
     recheckTip: 'Wait a moment, then position yourself near the sensor again and remain still.',
@@ -128,19 +126,19 @@ export const CONFIRM_PROMPTS = {
   finger_rest: {
     text: 'Stand and relax. Gently place your index fingertip on the sensor pad.',
     sub: 'Don’t press hard. This one reading measures your breathing rate and blood oxygen.',
-    pill: 'A 30-second reading starts when you tap the button',
+    pill: 'A 30-second reading starts when you tap the button', // RR_SECONDS
     button: 'My finger is on the sensor',
   },
   cuff_on: {
     text: 'Slide your arm into the cuff with your palm facing upward.',
     sub: 'Keep your arm supported at heart level. The cuff inflates by itself when you tap the button.',
-    pill: 'Measuring takes up to 100 seconds',
+    pill: 'Measuring takes up to 100 seconds', // bp_auto.TIMEOUT
     button: 'My arm is in the cuff',
   },
   forehead: {
     text: 'Hold your forehead 2–5 cm in front of the infrared sensor.',
     sub: 'Move your hair away from your forehead and keep still until the reading is complete.',
-    pill: 'Takes up to 30 seconds',
+    pill: 'A 5-second reading starts when you tap the button', // TEMP_SECONDS
     button: 'I’m in position',
   },
 };

@@ -277,6 +277,7 @@ function TimerRing({ run, step }) {
   if (step.countUp) return <ElapsedRing tick={run.tick} step={step} />;
   const total = run.totalSeconds || step.timerSeconds || 30;
   const left = run.tick ? Math.max(0, Math.ceil(run.tick.secondsLeft)) : total;
+  // (before the first tick there is nothing to count yet - show a full ring)
   const live = formatLive(run.tick?.live);
   return (
     <div className="k-ring" role="timer" aria-live="off">
@@ -294,7 +295,7 @@ function TimerRing({ run, step }) {
       </svg>
       <div className="k-ring__center">
         <strong>{left}</strong>
-        <span>{live ? `${live.value} ${live.unit}` : step.timerLabel}</span>
+        <span>{live ? `${live.value} ${live.unit}` : run.tick ? `seconds left · of ${total}` : 'Starting…'}</span>
       </div>
     </div>
   );
@@ -305,13 +306,16 @@ function BmiProgress({ run }) {
   const live = formatLive(run.tick?.live);
   const weighing = run.bmiStage !== 'height';
   const weight = weighing ? live : run.weight;
+  // seconds left of the agent's countdown for the row being measured
+  const left = run.tick?.secondsLeft != null ? Math.max(0, Math.ceil(run.tick.secondsLeft)) : null;
+  const measuringText = left != null ? `Measuring now… ${left}s left` : 'Measuring now…';
   return (
     <div className="k-panel k-panel--tint k-bmi">
       <div className={`k-bmi__row${weighing ? ' is-active' : ' is-done'}`}>
         {weighing ? <span className="k-spinner k-spinner--small" /> : <BadgeCheck />}
         <div className="k-bmi__label">
           <strong>Weight</strong>
-          <span>{weighing ? 'Measuring now…' : 'Measured'}</span>
+          <span>{weighing ? measuringText : 'Measured'}</span>
         </div>
         <p className="k-bmi__value">
           {weight ? weight.value : '—'}
@@ -322,7 +326,7 @@ function BmiProgress({ run }) {
         {weighing ? <span className="k-bmi__pending" /> : <span className="k-spinner k-spinner--small" />}
         <div className="k-bmi__label">
           <strong>Height</strong>
-          <span>{weighing ? 'Next' : 'Measuring now…'}</span>
+          <span>{weighing ? 'Next' : measuringText}</span>
         </div>
         <p className="k-bmi__value k-bmi__value--muted">
           —<span> cm</span>

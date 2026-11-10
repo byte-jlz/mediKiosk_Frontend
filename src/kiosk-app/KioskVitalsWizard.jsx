@@ -104,8 +104,10 @@ export default function KioskVitalsWizard() {
           ...r,
           phase: 'running',
           prompt: null,
-          // the agent may count from a different number than our default - use whichever is bigger
-          totalSeconds: Math.max(r.totalSeconds || 0, Math.ceil(secondsLeft)),
+          // The first tick of each countdown tells us how long the agent will
+          // read (measurements.py HR/RR/TEMP/WEIGHT/HEIGHT_SECONDS), so the ring
+          // always matches the hardware - no hard-coded seconds here.
+          totalSeconds: r.tick ? r.totalSeconds : Math.max(1, Math.ceil(secondsLeft)),
           tick: { secondsLeft, live: st.live },
           weight: st.live?.kg != null && r.bmiStage !== 'height' ? { value: Number(st.live.kg).toFixed(1) } : r.weight,
         }));
