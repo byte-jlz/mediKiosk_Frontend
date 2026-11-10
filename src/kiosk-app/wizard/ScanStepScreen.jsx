@@ -239,8 +239,42 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
 const RING_R = 200;
 const RING_C = 2 * Math.PI * RING_R;
 
+const BP_PHASE_TEXT = {
+  pumping: 'seconds · cuff inflating',
+  measuring: 'seconds · measuring',
+  checking: 'seconds · reading the result',
+};
+
+/** BP ring: counts UP with the agent's own seconds (same as the agent log). */
+function ElapsedRing({ tick, step }) {
+  const started = tick?.elapsed != null;
+  const seconds = started ? Math.floor(tick.elapsed) : 0;
+  const filled = started ? Math.min(1, tick.elapsed / tick.timeout) : 0;
+  return (
+    <div className="k-ring" role="timer" aria-live="off">
+      <svg width="480" height="480" viewBox="0 0 480 480" aria-hidden="true">
+        <circle className="k-ring__track" cx="240" cy="240" r={RING_R} />
+        <circle
+          className="k-ring__arc"
+          cx="240"
+          cy="240"
+          r={RING_R}
+          strokeDasharray={RING_C}
+          strokeDashoffset={RING_C * (1 - filled)}
+          transform="rotate(-90 240 240)"
+        />
+      </svg>
+      <div className="k-ring__center">
+        <strong>{started ? seconds : '…'}</strong>
+        <span>{started ? BP_PHASE_TEXT[tick.bpPhase] || 'seconds' : step.startingLabel || 'Starting…'}</span>
+      </div>
+    </div>
+  );
+}
+
 /** Countdown ring - the colored arc shrinks as the seconds run out. */
 function TimerRing({ run, step }) {
+  if (step.countUp) return <ElapsedRing tick={run.tick} step={step} />;
   const total = run.totalSeconds || step.timerSeconds || 30;
   const left = run.tick ? Math.max(0, Math.ceil(run.tick.secondsLeft)) : total;
   const live = formatLive(run.tick?.live);

@@ -49,8 +49,9 @@ export const KIOSK_STEPS = [
       'Slide your arm into the cuff with your palm facing upward.',
       'Keep your arm supported at heart level and remain still until the measurement is complete.',
     ],
-    timerSeconds: 100,
-    timerLabel: 'seconds left · max 100',
+    timerSeconds: 100, // the agent's timeout (bp_auto.TIMEOUT) - only used for the ring
+    countUp: true, // show the agent's elapsed seconds, not a countdown
+    startingLabel: 'Starting the monitor…',
     measuring: 'Measuring…',
     measuringHint:
       'The cuff is measuring your blood pressure and heart rate. Keep your arm still and avoid talking. It may finish early.',

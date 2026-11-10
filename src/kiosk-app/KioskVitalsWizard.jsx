@@ -89,6 +89,15 @@ export default function KioskVitalsWizard() {
         setRun((r) => ({ ...r, phase: 'awaiting', prompt: { step: st.step, message: st.message }, tick: null }));
       } else if (st.phase === 'confirmed' || st.phase === 'accepted') {
         setRun((r) => ({ ...r, phase: 'running', prompt: null }));
+      } else if (st.phase === 'measuring' && st.elapsed_s != null) {
+        // BP: the monitor decides when it's done, so the agent counts UP -
+        // show exactly the agent's seconds instead of a fake countdown.
+        setRun((r) => ({
+          ...r,
+          phase: 'running',
+          prompt: null,
+          tick: { elapsed: st.elapsed_s, timeout: st.timeout_s || r.totalSeconds || 100, bpPhase: st.bp_phase },
+        }));
       } else if (st.phase === 'measuring') {
         const secondsLeft = st.seconds_left ?? 0;
         setRun((r) => ({
@@ -260,6 +269,9 @@ export default function KioskVitalsWizard() {
 function progressOf(step, run) {
   if (run.phase !== 'running' && run.phase !== 'awaiting') return 0;
   if (step.key === 'bmi') return run.bmiStage === 'height' ? 0.5 : run.bmiStage === 'weight' ? 0.25 : 0;
+  if (run.phase === 'running' && run.tick?.elapsed != null) {
+    return Math.min(1, run.tick.elapsed / run.tick.timeout);
+  }
   if (run.phase === 'running' && run.tick && run.totalSeconds) {
     return Math.min(1, Math.max(0, 1 - run.tick.secondsLeft / run.totalSeconds));
   }
