@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import './KioskShell.css';
 
 // The kiosk touchscreen is mounted VERTICALLY (portrait, 1080 x 1920).
 // Every kiosk screen is laid out on this fixed canvas, then scaled to fit the
@@ -11,14 +10,8 @@ function fitScale() {
   return Math.min(window.innerWidth / KIOSK_WIDTH, window.innerHeight / KIOSK_HEIGHT);
 }
 
-/**
- * Wraps every kiosk screen in a tall, portrait frame - represents the
- * physical vertical touchscreen, as opposed to the phone (patient-app)
- * or browser window (admin-console).
- *
- * split: art banner on top, content below (landing / sign-in screens).
- */
-export default function KioskShell({ children, split = false }) {
+/** Wraps every kiosk screen in the 1080 x 1920 portrait frame. */
+export default function KioskShell({ children }) {
   const [scale, setScale] = useState(fitScale);
 
   useEffect(() => {
@@ -28,15 +21,9 @@ export default function KioskShell({ children, split = false }) {
   }, []);
 
   return (
-    <div className="mk-kiosk-outer">
-      <div
-        className="mk-kiosk-frame"
-        style={{ width: KIOSK_WIDTH * scale, height: KIOSK_HEIGHT * scale }}
-      >
-        <div
-          className={`mk-kiosk-shell${split ? ' mk-kiosk-shell--split' : ''}`}
-          style={{ width: KIOSK_WIDTH, height: KIOSK_HEIGHT, transform: `scale(${scale})` }}
-        >
+    <div className="k-outer">
+      <div className="k-frame" style={{ width: KIOSK_WIDTH * scale, height: KIOSK_HEIGHT * scale }}>
+        <div className="k-shell" style={{ width: KIOSK_WIDTH, height: KIOSK_HEIGHT, transform: `scale(${scale})` }}>
           {children}
         </div>
       </div>

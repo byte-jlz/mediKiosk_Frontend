@@ -1,70 +1,72 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import KioskShell from './KioskShell';
-import WizardProgress from './wizard/WizardProgress';
+import { KioskCard, LeaveDialog, TopBar } from './ui/KioskUI';
+import StepProgress from './wizard/StepProgress';
 import ScanStepScreen from './wizard/ScanStepScreen';
 import KioskResults from './wizard/KioskResults';
-import { KIOSK_STEPS, STEP_BY_KEY } from './wizard/kioskSteps';
+import { KIOSK_STEPS, isBorderline } from './wizard/kioskSteps';
 import { KIOSK_ID, useKioskAgent } from '../services/kioskAgentService';
-import { startKioskSession, getKioskSession, completeKioskSession } from '../services/kioskSessionService';
-import { mirrorCheckInToAdminStore } from '../services/vitalsService';
-import { getCurrentPatientProfile } from '../services/authService';
-import Button from '../components/Button';
-import './wizard/wizard.css';
-import './KioskVitalsWizard.css';
+import { completeKioskSession, startKioskSession } from '../services/kioskSessionService';
+import { clearPatientSession, getCurrentPatient } from '../services/authService';
+import { fullName, shortName } from './patientName';
 
-const KIOSK_NAME = 'Lobby — North Gate';
 const IDLE = { phase: 'idle' };
 
 /**
  * The kiosk check-in.
  *
- *  1. Start a backend session (the agent files every result under it).
- *  2. For each step, send a scan to the kiosk agent over MQTT and follow its
- *     `state` messages: "I'm ready" prompts, countdowns, then the result.
- *  3. Failed?  Try again, or "Skip for now" ONCE (the step moves to the end).
- *     Failed again after skipping:
- *       - registered patient -> must try again (or ask staff / cancel); their
- *         record only takes a COMPLETE check-in
- *       - guest -> may "Continue without it" (saved as incomplete and flagged
- *         for staff; the risk model is not run)
- *  4. Results: the patient's own readings only - the risk level is staff-only.
+ *  REGISTERED PATIENT (signed in with QR)
+ *    - a backend session is started; the kiosk agent files every result under it
+ *    - every reading is required, in order - there is no skip
+ *    - a failed reading must be tried again (or the staff called)
+ *    - on the results screen the check-in is saved to their record and sent
+ *      to the staff queue
+ *
+ *  GUEST
+ *    - NO backend session: scans are sent with session = null, so nothing
+ *      reaches the clinic staff or any record
+ *    - any reading can be skipped
+ *
+ *  BOTH
+ *    - a reading within the sensor's margin of error of a clinical cut-off
+ *      asks for ONE repeat measurement (kioskSteps.js -> BORDERLINE_RULES)
+ *    - the results screen shows the readings only - never the risk level
  */
 export default function KioskVitalsWizard() {
   const navigate = useNavigate();
-  const patient = getCurrentPatientProfile();
-  const patientId = patient?.id || null;
-  const patientName = patient?.firstName || 'Guest';
-  const isGuest = !patientId;
-  const fullName = [patient?.firstName, patient?.lastName].filter(Boolean).join(' ');
+  const [patient] = useState(getCurrentPatient);
+  const isGuest = !patient;
 
   const { agent, connection, agentOnline } = useKioskAgent();
 
   const [sessionId, setSessionId] = useState(null);
   const [sessionError, setSessionError] = useState(null);
-  const [order, setOrder] = useState(() => KIOSK_STEPS.map((s) => s.key));
-  const [position, setPosition] = useState(0); // index in `order`; order.length = results
-  const [skipped, setSkipped] = useState({}); // key -> true once it was skipped
-  const [missing, setMissing] = useState([]); // keys finished without
-  const [readings, setReadings] = useState({}); // key -> agent reading
+  const [index, setIndex] = useState(0); // KIOSK_STEPS.length = results screen
+  const [readings, setReadings] = useState({}); // stepKey -> agent reading
+  const [skipped, setSkipped] = useState(() => new Set());
+  const recheckedRef = useRef(new Set()); // steps that already had their one repeat
   const [run, setRun] = useState(IDLE);
-  const [session, setSession] = useState(null); // backend view, for the results screen
-  const [finishing, setFinishing] = useState(false);
-  const [finishError, setFinishError] = useState(null);
+  const [saveState, setSaveState] = useState(isGuest ? 'none' : 'saving');
+  const [saveError, setSaveError] = useState('');
+  const [leaving, setLeaving] = useState(false); // "leave this check-in?" popup
 
   const scanIdRef = useRef(null);
   const agentRef = useRef(null);
   agentRef.current = agent;
 
-  // ---- 1. backend session
+  // ---- registered patients: ONE backend session per check-in
+  const sessionRequestRef = useRef(null);
   const openSession = useCallback(() => {
+    if (isGuest) return;
     setSessionError(null);
-    startKioskSession(KIOSK_ID, patientId, fullName)
-      .then((s) => setSessionId(s.sessionId))
-      .catch((e) => setSessionError(e.message));
-  }, [patientId, fullName]);
+    sessionRequestRef.current = startKioskSession(KIOSK_ID, patient.id, fullName(patient));
+    sessionRequestRef.current.then((s) => setSessionId(s.sessionId)).catch((e) => setSessionError(e.message));
+  }, [isGuest, patient]);
 
-  useEffect(openSession, [openSession]);
+  useEffect(() => {
+    if (!sessionRequestRef.current) openSession(); // not twice (React dev mode runs effects twice)
+  }, [openSession]);
 
   // Leaving the screen mid-scan: tell the agent to stop.
   useEffect(
@@ -74,34 +76,29 @@ export default function KioskVitalsWizard() {
     []
   );
 
-  const isResults = position >= order.length;
-  const currentKey = order[position];
-  const step = STEP_BY_KEY[currentKey];
-  const isLast = position === order.length - 1;
+  const isResults = index >= KIOSK_STEPS.length;
+  const step = KIOSK_STEPS[Math.min(index, KIOSK_STEPS.length - 1)];
 
-  // ---- results screen: fetch the backend's view (official heart rate etc.)
-  useEffect(() => {
-    if (!isResults || !sessionId) return;
-    getKioskSession(sessionId)
-      .then(setSession)
-      .catch((e) => setFinishError(e.message));
-  }, [isResults, sessionId]);
-
-  // ---- 2. one scan
+  // ---- one scan
   async function startScan() {
-    if (!agent || !sessionId) return;
-    const key = currentKey;
-    setRun({ phase: 'starting' });
-    const { id, done } = agent.scan(key, sessionId, (st) => {
+    if (!agent || (!isGuest && !sessionId)) return;
+    const key = step.key;
+    setRun({ phase: 'starting', totalSeconds: step.timerSeconds || 0 });
+    const { id, done } = agent.scan(key, isGuest ? null : sessionId, (st) => {
       if (st.phase === 'awaiting_confirm') {
         setRun((r) => ({ ...r, phase: 'awaiting', prompt: { step: st.step, message: st.message }, tick: null }));
       } else if (st.phase === 'confirmed' || st.phase === 'accepted') {
         setRun((r) => ({ ...r, phase: 'running', prompt: null }));
       } else if (st.phase === 'measuring') {
+        const secondsLeft = st.seconds_left ?? 0;
         setRun((r) => ({
           ...r,
           phase: 'running',
-          tick: { secondsLeft: st.seconds_left ?? 0, live: st.live },
+          prompt: null,
+          // the agent may count from a different number than our default - use whichever is bigger
+          totalSeconds: Math.max(r.totalSeconds || 0, Math.ceil(secondsLeft)),
+          tick: { secondsLeft, live: st.live },
+          weight: st.live?.kg != null && r.bmiStage !== 'height' ? { value: Number(st.live.kg).toFixed(1) } : r.weight,
         }));
       } else if (st.phase === 'countdown_end') {
         setRun((r) => ({ ...r, tick: null }));
@@ -114,150 +111,175 @@ export default function KioskVitalsWizard() {
     scanIdRef.current = null;
     if (result.ok) {
       setReadings((prev) => ({ ...prev, [key]: result.reading }));
-      setRun({ phase: 'done' });
-    } else {
+      const needsRepeat = isBorderline(key, result.reading) && !recheckedRef.current.has(key);
+      setRun({ phase: needsRepeat ? 'recheck' : 'done' });
+    } else if (!result.cancelled) {
       setRun({
         phase: 'failed',
         error: result.rejected
-          ? `The sensors are busy (${result.error}). Please wait a moment and try again.`
-          : friendlyError(result.error),
+          ? 'The sensors are busy. Please wait a moment and try again.'
+          : friendlyError(result.error, key),
       });
     }
   }
 
   function confirmStep() {
-    if (agent && run.scanId && run.prompt) {
-      agent.confirm(run.scanId, run.prompt.step);
-      setRun((r) => ({ ...r, phase: 'running', prompt: null }));
-    }
+    if (!agent || !run.scanId || !run.prompt) return;
+    agent.confirm(run.scanId, run.prompt.step);
+    setRun((r) => ({
+      ...r,
+      phase: 'running',
+      prompt: null,
+      bmiStage: r.prompt.step === 'stand_under' ? 'height' : r.prompt.step === 'step_on' ? 'weight' : r.bmiStage,
+    }));
+  }
+
+  function measureAgain() {
+    recheckedRef.current.add(step.key);
+    startScan();
   }
 
   function next() {
     setRun(IDLE);
-    setPosition((p) => p + 1);
+    setIndex((i) => i + 1);
   }
 
-  // ---- 3. skip once: move this step to the end
-  function skipForNow() {
-    setSkipped((s) => ({ ...s, [currentKey]: true }));
-    setOrder((o) => [...o.filter((k) => k !== currentKey), currentKey]);
-    setRun(IDLE);
-  }
-
-  function giveUp() {
+  function skip() {
     if (!isGuest) return; // registered patients must complete every reading
-    setMissing((m) => [...m, currentKey]);
+    setSkipped((s) => new Set(s).add(step.key));
+    setReadings((r) => {
+      const { [step.key]: _dropped, ...rest } = r;
+      return rest;
+    });
     next();
   }
 
-  function cancelCheckIn() {
+  /**
+   * Leave mid-check-in: stop any running scan and drop every reading taken.
+   * A signed-in patient goes back to their Signed-in screen (still signed in);
+   * a guest goes back to the guest welcome.
+   */
+  function leaveCheckIn() {
     if (scanIdRef.current && agent) agent.cancel(scanIdRef.current);
+    navigate(isGuest ? '/kiosk/guest' : '/kiosk/signed-in');
+  }
+
+  /** Sign the patient out and go back to the Start screen. */
+  function leave() {
+    clearPatientSession();
     navigate('/kiosk');
   }
 
-  // ---- 4. finish
-  async function finish() {
-    setFinishing(true);
-    setFinishError(null);
-    try {
-      const saved = await completeKioskSession(sessionId, isGuest && missing.length > 0);
-      if (patientId) {
-        // Until the admin console reads check-ins from the backend (step 4b),
-        // also keep its local demo store up to date.
-        mirrorCheckInToAdminStore(patient, saved.readings, { id: KIOSK_ID, name: KIOSK_NAME });
-      }
-      navigate('/kiosk');
-    } catch (e) {
-      setFinishError(e.message);
-      setFinishing(false);
-    }
-  }
+  // ---- results: save a registered patient's check-in right away
+  const savingRef = useRef(false);
+  const save = useCallback(() => {
+    if (isGuest || !sessionId || savingRef.current) return;
+    savingRef.current = true;
+    setSaveState('saving');
+    setSaveError('');
+    completeKioskSession(sessionId)
+      .then(() => setSaveState('saved'))
+      .catch((e) => {
+        setSaveError(e.message);
+        setSaveState('error');
+      })
+      .finally(() => {
+        savingRef.current = false;
+      });
+  }, [isGuest, sessionId]);
+
+  useEffect(() => {
+    if (isResults) save();
+  }, [isResults, save]);
 
   // ---- what blocks scanning right now
-  const sensorsReady = Boolean(agent) && connection === 'connected' && agentOnline && Boolean(sessionId);
+  const sensorsReady =
+    Boolean(agent) && connection === 'connected' && agentOnline && (isGuest || Boolean(sessionId));
   const sensorsMessage = sessionError
-    ? `Can't reach the clinic server (${sessionError}).`
+    ? sessionError
     : connection !== 'connected'
       ? 'Connecting to the kiosk sensors…'
       : !agentOnline
-        ? 'The kiosk sensors are offline. Please ask the staff for help.'
+        ? 'The kiosk sensors are offline. Please ask the clinic staff for help.'
         : 'Getting ready…';
 
-  const done = Object.fromEntries(Object.keys(readings).map((k) => [k, true]));
-  const runActive = ['starting', 'awaiting', 'running'].includes(run.phase);
+  // Readings that count as finished (a reading waiting for its repeat doesn't).
+  const done = new Set(
+    Object.keys(readings).filter((k) => !(k === step.key && run.phase === 'recheck' && !isResults))
+  );
+  const frac = progressOf(step, run);
 
   return (
     <KioskShell>
-      <div className="mk-kwizard">
-        {!isResults && (
-          <header className="mk-kwizard__top">
-            <div>
-              <p className="mk-kwizard__welcome">Welcome, {patientName}</p>
-              <p className="mk-kwizard__subtitle">Health check-in</p>
-            </div>
-            <button type="button" className="mk-kwizard__cancel" onClick={cancelCheckIn}>
-              ✕ Cancel check-in
-            </button>
-          </header>
+      <KioskCard color={isResults ? undefined : step.color}>
+        <TopBar name={isGuest ? 'Guest' : shortName(patient)} onLeave={isResults ? undefined : () => setLeaving(true)} />
+
+        {isResults ? (
+          <KioskResults
+            readings={readings}
+            skipped={skipped}
+            isGuest={isGuest}
+            firstName={patient?.firstName}
+            saveState={saveState}
+            saveError={saveError}
+            onFinish={leave}
+            onRetrySave={save}
+          />
+        ) : (
+          <>
+            <StepProgress current={index} done={done} skipped={skipped} frac={frac} />
+            <ScanStepScreen
+              step={step}
+              run={run}
+              reading={readings[step.key]}
+              isGuest={isGuest}
+              isLast={index === KIOSK_STEPS.length - 1}
+              sensorsReady={sensorsReady}
+              sensorsMessage={sensorsMessage}
+              onStart={startScan}
+              onConfirm={confirmStep}
+              onContinue={next}
+              onRecheck={measureAgain}
+              onSkip={skip}
+            />
+          </>
         )}
-
-        {sessionError && (
-          <div className="mk-kwizard__banner" role="alert">
-            Can't reach the clinic server: {sessionError}{' '}
-            <Button variant="secondary" onClick={openSession}>
-              Retry
-            </Button>
-          </div>
+        {leaving && (
+          <LeaveDialog
+            destination={isGuest ? 'You’ll go back to the guest welcome page.' : 'You’ll go back to your Signed-in page.'}
+            onStay={() => setLeaving(false)}
+            onLeave={leaveCheckIn}
+          />
         )}
-
-        <div className="mk-kwizard__body">
-          {!isResults && (
-            <aside className="mk-kwizard__rail">
-              <WizardProgress order={order} position={position} done={done} missing={missing} />
-            </aside>
-          )}
-
-          <div className="mk-kwizard__content">
-            {isResults ? (
-              <KioskResults
-                session={session}
-                missing={missing}
-                isGuest={isGuest}
-                finishing={finishing}
-                error={finishError}
-                onFinish={finish}
-              />
-            ) : (
-              <ScanStepScreen
-                key={currentKey}
-                step={step}
-                run={run}
-                reading={readings[currentKey]}
-                sensorsReady={sensorsReady}
-                sensorsMessage={sensorsMessage}
-                canSkip={!skipped[currentKey] && !isLast && !runActive}
-                canGiveUp={isGuest && (Boolean(skipped[currentKey]) || isLast) && run.phase === 'failed'}
-              mustComplete={!isGuest && (Boolean(skipped[currentKey]) || isLast)}
-                onStart={startScan}
-                onConfirm={confirmStep}
-                onContinue={next}
-                onRetry={startScan}
-                onSkip={skipForNow}
-                onGiveUp={giveUp}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+      </KioskCard>
     </KioskShell>
   );
 }
 
-/** Agent error texts are written for logs - soften the common ones for the screen. */
-function friendlyError(error) {
-  if (!error) return 'Please try again.';
-  if (error.startsWith('nobody confirmed')) return 'We waited a while for you. Press "Try again" when you are ready.';
-  if (error.includes('finger')) return 'Your finger moved or was not on the sensor. Rest it gently on the pad and keep still.';
-  if (error.startsWith('sensor problem')) return 'There is a problem with this sensor. You can try again or ask the staff for help.';
-  return error.charAt(0).toUpperCase() + error.slice(1) + '.';
+/** How far the current reading is (0..1), for the step bar's line. */
+function progressOf(step, run) {
+  if (run.phase !== 'running' && run.phase !== 'awaiting') return 0;
+  if (step.key === 'bmi') return run.bmiStage === 'height' ? 0.5 : run.bmiStage === 'weight' ? 0.25 : 0;
+  if (run.phase === 'running' && run.tick && run.totalSeconds) {
+    return Math.min(1, Math.max(0, 1 - run.tick.secondsLeft / run.totalSeconds));
+  }
+  return 0;
+}
+
+/** What to tell the patient when a reading didn't work - same wording as each step's instructions. */
+const RETRY_HELP = {
+  respirationSpo2Hr:
+    'We couldn’t read your fingertip. Gently place your index fingertip on the sensor pad, breathe normally and avoid talking or moving until the measurement is complete.',
+  bloodPressure:
+    'The cuff couldn’t get a reading. Slide your arm into the cuff with your palm facing upward, keep it supported at heart level and remain still until the measurement is complete.',
+  temperature:
+    'We couldn’t get a temperature reading. Position the required body part near the sensor as indicated on the screen and remain still until the reading is complete.',
+  bmi: 'We couldn’t measure your height and weight. Stand upright on the platform, face forward and keep your feet still while you are measured.',
+};
+
+/** Agent error texts are written for logs - turn them into plain wording for the screen. */
+function friendlyError(error, stepKey) {
+  if (error?.startsWith('nobody confirmed')) return 'We waited a while for you. Tap “Try again” when you are ready.';
+  if (error?.startsWith('sensor problem')) return 'There’s a problem with this sensor. You can try again or ask the clinic staff for help.';
+  return RETRY_HELP[stepKey] || 'Please try again.';
 }

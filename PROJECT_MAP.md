@@ -1,88 +1,40 @@
 # Project Map — where to find things
 
-Open this project's file explorer in VS Code (`Ctrl+Shift+E` / `Cmd+Shift+E`)
-and use this as a guide. Folders are listed in the order you'd actually touch
-them while working.
-
 ```
 src/
+├── App.jsx                    ⭐ START HERE — every kiosk screen (route) in one file
+├── main.jsx                   Loads the font, styles and the app
+├── index.css                  Colors (brand + one color per reading)
+├── assets/
+│   └── medikiosk-logo.png
 │
-├── App.jsx                 ⭐ START HERE — every route/page in the whole app
-│                              lives in this one file. If you're lost, open
-│                              this first to see the full site map.
+├── kiosk-app/
+│   ├── kiosk.css              All layout, sizes and animations
+│   ├── KioskShell.jsx         The 1080 × 1920 portrait frame, scaled to the window
+│   ├── StartScreen.jsx        Live date & time, Start button (signs out the last patient)
+│   ├── WelcomeScreen.jsx      Login with QR / Continue as Guest / get the app
+│   ├── KioskQrScanScreen.jsx  Camera QR scan + typed code
+│   ├── SignedInScreen.jsx     "Hi, <name>!" + the 4 required readings
+│   ├── GuestWelcomeScreen.jsx Guest: readings are optional and not sent to staff
+│   ├── KioskVitalsWizard.jsx  ⭐ The check-in: session, MQTT scans, skip / repeat / retry rules
+│   ├── patientName.js
+│   ├── ui/
+│   │   ├── KioskUI.jsx        Card, top bar, footer, buttons, pills, lists
+│   │   └── Icon.jsx           Line icons
+│   └── wizard/
+│       ├── kioskSteps.js      ⭐ Step order, wording, tips, timers, "Your turn" prompts,
+│       │                         repeat-measurement rules (BORDERLINE_RULES)
+│       ├── StepProgress.jsx   Step bar with % complete
+│       ├── ScanStepScreen.jsx One reading (intro / your turn / measuring / done / repeat / failed)
+│       └── KioskResults.jsx   Final summary (readings only - no risk level)
 │
-├── AppSwitcher.jsx          The floating "DEMO SWITCHER" pill (dev tool only,
-│                              not part of the real product — see comment at
-│                              top of the file).
-│
-├── index.css                All colors, fonts, spacing "tokens" for the whole
-│                              app. Change a color here, it updates everywhere.
-│
-├── components/               Small reusable pieces used across multiple
-│   │                          screens (buttons, tables, badges, layout shell).
-│   ├── Button.jsx
-│   ├── DataTable.jsx
-│   ├── StatusBadge.jsx
-│   ├── Sidebar.jsx           (admin console nav + header)
-│   └── AdminLayout.jsx
-│
-├── services/                  ⭐ THE HANDOFF POINT TO YOUR BACKEND TEAMMATE.
-│   │                           Every fake "API call" lives here. Each function
-│   │                           has a comment describing the real FastAPI
-│   │                           endpoint it should eventually call.
-│   ├── authService.js
-│   ├── kioskAgentService.js   (MQTT: sends scans to the kiosk agent, follows its progress)
-│   ├── kioskSessionService.js (REST: start / read / complete a kiosk check-in session)
-│   ├── vitalsService.js       (patient history)
-│   ├── patientsService.js
-│   ├── staffService.js
-│   ├── kiosksService.js
-│   └── auditService.js
-│
-├── mocks/                     Fake data used by services/ until the real
-│                               backend exists. Safe to edit if you want to
-│                               demo with different names/numbers.
-│
-├── patient-app/                📱 The mobile app (patient's own phone)
-│   ├── LandingScreen.jsx
-│   ├── SignInScreen.jsx
-│   ├── SignUpScreen.jsx
-│   ├── QrLoginScreen.jsx
-│   ├── VitalsHomeScreen.jsx
-│   ├── ProfileScreen.jsx
-│   └── SettingsScreen.jsx       (the phone only VIEWS records - no measuring)
-│
-├── kiosk-app/                  🖥 The physical tablet kiosk (landscape)
-│   ├── KioskLandingScreen.jsx
-│   ├── KioskSignInScreen.jsx
-│   ├── KioskQrScanScreen.jsx
-│   ├── KioskQrDisplayScreen.jsx
-│   ├── KioskVitalsWizard.jsx     ⭐ The check-in: session, MQTT scans, skip / retry
-│   ├── wizard/
-│   │   ├── kioskSteps.js         ⭐ Step order, names, colors, "I'm ready" wording
-│   │   ├── ScanStepScreen.jsx    One step (start / I'm ready / countdown / done / failed)
-│   │   ├── WizardProgress.jsx    The progress bar + step circles
-│   │   ├── KioskResults.jsx      Final summary (readings only - no risk level)
-│   │   └── wizard.css
-│
-└── admin-console/               💻 The staff/admin web dashboard
-    ├── AdminLoginScreen.jsx
-    ├── DashboardScreen.jsx       ("Overview" in the sidebar)
-    ├── StaffAccountsScreen.jsx
-    ├── PatientRecordsScreen.jsx
-    ├── KiosksScreen.jsx
-    ├── KiosksActivityScreen.jsx
-    └── AuditLogsScreen.jsx
+└── services/                  Talking to the outside world
+    ├── apiClient.js           fetch wrapper for the FastAPI backend
+    ├── authService.js         QR sign-in, who's signed in, sign out
+    ├── kioskSessionService.js Start / complete a registered patient's check-in
+    ├── kioskAgentService.js   MQTT to the kiosk agent (scan / confirm / cancel)
+    ├── patientQr.js           Reads MEDIKIOSK:<token> codes
+    └── devAuth.js             DEV-only "Skip login as test patient"
 ```
 
-## Common things you might want to change
-
-| I want to... | Edit this file |
-|---|---|
-| Change a color used everywhere | `src/index.css` |
-| Change kiosk step order, names, icons, or wording | `src/kiosk-app/wizard/kioskSteps.js` |
-| Change the fake patient/staff/kiosk names shown | `src/mocks/*.js` |
-| Add a new page/route | `src/App.jsx` |
-| Connect a real backend endpoint | The matching file in `src/services/` |
-
-See `README.md` in this same folder for how to run the project.
+See `README.md` for how to run it and how a check-in works.

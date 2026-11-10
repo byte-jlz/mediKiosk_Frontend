@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import jsQR from 'jsqr';
 import KioskShell from './KioskShell';
-import Button from '../components/Button';
-import { patientLoginWithQr } from '../services/authService';
-import './KioskQrScreens.css';
+import Icon from './ui/Icon';
+import { KioskCard, TopBar } from './ui/KioskUI';
+import { clearPatientSession, patientLoginWithQr } from '../services/authService';
+import { DEV_AUTH_BYPASS, devLoginPatient } from '../services/devAuth';
 
 // Scan every few frames; decoding a full frame on each animation tick is wasteful on a Pi.
 const SCAN_EVERY_N_FRAMES = 4;
@@ -28,7 +29,7 @@ export default function KioskQrScanScreen() {
       setError('');
       try {
         await patientLoginWithQr(value);
-        navigate('/kiosk/vitals');
+        navigate('/kiosk/signed-in');
       } catch (err) {
         setError(err.message || 'QR code not recognized.');
         setStatus('idle');
@@ -72,9 +73,7 @@ export default function KioskQrScanScreen() {
       if (!navigator.mediaDevices?.getUserMedia) {
         setCameraState('unavailable');
         setCameraError(
-          window.isSecureContext
-            ? 'This device has no camera access.'
-            : 'The camera only works over https:// or on localhost.'
+          window.isSecureContext ? 'This kiosk has no camera access.' : 'The camera only works over https:// or on localhost.'
         );
         return;
       }
@@ -94,11 +93,7 @@ export default function KioskQrScanScreen() {
         tick();
       } catch (err) {
         setCameraState('unavailable');
-        setCameraError(
-          err?.name === 'NotAllowedError'
-            ? 'Camera permission was denied.'
-            : 'No camera could be started.'
-        );
+        setCameraError(err?.name === 'NotAllowedError' ? 'Camera permission was denied.' : 'No camera could be started.');
       }
     }
 
@@ -117,51 +112,96 @@ export default function KioskQrScanScreen() {
     setManualCode('');
   }
 
+  function continueAsGuest() {
+    clearPatientSession();
+    navigate('/kiosk/guest');
+  }
+
+  const statusText =
+    status === 'verifying'
+      ? 'Signing you in…'
+      : cameraState === 'starting'
+        ? 'Starting camera…'
+        : cameraState === 'unavailable'
+          ? cameraError
+          : 'Looking for a code…';
+
   return (
     <KioskShell>
-      <div className="mk-kqr mk-kqr--dark">
-        <button className="mk-kqr__back" onClick={() => navigate('/kiosk')} aria-label="Go back">
-          ← Back
-        </button>
+      <KioskCard>
+        <TopBar onBack={() => navigate('/kiosk/welcome')} />
 
-        <h2 className="mk-kqr__title">Scan your QR code</h2>
+        <div className="k-hero">
+          <h1 className="k-h1">Scan your QR code</h1>
+          <p className="k-lead">
+            {cameraState === 'unavailable'
+              ? 'Type the code below, or ask the clinic staff for help.'
+              : 'Open the MediKiosk app and hold your QR code up to the camera.'}
+          </p>
+        </div>
 
-        <div className={`mk-kqr__camera${cameraState === 'live' ? ' is-scanning' : ''}`}>
-          <video ref={videoRef} className="mk-kqr__video" muted playsInline />
+        <div className={`k-camera is-${cameraState}${status === 'verifying' ? ' is-verifying' : ''}`}>
+          <video ref={videoRef} className="k-camera__video" muted playsInline />
           <canvas ref={canvasRef} hidden />
-          {cameraState === 'live' && <span className="mk-kqr__camera-pulse" />}
-          {cameraState === 'starting' && <p className="mk-kqr__camera-msg">Starting camera…</p>}
-          {cameraState === 'unavailable' && <p className="mk-kqr__camera-msg">{cameraError}</p>}
-          {status === 'verifying' && <p className="mk-kqr__camera-msg is-overlay">Signing you in…</p>}
+          <span className="k-camera__corner k-camera__corner--tl" />
+          <span className="k-camera__corner k-camera__corner--tr" />
+          <span className="k-camera__corner k-camera__corner--bl" />
+          <span className="k-camera__corner k-camera__corner--br" />
+          {cameraState === 'live' && status !== 'verifying' && <span className="k-camera__scanline" />}
+          <span className="k-camera__status" role="status">
+            <span className="k-camera__status-dot" />
+            {statusText}
+          </span>
         </div>
 
         {error && (
-          <p className="mk-kqr__error" role="alert">
+          <p className="k-inline-error" role="alert">
+            <Icon name="alert" size={30} />
             {error}
           </p>
         )}
 
-        <p className="mk-kqr__subtitle">
-          {cameraState === 'unavailable'
-            ? 'Use the QR scanner, or ask the clinic staff for help.'
-            : 'Hold your patient QR code up to the camera'}
-        </p>
+        <div className="k-divider">
+          <span>OR TYPE YOUR CODE</span>
+        </div>
 
         {/* Works for typing a code and for USB QR scanners, which type the code then press Enter. */}
-        <form className="mk-kqr__manual" onSubmit={handleManualSubmit}>
+        <form className="k-codeform" onSubmit={handleManualSubmit}>
+          <label htmlFor="k-qr-code" className="k-visually-hidden">
+            QR code
+          </label>
           <input
+            id="k-qr-code"
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
-            placeholder="Scan or enter code"
+            placeholder="Enter code"
             autoFocus={cameraState === 'unavailable'}
-            aria-label="QR code"
             autoComplete="off"
           />
-          <Button type="submit" variant="secondary" disabled={status === 'verifying' || !manualCode.trim()}>
+          <button type="submit" disabled={status === 'verifying' || !manualCode.trim()}>
             Sign in
-          </Button>
+          </button>
         </form>
-      </div>
+
+        {DEV_AUTH_BYPASS && (
+          <button
+            type="button"
+            className="k-devskip"
+            onClick={() => {
+              devLoginPatient();
+              navigate('/kiosk/signed-in');
+            }}
+          >
+            <span>DEV</span> Skip login as test patient
+          </button>
+        )}
+
+        <footer className="k-footer k-footer--center">
+          <button type="button" className="k-link" onClick={continueAsGuest}>
+            No app? Continue as Guest
+          </button>
+        </footer>
+      </KioskCard>
     </KioskShell>
   );
 }

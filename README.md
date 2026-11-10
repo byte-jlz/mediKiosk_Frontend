@@ -1,99 +1,85 @@
-# Medi-Kiosk — Frontend
+# MediKiosk — Kiosk App
 
-React (Vite) frontend for the Medi-Kiosk capstone project. This is the **UI only** —
-the backend (FastAPI) is being built separately by a teammate.
+React (Vite) front-end for the MediKiosk vital-signs kiosk: the portrait
+touchscreen (1080 × 1920) in the clinic. This project contains **only the kiosk
+app**. The patient phone app and the admin console are no longer in here.
 
-## What's in here
-
-This project actually contains **3 separate front-ends**, matching the 3 pieces of
-the Figma design:
-
-| App | Folder | Route | Represents |
-|---|---|---|---|
-| Patient App | `src/patient-app/` | `/app` | The mobile app patients use on their own phone |
-| Kiosk | `src/kiosk-app/` | `/kiosk` | The physical tablet/kiosk hardware in the clinic |
-| Admin Console | `src/admin-console/` | `/admin` | The web dashboard clinical staff/admins use |
-
-In real life these run on 3 different devices and a user would only ever see one.
-For this demo, there's a small "DEMO SWITCHER" pill fixed at the top of the screen
-so you can jump between all three easily — **that switcher is not part of the real
-product**, just a convenience for showing your capstone.
-
-## How to run it
+## Run it
 
 ```bash
 npm install
+cp .env.example .env      # then set the backend / MQTT addresses
 npm run dev
 ```
 
-Then open the URL it prints (usually `http://localhost:5173`).
-
-## FastAPI backend scaffold
-
-A matching FastAPI backend scaffold has been added under `backend/`. To run it locally:
+Open the URL it prints (usually `http://localhost:5173`). Every address goes to
+the kiosk's Start screen (`/kiosk`).
 
 ```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+npm run build     # production build in dist/
+npm run lint
 ```
 
-The backend exposes the same API contracts the frontend services currently expect.
+The kiosk needs the FastAPI backend (`backend/`) and the kiosk agent on the Pi
+(MQTT) to take real readings. See `backend/README.md`.
 
-## Build status (as of this handoff)
+## The screens
 
-- ✅ **Patient App** — Landing, Sign In, Sign Up, QR Login, Vitals Home (history),
-  Profile, Settings. The phone is for viewing records only - all measuring
-  happens at the kiosk.
-- ✅ **Kiosk App** — landscape Landing, Sign In, QR Scan, QR Display, and the
-  check-in wizard, which talks to the real sensors through the kiosk agent over
-  MQTT: BMI → Breathing & Oxygen (respiration + SpO2 + pulse from one finger
-  reading) → Blood Pressure → Temperature → Results. Live countdowns, "I'm
-  ready" buttons, Try again, Skip for now (once - moves the step to the end),
-  and Continue without it (saved as incomplete). The risk level is never shown
-  on the kiosk; it is for staff only.
-- ✅ **Admin Console** — fully built: Login, Dashboard (Overview), Staff Accounts
-  (add/remove staff), Patient Records (view detail modal), Kiosks (deactivate/
-  reactivate, add kiosk), Kiosks Activity (live-style feed), and Audit Logs
-  (search + Export CSV, which downloads a real .csv file of the visible rows).
-
-**All three apps in the Figma are now built and clickable end-to-end.**
-
-## Connecting the real FastAPI backend
-
-**Everything your backend teammate needs is in `src/services/`.** Each file in
-that folder is the single "seam" between the UI and the backend:
-
-- `authService.js` — login/signup/logout
-- `vitalsService.js` — sensor readings + check-in submission (see the comment
-  block at the top — it also explains how to wire up real sensors, polling vs.
-  WebSocket)
-- `patientsService.js` — patient records
-- `staffService.js` — staff accounts
-- `kiosksService.js` — kiosk list/status + dashboard stats
-- `auditService.js` — audit logs + activity feeds
-
-Every function has a comment directly above it describing the exact endpoint,
-request body, and response shape it expects, e.g.:
-
-```js
-// EXPECTED BACKEND ENDPOINT: POST /api/vitals/check-in
-// REQUEST BODY: { patientId, kioskId, readings: {...} }
-// RESPONSE: { success, checkInId, summary }
+```
+Start ─► Welcome ─┬─► Login with QR ─► Signed in ─┐
+                  └─► Continue as Guest ─► Guest welcome ─┴─► Check-in ─► Results ─► Start
 ```
 
-To connect a real backend: replace the body of each function with a real
-`fetch()`/`axios` call to that endpoint. **No screen/component needs to change** —
-they only ever call these service functions, never mock data directly.
+| Screen | File |
+|---|---|
+| Start (live date & time) | `src/kiosk-app/StartScreen.jsx` |
+| Welcome | `src/kiosk-app/WelcomeScreen.jsx` |
+| Login with QR (camera, typed code, USB scanner) | `src/kiosk-app/KioskQrScanScreen.jsx` |
+| Signed in | `src/kiosk-app/SignedInScreen.jsx` |
+| Guest welcome | `src/kiosk-app/GuestWelcomeScreen.jsx` |
+| Check-in (all four readings) | `src/kiosk-app/KioskVitalsWizard.jsx` |
+| One reading: intro, "Your turn", measuring, done, measure again, failed | `src/kiosk-app/wizard/ScanStepScreen.jsx` |
+| Step bar with % complete | `src/kiosk-app/wizard/StepProgress.jsx` |
+| Results | `src/kiosk-app/wizard/KioskResults.jsx` |
 
-Mock data used by the services (until the backend is live) lives in `src/mocks/`.
+## How a check-in works
 
-## Design notes
+**Registered patient (Login with QR)**
+- A backend session is started; the kiosk agent files every reading under it.
+- All four readings are required, in order. There is no Skip.
+- When the results screen opens, the check-in is saved to the patient's record
+  and sent to the clinic staff queue.
 
-Colors, type, and component patterns were taken directly from the Figma file
-(Medi-Kiosk), not a generic template — see `src/index.css` for the full token
-list (navy `#1e3a5f`, brand blue `#4a7ba9`, Playfair Display for headings/logo,
-Inter for body text, and the color-coded vital icons: red=Heart Rate,
-green=BMI, amber=Temperature, pink=Blood Pressure, blue=SpO2, olive=Respiration).
+**Guest**
+- No backend session: scans are sent with `session: null`, so guest readings are
+  shown on screen only and never reach the staff or any record.
+- Every reading can be skipped.
+
+**Both**
+- A reading within the sensor's margin of error of a clinical cut-off asks for
+  one repeat measurement ("Let's take that reading once more").
+  ⚠ The cut-offs and margins in `src/kiosk-app/wizard/kioskSteps.js`
+  (`BORDERLINE_RULES`) are **placeholders**. Confirm them with your adviser
+  and each sensor's datasheet.
+- The kiosk never shows the risk level; that is staff-only.
+- The patient is signed out on Finish, on Cancel, and whenever the Start screen
+  opens. The results screen returns to Start by itself after 30 seconds.
+
+## Where to change things
+
+| I want to… | Edit |
+|---|---|
+| Change colors | `src/index.css` |
+| Change layout, sizes or animations | `src/kiosk-app/kiosk.css` |
+| Change step names, wording, tips, timers or repeat-measurement rules | `src/kiosk-app/wizard/kioskSteps.js` |
+| Change the logo | replace `src/assets/medikiosk-logo.png` |
+| Change the version in the footer | `version` in `package.json` |
+| Point the "Get the app" QR code somewhere | `VITE_APP_DOWNLOAD_URL` in `.env` |
+
+## Notes
+
+- The Inter font is bundled (`@fontsource/inter`), so the kiosk works offline.
+- The logo in `src/assets/` was cut from a screenshot. Swap in the original
+  logo file for the sharpest result.
+- The backend in `backend/` still includes the admin console's endpoints. Only
+  the front-end apps were removed.

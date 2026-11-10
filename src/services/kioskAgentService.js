@@ -72,7 +72,8 @@ class KioskAgentConnection {
   /**
    * Start a scan on the agent.
    *   vital    'bmi' | 'respirationSpo2Hr' | 'bloodPressure' | 'temperature'
-   *   session  the backend session id (so the backend files the result)
+   *   session  the backend session id (so the backend files the result),
+   *            or null for a guest (the result is shown on screen only)
    *   onState  called with every `state` message for this scan
    * Returns { id, done } - `done` resolves with the agent's `result` message
    * (ok or not), or with { ok: false, rejected: true, error } if the agent
