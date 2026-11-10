@@ -1,20 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import jsQR from 'jsqr';
 import KioskShell from './KioskShell';
 import Icon from './ui/Icon';
 import { KioskCard, TopBar } from './ui/KioskUI';
 import { clearPatientSession, patientLoginWithQr } from '../services/authService';
 import { DEV_AUTH_BYPASS, devLoginPatient } from '../services/devAuth';
+import { useKioskAgent } from '../services/kioskAgentService';
 
-// Scan every few frames; decoding a full frame on each animation tick is wasteful on a Pi.
-const SCAN_EVERY_N_FRAMES = 4;
+// The QR cam is opened by the kiosk agent on the Pi (by its USB port, hub
+// port 1.2), NOT by the browser: the BP cam is the same webcam model, so the
+// browser can't tell the two apart and kept picking the BP cam. The agent
+// decodes the code and sends us a small preview to aim with.
+// See MediKiosk_hardware/agent/qr_reader.py.
+
+const AGENT_GRACE_MS = 4000; // wait this long for the agent before saying the camera is offline
 
 export default function KioskQrScanScreen() {
   const navigate = useNavigate();
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
+  const { agent, agentOnline } = useKioskAgent();
   const busyRef = useRef(false);
+  const previewUrlRef = useRef('');
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [scanKey, setScanKey] = useState(0); // bump to start a fresh QR scan on the agent
+  const [agentMissing, setAgentMissing] = useState(false);
   const [cameraState, setCameraState] = useState('starting'); // starting | live | unavailable
   const [cameraError, setCameraError] = useState('');
   const [status, setStatus] = useState('idle'); // idle | verifying
@@ -33,78 +41,69 @@ export default function KioskQrScanScreen() {
       } catch (err) {
         setError(err.message || 'QR code not recognized.');
         setStatus('idle');
-        // Short pause so the same invalid code isn't re-submitted on every frame.
+        // Short pause so the same invalid code isn't re-submitted straight away,
+        // then look for a code again.
         setTimeout(() => {
           busyRef.current = false;
+          setScanKey((k) => k + 1);
         }, 2000);
       }
     },
     [navigate]
   );
 
+  // Agent offline for a few seconds -> say so (the typed code still works).
   useEffect(() => {
-    let stream;
-    let frameId;
-    let frame = 0;
-    let stopped = false;
-
-    function tick() {
-      if (stopped) return;
-      frameId = requestAnimationFrame(tick);
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      if (busyRef.current || !video || !canvas || video.readyState < 2) return;
-      if (++frame % SCAN_EVERY_N_FRAMES !== 0) return;
-
-      const width = video.videoWidth;
-      const height = video.videoHeight;
-      if (!width || !height) return;
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(video, 0, 0, width, height);
-      const code = jsQR(ctx.getImageData(0, 0, width, height).data, width, height, {
-        inversionAttempts: 'dontInvert',
-      });
-      if (code?.data) signIn(code.data);
+    if (agentOnline) {
+      setAgentMissing(false);
+      return undefined;
     }
+    const t = setTimeout(() => setAgentMissing(true), AGENT_GRACE_MS);
+    return () => clearTimeout(t);
+  }, [agentOnline]);
 
-    async function startCamera() {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setCameraState('unavailable');
-        setCameraError(
-          window.isSecureContext ? 'This kiosk has no camera access.' : 'The camera only works over https:// or on localhost.'
-        );
-        return;
-      }
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
-        });
-        if (stopped) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-        const video = videoRef.current;
-        video.srcObject = stream;
-        await video.play();
+  // One QR scan on the agent; restarted (scanKey) after a timeout or a rejected code.
+  useEffect(() => {
+    if (!agent || !agentOnline) return undefined;
+    // keep showing "unavailable" while retrying - it turns "live" on the first preview frame
+    setCameraState((c) => (c === 'live' || c === 'unavailable' ? c : 'starting'));
+    let retry;
+    const stop = agent.startQr({
+      onPreview: (jpeg) => {
+        const url = URL.createObjectURL(new Blob([jpeg], { type: 'image/jpeg' }));
+        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = url;
+        setPreviewUrl(url);
         setCameraState('live');
-        tick();
-      } catch (err) {
-        setCameraState('unavailable');
-        setCameraError(err?.name === 'NotAllowedError' ? 'Camera permission was denied.' : 'No camera could be started.');
-      }
-    }
-
-    startCamera();
-
+      },
+      onEvent: (ev) => {
+        if (ev.phase === 'found' && ev.text) {
+          signIn(ev.text);
+        } else if (ev.phase === 'timeout') {
+          setScanKey((k) => k + 1); // still on this screen - keep looking
+        } else if (ev.phase === 'error') {
+          console.warn('[qr] agent:', ev.error);
+          setCameraState('unavailable');
+          setCameraError('The QR camera isn’t working right now.');
+          retry = setTimeout(() => setScanKey((k) => k + 1), 5000); // e.g. re-plugged - try again
+        }
+      },
+    });
     return () => {
-      stopped = true;
-      cancelAnimationFrame(frameId);
-      stream?.getTracks().forEach((track) => track.stop());
+      clearTimeout(retry);
+      stop();
     };
-  }, [signIn]);
+  }, [agent, agentOnline, scanKey, signIn]);
+
+  useEffect(
+    () => () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    },
+    []
+  );
+
+  const cameraShown = agentMissing ? 'unavailable' : cameraState;
+  const cameraText = agentMissing ? 'The QR camera is offline.' : cameraError;
 
   function handleManualSubmit(e) {
     e.preventDefault();
@@ -120,10 +119,10 @@ export default function KioskQrScanScreen() {
   const statusText =
     status === 'verifying'
       ? 'Signing you in…'
-      : cameraState === 'starting'
+      : cameraShown === 'starting'
         ? 'Starting camera…'
-        : cameraState === 'unavailable'
-          ? cameraError
+        : cameraShown === 'unavailable'
+          ? cameraText
           : 'Looking for a code…';
 
   return (
@@ -134,20 +133,19 @@ export default function KioskQrScanScreen() {
         <div className="k-hero">
           <h1 className="k-h1">Scan your QR code</h1>
           <p className="k-lead">
-            {cameraState === 'unavailable'
+            {cameraShown === 'unavailable'
               ? 'Type the code below, or ask the clinic staff for help.'
               : 'Open the MediKiosk app and hold your QR code up to the camera.'}
           </p>
         </div>
 
-        <div className={`k-camera is-${cameraState}${status === 'verifying' ? ' is-verifying' : ''}`}>
-          <video ref={videoRef} className="k-camera__video" muted playsInline />
-          <canvas ref={canvasRef} hidden />
+        <div className={`k-camera is-${cameraShown}${status === 'verifying' ? ' is-verifying' : ''}`}>
+          {previewUrl && cameraShown === 'live' && <img src={previewUrl} className="k-camera__video" alt="" />}
           <span className="k-camera__corner k-camera__corner--tl" />
           <span className="k-camera__corner k-camera__corner--tr" />
           <span className="k-camera__corner k-camera__corner--bl" />
           <span className="k-camera__corner k-camera__corner--br" />
-          {cameraState === 'live' && status !== 'verifying' && <span className="k-camera__scanline" />}
+          {cameraShown === 'live' && status !== 'verifying' && <span className="k-camera__scanline" />}
           <span className="k-camera__status" role="status">
             <span className="k-camera__status-dot" />
             {statusText}
@@ -175,7 +173,7 @@ export default function KioskQrScanScreen() {
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
             placeholder="Enter code"
-            autoFocus={cameraState === 'unavailable'}
+            autoFocus={cameraShown === 'unavailable'}
             autoComplete="off"
           />
           <button type="submit" disabled={status === 'verifying' || !manualCode.trim()}>

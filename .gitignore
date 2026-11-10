@@ -6,6 +6,7 @@ dist/
 dist-ssr/
 
 # Env files
+.env
 .env.local
 
 # Editor

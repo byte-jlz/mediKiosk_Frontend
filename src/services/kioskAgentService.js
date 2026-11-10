@@ -9,6 +9,11 @@
 //   medikiosk/<KIOSK_ID>/state   <- progress of the running scan (countdowns, "put the cuff on", ...)
 //   medikiosk/<KIOSK_ID>/result  <- the final outcome of each scan
 //   medikiosk/<KIOSK_ID>/status  <- agent online / busy (retained)
+//   medikiosk/<KIOSK_ID>/qr      <- QR login: started / found (the code) / timeout / error
+//   medikiosk/<KIOSK_ID>/qr/preview <- JPEG preview of the QR cam (raw bytes)
+//
+// The QR cam is opened by the AGENT (by its USB port), not by the browser:
+// the BP cam is the same webcam model, so the browser can't tell them apart.
 //
 // Every message is documented in MediKiosk_hardware/agent/README.md.
 // The kiosk NEVER subscribes to medikiosk/<id>/urgency - the risk level is
@@ -38,18 +43,28 @@ class KioskAgentConnection {
     this.client = client;
     this.listeners = new Map(); // scan id -> (kind, message) => void
     this.statusListeners = new Set();
+    this.qrListeners = new Map(); // qr session id -> (msg) => void
+    this.previewListeners = new Set(); // (Uint8Array jpeg) => void
     this.status = null; // last agent status message
     this.connected = false;
   }
 
   _handle(topic, payload) {
+    if (topic === `${BASE}/qr/preview`) {
+      this.previewListeners.forEach((fn) => fn(payload)); // raw JPEG, not JSON
+      return;
+    }
     let msg;
     try {
       msg = JSON.parse(payload.toString());
     } catch {
       return;
     }
-    const kind = topic.slice(BASE.length + 1); // "state" | "result" | "status"
+    const kind = topic.slice(BASE.length + 1); // "state" | "result" | "status" | "qr"
+    if (kind === 'qr') {
+      this.qrListeners.get(msg.id)?.(msg);
+      return;
+    }
     if (kind === 'status') {
       this.status = msg;
       this.statusListeners.forEach((fn) => fn(msg));
@@ -108,8 +123,28 @@ class KioskAgentConnection {
     this._send(id ? { action: 'cancel', id } : { action: 'cancel' });
   }
 
+  /**
+   * Look for a QR code with the agent's QR cam.
+   *   onEvent    called with every `qr` message: started | found {text} | timeout | error {error}
+   *   onPreview  called with each JPEG preview frame (Uint8Array)
+   * Returns stop() - call it when the screen goes away.
+   */
+  startQr({ onEvent, onPreview } = {}) {
+    const id = newId();
+    if (onEvent) this.qrListeners.set(id, onEvent);
+    if (onPreview) this.previewListeners.add(onPreview);
+    this._send({ action: 'qr_start', id });
+    return () => {
+      this.qrListeners.delete(id);
+      if (onPreview) this.previewListeners.delete(onPreview);
+      this._send({ action: 'qr_stop', id });
+    };
+  }
+
   close() {
     this.listeners.clear();
+    this.qrListeners.clear();
+    this.previewListeners.clear();
     this.statusListeners.clear();
     this.client.end(true);
   }
@@ -127,7 +162,8 @@ export async function connectKioskAgent({ onConnectionChange } = {}) {
   const conn = new KioskAgentConnection(client);
   client.on('connect', () => {
     conn.connected = true;
-    client.subscribe([`${BASE}/state`, `${BASE}/result`, `${BASE}/status`], { qos: 1 });
+    client.subscribe([`${BASE}/state`, `${BASE}/result`, `${BASE}/status`, `${BASE}/qr`], { qos: 1 });
+    client.subscribe(`${BASE}/qr/preview`, { qos: 0 });
     onConnectionChange?.('connected');
   });
   client.on('reconnect', () => onConnectionChange?.('reconnecting'));
