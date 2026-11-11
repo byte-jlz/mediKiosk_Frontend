@@ -26,6 +26,9 @@ export default function KioskResults({ readings, skipped, isGuest, firstName, sa
   const temp = readings.temperature;
 
   const cards = [
+    // same order as the check-in: BMI first
+    { color: 'bmi', icon: 'bmi', label: 'BMI', skip: skipped.has('bmi'), value: bmi?.value, unit: bmi?.unit || 'kg/m²',
+      sub: bmi?.weight && bmi?.height ? `${Number(bmi.weight.value).toFixed(1)} kg · ${bmi.height.value} cm` : null },
     { color: 'breath', icon: 'breath', label: 'Breathing rate', skip: skipped.has('respirationSpo2Hr'),
       value: finger?.respiration?.value, unit: finger?.respiration?.unit || '/min' },
     { color: 'breath', icon: 'drop', label: 'Blood oxygen', skip: skipped.has('respirationSpo2Hr'),
@@ -36,8 +39,6 @@ export default function KioskResults({ readings, skipped, isGuest, firstName, sa
       value: hr?.value, unit: 'bpm' },
     { color: 'temp', icon: 'temp', label: 'Temperature', skip: skipped.has('temperature'),
       value: temp?.value, unit: temp?.unit || '°C' },
-    { color: 'bmi', icon: 'bmi', label: 'BMI', skip: skipped.has('bmi'), value: bmi?.value, unit: bmi?.unit || 'kg/m²',
-      sub: bmi?.weight && bmi?.height ? `${Number(bmi.weight.value).toFixed(1)} kg · ${bmi.height.value} cm` : null },
   ];
 
   const subtitle = isGuest

@@ -3,14 +3,34 @@
 //
 // `key` is the vital name the kiosk agent understands (see
 // MediKiosk_hardware/agent/README.md) and the backend stores.
-// Order: Breathing & oxygen (ONE finger reading) -> Blood pressure +
-// heart rate -> Temperature -> BMI (height & weight).
+// Order: BMI (height & weight) FIRST - the patient steps on the platform once
+// and stays on it - then Breathing & oxygen (ONE finger reading) -> Blood
+// pressure + heart rate -> Temperature.
 //
 // Each step has its own color (accent = buttons/icons, tint = panels,
 // ink = headings on the tint). Colors are also in src/index.css.
 // ============================================================
 
 export const KIOSK_STEPS = [
+  {
+    key: 'bmi',
+    name: 'BMI',
+    label: 'BMI',
+    title: 'BMI · height & weight',
+    measures: 'Height & weight',
+    icon: 'bmi',
+    color: 'bmi',
+    description:
+      'We’ll measure your weight using the platform and your height using the sensor above you. Your BMI will automatically be calculated using these measurements.',
+    duration: 'Takes about 20 seconds',
+    tips: [
+      'Remove your shoes and any heavy items from your pockets.',
+      'Stand upright on the platform and face forward.',
+      'Keep your feet still and look straight ahead while your height and weight are measured.',
+    ],
+    measuring: 'Stand up straight',
+    measuringHint: 'Keep your feet still and look straight ahead while your height is measured.',
+  },
   {
     key: 'respirationSpo2Hr',
     name: 'Breathing & Oxygen',
@@ -73,25 +93,6 @@ export const KIOSK_STEPS = [
     timerSeconds: 5, // TEMP_SECONDS in measurements.py (the ring itself uses the agent's countdown)
     measuring: 'Measuring…',
     measuringHint: 'Hold still in front of the sensor until the reading is complete.',
-  },
-  {
-    key: 'bmi',
-    name: 'BMI',
-    label: 'BMI',
-    title: 'BMI · height & weight',
-    measures: 'Height & weight',
-    icon: 'bmi',
-    color: 'bmi',
-    description:
-      'We’ll measure your weight using the platform and your height using the sensor above you. Your BMI will automatically be calculated using these measurements.',
-    duration: 'Takes about 20 seconds',
-    tips: [
-      'Remove your shoes and any heavy items from your pockets.',
-      'Stand upright on the platform and face forward.',
-      'Keep your feet still and look straight ahead while your height and weight are measured.',
-    ],
-    measuring: 'Stand up straight',
-    measuringHint: 'Keep your feet still and look straight ahead while your height is measured.',
   },
 ];
 
