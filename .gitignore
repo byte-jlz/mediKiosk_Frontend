@@ -5,7 +5,8 @@ node_modules/
 dist/
 dist-ssr/
 
-# Env files
+# Env files (secrets / per-machine settings - never commit)
+.env
 .env.local
 
 # Editor
