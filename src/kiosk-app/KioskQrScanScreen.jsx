@@ -4,7 +4,6 @@ import KioskShell from './KioskShell';
 import Icon from './ui/Icon';
 import { KioskCard, TopBar } from './ui/KioskUI';
 import { clearPatientSession, patientLoginWithQr } from '../services/authService';
-import { DEV_AUTH_BYPASS, devLoginPatient } from '../services/devAuth';
 import { useKioskAgent } from '../services/kioskAgentService';
 
 // The QR cam is opened by the kiosk agent on the Pi (by its USB port, hub
@@ -180,19 +179,6 @@ export default function KioskQrScanScreen() {
             Sign in
           </button>
         </form>
-
-        {DEV_AUTH_BYPASS && (
-          <button
-            type="button"
-            className="k-devskip"
-            onClick={() => {
-              devLoginPatient();
-              navigate('/kiosk/signed-in');
-            }}
-          >
-            <span>DEV</span> Skip login as test patient
-          </button>
-        )}
 
         <footer className="k-footer k-footer--center">
           <button type="button" className="k-link" onClick={continueAsGuest}>

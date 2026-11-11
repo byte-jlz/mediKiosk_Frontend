@@ -980,29 +980,6 @@
   opacity: 0.45;
 }
 
-.k-devskip {
-  align-self: center;
-  margin-top: 28px;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 24px;
-  border-radius: 999px;
-  border: 2px dashed #b9c7cc;
-  background: transparent;
-  color: var(--k-muted);
-  font: 600 22px var(--k-font);
-  cursor: pointer;
-}
-
-.k-devskip span {
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: #fde68a;
-  color: #713f12;
-  font-size: 18px;
-}
-
 /* ---------- step bar ---------- */
 .k-progress {
   margin-top: 40px;
