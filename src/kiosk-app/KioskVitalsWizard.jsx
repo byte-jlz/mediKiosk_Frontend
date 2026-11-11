@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import KioskShell from './KioskShell';
 import { KioskCard, LeaveDialog, TopBar } from './ui/KioskUI';
@@ -7,21 +7,29 @@ import ScanStepScreen from './wizard/ScanStepScreen';
 import KioskResults from './wizard/KioskResults';
 import { KIOSK_STEPS } from './wizard/kioskSteps';
 import { KIOSK_ID, useKioskAgent } from '../services/kioskAgentService';
-import { completeKioskSession, startKioskSession } from '../services/kioskSessionService';
 import { clearPatientSession, getCurrentPatient } from '../services/authService';
-import { fullName, shortName } from './patientName';
+import { shortName } from './patientName';
 
 const IDLE = { phase: 'idle' };
+const SAVE_WAIT_MS = 20000; // how long to wait for the edge service to confirm the save
+
+/** One id per check-in, made here on the kiosk (no backend call needed). */
+function newCheckInId() {
+  const rand = Math.random().toString(16).slice(2, 8);
+  return `SES-${KIOSK_ID}-${Date.now().toString(36)}-${rand}`;
+}
 
 /**
  * The kiosk check-in.
  *
  *  REGISTERED PATIENT (signed in with QR)
- *    - a backend session is started; the kiosk agent files every result under it
+ *    - the kiosk makes a check-in id; every scan carries it + the patient's id
+ *    - agent -> edge service (on the Pi): when all 4 readings are in, the edge
+ *      classifies the visit, saves it and queues it for the clinic backend
+ *      (sent over the internet by edge/sync_worker.py, kept on the Pi until then)
  *    - every reading is required, in order - there is no skip
  *    - a failed reading must be tried again (or the staff called)
- *    - on the results screen the check-in is saved to their record and sent
- *      to the staff queue
+ *    - the results screen waits for the edge's "saved" for this check-in
  *
  *  GUEST
  *    - NO backend session: scans are sent with session = null, so nothing
@@ -43,8 +51,7 @@ export default function KioskVitalsWizard() {
   const scanningRef = useRef(false);
   agentBusyRef.current = agentBusy;
 
-  const [sessionId, setSessionId] = useState(null);
-  const [sessionError, setSessionError] = useState(null);
+  const [sessionId] = useState(() => (patient ? newCheckInId() : null));
   const [index, setIndex] = useState(0); // KIOSK_STEPS.length = results screen
   const [readings, setReadings] = useState({}); // stepKey -> agent reading
   const [skipped, setSkipped] = useState(() => new Set());
@@ -56,19 +63,6 @@ export default function KioskVitalsWizard() {
   const scanIdRef = useRef(null);
   const agentRef = useRef(null);
   agentRef.current = agent;
-
-  // ---- registered patients: ONE backend session per check-in
-  const sessionRequestRef = useRef(null);
-  const openSession = useCallback(() => {
-    if (isGuest) return;
-    setSessionError(null);
-    sessionRequestRef.current = startKioskSession(KIOSK_ID, patient.id, fullName(patient));
-    sessionRequestRef.current.then((s) => setSessionId(s.sessionId)).catch((e) => setSessionError(e.message));
-  }, [isGuest, patient]);
-
-  useEffect(() => {
-    if (!sessionRequestRef.current) openSession(); // not twice (React dev mode runs effects twice)
-  }, [openSession]);
 
   // Leaving the screen mid-scan: tell the agent to stop.
   useEffect(
@@ -135,6 +129,7 @@ export default function KioskVitalsWizard() {
   }
 
   function sendScan(key) {
+    const extra = isGuest ? {} : { patient: patient.id }; // the edge saves the visit under this patient
     const { id, done } = agent.scan(key, isGuest ? null : sessionId, (st) => {
       if (st.phase === 'awaiting_confirm') {
         setRun((r) => ({ ...r, phase: 'awaiting', prompt: { step: st.step, message: st.message }, tick: null }));
@@ -165,7 +160,7 @@ export default function KioskVitalsWizard() {
       } else if (st.phase === 'countdown_end') {
         setRun((r) => ({ ...r, tick: null }));
       }
-    });
+    }, extra);
     scanIdRef.current = id;
     setRun((r) => ({ ...r, scanId: id }));
     return done;
@@ -213,34 +208,58 @@ export default function KioskVitalsWizard() {
     navigate('/kiosk');
   }
 
-  // ---- results: save a registered patient's check-in right away
-  const savingRef = useRef(false);
-  const save = useCallback(() => {
-    if (isGuest || !sessionId || savingRef.current) return;
-    savingRef.current = true;
+  // ---- results: wait for the edge service to confirm it saved this check-in
+  // (it saves as soon as the 4th reading arrives - usually before this screen shows)
+  const [waitKey, setWaitKey] = useState(0); // bump to wait again ("Try saving again")
+  const redoRef = useRef(null);
+  useEffect(() => {
+    if (!isResults || isGuest || !agent) return undefined;
     setSaveState('saving');
     setSaveError('');
-    completeKioskSession(sessionId)
-      .then(() => setSaveState('saved'))
-      .catch((e) => {
-        setSaveError(e.message);
+    redoRef.current = null;
+    const timer = setTimeout(() => {
+      setSaveError('The kiosk could not confirm the save. Please ask the clinic staff for help.');
+      setSaveState('error');
+    }, SAVE_WAIT_MS);
+    const unsub = agent.onAssessment(sessionId, (msg) => {
+      clearTimeout(timer);
+      if (msg.status === 'saved') {
+        setSaveState('saved');
+      } else {
+        // incomplete / rejected: the edge says which reading to take again
+        redoRef.current = msg.redo_vitals || [];
+        const names = redoRef.current.map((k) => KIOSK_STEPS.find((s) => s.key === k)?.name || k);
+        setSaveError(
+          names.length
+            ? `This reading needs to be taken again: ${names.join(', ')}.`
+            : 'The kiosk could not use these readings. Please try again.'
+        );
         setSaveState('error');
-      })
-      .finally(() => {
-        savingRef.current = false;
-      });
-  }, [isGuest, sessionId]);
+      }
+    });
+    return () => {
+      clearTimeout(timer);
+      unsub();
+    };
+  }, [isResults, isGuest, agent, sessionId, waitKey]);
 
-  useEffect(() => {
-    if (isResults) save();
-  }, [isResults, save]);
+  /** "Try saving again": redo the reading the edge asked for, or just wait again. */
+  function retrySave() {
+    const redo = redoRef.current || [];
+    const at = KIOSK_STEPS.findIndex((s) => redo.includes(s.key));
+    if (at >= 0) {
+      setReadings((r) => Object.fromEntries(Object.entries(r).filter(([k]) => !redo.includes(k))));
+      setRun(IDLE);
+      setIndex(at);
+    } else {
+      setWaitKey((k) => k + 1);
+    }
+  }
 
   // ---- what blocks scanning right now
-  const sensorsReady =
-    Boolean(agent) && connection === 'connected' && agentOnline && (isGuest || Boolean(sessionId));
-  const sensorsMessage = sessionError
-    ? sessionError
-    : connection !== 'connected'
+  const sensorsReady = Boolean(agent) && connection === 'connected' && agentOnline;
+  const sensorsMessage =
+    connection !== 'connected'
       ? 'Connecting to the kiosk sensors…'
       : !agentOnline
         ? 'The kiosk sensors are offline. Please ask the clinic staff for help.'
@@ -263,7 +282,7 @@ export default function KioskVitalsWizard() {
             saveState={saveState}
             saveError={saveError}
             onFinish={leave}
-            onRetrySave={save}
+            onRetrySave={retrySave}
           />
         ) : (
           <>

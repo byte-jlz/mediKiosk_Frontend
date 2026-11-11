@@ -10,6 +10,8 @@
 //   medikiosk/<KIOSK_ID>/result  <- the final outcome of each scan
 //   medikiosk/<KIOSK_ID>/status  <- agent online / busy (retained)
 //   medikiosk/<KIOSK_ID>/qr      <- QR login: started / found (the code) / timeout / error
+//   medikiosk/<KIOSK_ID>/edge/assessment <- the edge service: a patient's check-in was saved
+//                                (status saved / incomplete / rejected - NEVER the risk tier)
 //   medikiosk/<KIOSK_ID>/qr/preview <- JPEG preview of the QR cam (raw bytes)
 //
 // The QR cam is opened by the AGENT (by its USB port), not by the browser:
@@ -45,6 +47,8 @@ class KioskAgentConnection {
     this.statusListeners = new Set();
     this.qrListeners = new Map(); // qr session id -> (msg) => void
     this.previewListeners = new Set(); // (Uint8Array jpeg) => void
+    this.assessments = new Map(); // session id -> last edge/assessment message
+    this.assessmentListeners = new Set();
     this.status = null; // last agent status message
     this.connected = false;
   }
@@ -60,7 +64,12 @@ class KioskAgentConnection {
     } catch {
       return;
     }
-    const kind = topic.slice(BASE.length + 1); // "state" | "result" | "status" | "qr"
+    const kind = topic.slice(BASE.length + 1); // "state" | "result" | "status" | "qr" | "edge/assessment"
+    if (kind === 'edge/assessment') {
+      if (msg.session) this.assessments.set(msg.session, msg);
+      this.assessmentListeners.forEach((fn) => fn(msg));
+      return;
+    }
     if (kind === 'qr') {
       this.qrListeners.get(msg.id)?.(msg);
       return;
@@ -94,7 +103,18 @@ class KioskAgentConnection {
    * (ok or not), or with { ok: false, rejected: true, error } if the agent
    * refused the command (e.g. busy).
    */
-  scan(vital, session, onState) {
+  /**
+   * The edge service's answer for one check-in session (saved / incomplete / rejected).
+   * Calls fn right away if the answer already arrived. Returns unsubscribe().
+   */
+  onAssessment(session, fn) {
+    const own = (msg) => msg.session === session && fn(msg);
+    this.assessmentListeners.add(own);
+    if (this.assessments.has(session)) fn(this.assessments.get(session));
+    return () => this.assessmentListeners.delete(own);
+  }
+
+  scan(vital, session, onState, extra = {}) {
     const id = newId();
     const done = new Promise((resolve) => {
       this.listeners.set(id, (kind, msg) => {
@@ -111,7 +131,7 @@ class KioskAgentConnection {
         }
       });
     });
-    this._send({ action: 'scan', id, vital, session });
+    this._send({ action: 'scan', id, vital, session, ...extra }); // extra: { patient } for a signed-in patient
     return { id, done };
   }
 
@@ -162,7 +182,9 @@ export async function connectKioskAgent({ onConnectionChange } = {}) {
   const conn = new KioskAgentConnection(client);
   client.on('connect', () => {
     conn.connected = true;
-    client.subscribe([`${BASE}/state`, `${BASE}/result`, `${BASE}/status`, `${BASE}/qr`], { qos: 1 });
+    client.subscribe([`${BASE}/state`, `${BASE}/result`, `${BASE}/status`, `${BASE}/qr`, `${BASE}/edge/assessment`], {
+      qos: 1,
+    });
     client.subscribe(`${BASE}/qr/preview`, { qos: 0 });
     onConnectionChange?.('connected');
   });
