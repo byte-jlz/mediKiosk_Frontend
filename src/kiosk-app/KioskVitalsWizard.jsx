@@ -40,6 +40,7 @@ export default function KioskVitalsWizard() {
 
   const { agent, connection, agentOnline, agentBusy } = useKioskAgent();
   const agentBusyRef = useRef(false);
+  const scanningRef = useRef(false);
   agentBusyRef.current = agentBusy;
 
   const [sessionId, setSessionId] = useState(null);
@@ -82,15 +83,60 @@ export default function KioskVitalsWizard() {
   const step = KIOSK_STEPS[Math.min(index, KIOSK_STEPS.length - 1)];
 
   // ---- one scan
+  async function waitUntilAgentFree(ms) {
+    for (let waited = 0; agentBusyRef.current && waited < ms; waited += 200) {
+      await new Promise((ok) => setTimeout(ok, 200));
+    }
+  }
+
   async function startScan() {
     if (!agent || (!isGuest && !sessionId)) return;
+    if (scanningRef.current) return; // a double tap must not start a second scan
+    scanningRef.current = true;
+    try {
+      await runScan();
+    } finally {
+      scanningRef.current = false;
+    }
+  }
+
+  async function runScan() {
     const key = step.key;
     setRun({ phase: 'starting', totalSeconds: step.timerSeconds || 0 });
     // A scan that was just cancelled (Leave / Try again) needs a moment to stop
-    // on the agent - wait up to 5 s for it to be free instead of being refused as "busy".
-    for (let waited = 0; agentBusyRef.current && waited < 5000; waited += 200) {
-      await new Promise((ok) => setTimeout(ok, 200));
+    // on the agent - wait for it to be free instead of being refused as "busy".
+    await waitUntilAgentFree(5000);
+
+    let result = await sendScan(key);
+    if (result.rejected && /^busy/.test(result.error || '')) {
+      // The touchscreen is the kiosk's only screen, so a scan we don't know about
+      // is a leftover (e.g. its screen was closed before it could cancel). It would
+      // keep the sensors blocked for up to 2 minutes - cancel it and try once more.
+      console.warn('[kiosk] agent busy with a leftover scan - cancelling it:', result.error);
+      agent.cancel();
+      await new Promise((ok) => setTimeout(ok, 500));
+      await waitUntilAgentFree(8000);
+      result = await sendScan(key);
     }
+    scanIdRef.current = null;
+    if (result.ok) {
+      setReadings((prev) => ({ ...prev, [key]: result.reading }));
+      const needsRepeat = isBorderline(key, result.reading) && !recheckedRef.current.has(key);
+      setRun({ phase: needsRepeat ? 'recheck' : 'done' });
+    } else if (!result.cancelled) {
+      if (result.rejected) console.warn('[kiosk] agent refused the scan:', result.error);
+      setRun({
+        phase: 'failed',
+        error: !result.rejected
+          ? friendlyError(result.error, key)
+          : /^busy/.test(result.error || '')
+            ? 'The sensors are busy. Please wait a moment and try again.'
+            : 'The kiosk couldn’t start this reading. Please try again or ask the clinic staff for help.',
+      });
+    }
+  }
+
+  function sendScan(key) {
     const { id, done } = agent.scan(key, isGuest ? null : sessionId, (st) => {
       if (st.phase === 'awaiting_confirm') {
         setRun((r) => ({ ...r, phase: 'awaiting', prompt: { step: st.step, message: st.message }, tick: null }));
@@ -124,21 +170,7 @@ export default function KioskVitalsWizard() {
     });
     scanIdRef.current = id;
     setRun((r) => ({ ...r, scanId: id }));
-
-    const result = await done;
-    scanIdRef.current = null;
-    if (result.ok) {
-      setReadings((prev) => ({ ...prev, [key]: result.reading }));
-      const needsRepeat = isBorderline(key, result.reading) && !recheckedRef.current.has(key);
-      setRun({ phase: needsRepeat ? 'recheck' : 'done' });
-    } else if (!result.cancelled) {
-      setRun({
-        phase: 'failed',
-        error: result.rejected
-          ? 'The sensors are busy. Please wait a moment and try again.'
-          : friendlyError(result.error, key),
-      });
-    }
+    return done;
   }
 
   function confirmStep() {
