@@ -133,8 +133,9 @@ export const CONFIRM_PROMPTS = {
     button: 'My arm is in the cuff',
   },
   forehead: {
-    text: 'Hold your forehead 2–5 cm in front of the infrared sensor.',
-    sub: 'Move your hair away from your forehead and keep still until the reading is complete.',
+    // (the agent still calls this step "forehead" - only the wording changed to the wrist)
+    text: 'Hold the inside of your wrist 2–5 cm in front of the infrared sensor.',
+    sub: 'Pull back your sleeve, turn your palm up, and keep still until the reading is complete.',
     pill: 'A 5-second reading starts when you tap the button', // TEMP_SECONDS
     button: 'I’m in position',
   },
