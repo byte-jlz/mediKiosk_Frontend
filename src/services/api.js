@@ -6,14 +6,16 @@
 // the user out if the token has expired.
 //
 // Two separate sessions: the staff console (clinic staff / admin /
-// super admin) and the patient app. Staff tokens live only until the
-// tab is closed; the patient app stays signed in on the phone.
+// super admin) and the patient app. Both are kept in localStorage, so
+// every tab of the same browser shares one sign-in and a new tab does
+// not ask again. The token still expires on the server (8 hours by
+// default) and signing out in one tab signs out all of them.
 // ============================================================
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 const STORES = {
-  staff: { storage: 'sessionStorage', key: 'mkStaffSession', event: 'mk-staff-session' },
+  staff: { storage: 'localStorage', key: 'mkStaffSession', event: 'mk-staff-session' },
   patient: { storage: 'localStorage', key: 'mkPatientSession', event: 'mk-patient-session' },
 };
 
@@ -55,6 +57,14 @@ export function clearSession(kind) {
 export function sessionEvent(kind) {
   return STORES[kind].event;
 }
+
+// The browser tells OTHER tabs when localStorage changes. Turn that into the same event the app already listens to,
+// so signing in or out in one tab updates the rest (a signed-out tab goes back to the sign-in page).
+window.addEventListener('storage', (e) => {
+  for (const kind of Object.keys(STORES)) {
+    if (e.key === STORES[kind].key || e.key === null) window.dispatchEvent(new CustomEvent(STORES[kind].event));
+  }
+});
 
 function messageFrom(body, status) {
   const d = body?.detail;
