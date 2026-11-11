@@ -38,7 +38,9 @@ export default function KioskVitalsWizard() {
   const [patient] = useState(getCurrentPatient);
   const isGuest = !patient;
 
-  const { agent, connection, agentOnline } = useKioskAgent();
+  const { agent, connection, agentOnline, agentBusy } = useKioskAgent();
+  const agentBusyRef = useRef(false);
+  agentBusyRef.current = agentBusy;
 
   const [sessionId, setSessionId] = useState(null);
   const [sessionError, setSessionError] = useState(null);
@@ -84,6 +86,11 @@ export default function KioskVitalsWizard() {
     if (!agent || (!isGuest && !sessionId)) return;
     const key = step.key;
     setRun({ phase: 'starting', totalSeconds: step.timerSeconds || 0 });
+    // A scan that was just cancelled (Leave / Try again) needs a moment to stop
+    // on the agent - wait up to 5 s for it to be free instead of being refused as "busy".
+    for (let waited = 0; agentBusyRef.current && waited < 5000; waited += 200) {
+      await new Promise((ok) => setTimeout(ok, 200));
+    }
     const { id, done } = agent.scan(key, isGuest ? null : sessionId, (st) => {
       if (st.phase === 'awaiting_confirm') {
         setRun((r) => ({ ...r, phase: 'awaiting', prompt: { step: st.step, message: st.message }, tick: null }));

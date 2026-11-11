@@ -22,7 +22,7 @@
 //   VITE_MQTT_URL=ws://<pi-ip>:9001   (default: ws://<page host>:9001)
 //   VITE_KIOSK_ID=K-01
 // ============================================================
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 // MQTT broker over WebSockets (Mosquitto port 9001). Default: the same host as the page.
 export const MQTT_URL =
   import.meta.env.VITE_MQTT_URL || `ws://${window.location.hostname || 'localhost'}:9001`;
@@ -35,8 +35,8 @@ function newId() {
 }
 
 /**
- * One MQTT connection to the agent. Create it with `connectKioskAgent()`
- * and call `close()` when the screen goes away.
+ * The MQTT connection to the agent. The app shares ONE of these (see
+ * useKioskAgent below); screens never close it.
  */
 class KioskAgentConnection {
   constructor(client) {
@@ -176,40 +176,77 @@ export async function connectKioskAgent({ onConnectionChange } = {}) {
   return conn;
 }
 
+// ---- ONE shared connection for the whole kiosk app ----
+// Every screen uses the same MQTT connection, and it is never closed while the
+// app runs. (Before, each screen opened its own and React closed it BEFORE the
+// screen's own clean-up ran - so a screen's last message, e.g. "cancel this
+// scan" or "stop the QR camera", went out on a closed connection and was lost.
+// The agent then kept waiting for a tap on a screen that was gone and refused
+// the next scan as "busy".)
+let sharedPromise = null;
+let sharedConn = null;
+let sharedState = 'connecting';
+let slateCleared = false;
+const connectionListeners = new Set();
+
+// When the kiosk app (re)loads - e.g. F5, or Chromium restarted mid-scan - the
+// old page had no chance to cancel its scan, and the agent would keep waiting
+// for it. The touchscreen is the kiosk's only screen, so on the app's FIRST
+// connection we tell the agent to drop anything left over. (Not on later
+// reconnects: that could be a live scan of this same page.)
+function clearSlate() {
+  if (slateCleared || !sharedConn || sharedState !== 'connected') return;
+  slateCleared = true;
+  sharedConn.cancel();
+  sharedConn._send({ action: 'qr_stop' });
+}
+
+function getSharedAgent() {
+  if (!sharedPromise) {
+    sharedPromise = connectKioskAgent({
+      onConnectionChange: (c) => {
+        sharedState = c;
+        clearSlate();
+        connectionListeners.forEach((fn) => fn(c));
+      },
+    }).then((c) => {
+      sharedConn = c;
+      clearSlate();
+      return c;
+    });
+  }
+  return sharedPromise;
+}
+
 /**
- * React hook: one agent connection for the lifetime of a screen.
+ * React hook: the kiosk's shared agent connection.
  * Returns { agent, connection, agentOnline, agentBusy, simulated }.
  */
 export function useKioskAgent() {
-  const [connection, setConnection] = useState('connecting');
-  const [status, setStatus] = useState(null);
-  const agentRef = useRef(null);
-  const [, force] = useState(0);
+  const [connection, setConnection] = useState(sharedState);
+  const [status, setStatus] = useState(sharedConn?.status ?? null);
+  const [agent, setAgent] = useState(sharedConn);
 
   useEffect(() => {
     let cancelled = false;
-    let conn = null;
     let unsub = () => {};
-    connectKioskAgent({ onConnectionChange: (c) => !cancelled && setConnection(c) }).then((c) => {
-      if (cancelled) {
-        c.close();
-        return;
-      }
-      conn = c;
-      agentRef.current = c;
+    connectionListeners.add(setConnection);
+    getSharedAgent().then((c) => {
+      if (cancelled) return;
+      setAgent(c);
+      setConnection(sharedState);
       unsub = c.onStatus((s) => setStatus(s));
-      force((n) => n + 1);
     });
     return () => {
       cancelled = true;
       unsub();
-      if (conn) conn.close();
-      agentRef.current = null;
+      connectionListeners.delete(setConnection);
+      // the connection itself stays open for the next screen
     };
   }, []);
 
   return {
-    agent: agentRef.current,
+    agent,
     connection,
     agentOnline: Boolean(status?.online),
     agentBusy: Boolean(status?.busy),
