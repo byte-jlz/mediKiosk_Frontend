@@ -5,7 +5,7 @@ import { KioskCard, LeaveDialog, TopBar } from './ui/KioskUI';
 import StepProgress from './wizard/StepProgress';
 import ScanStepScreen from './wizard/ScanStepScreen';
 import KioskResults from './wizard/KioskResults';
-import { KIOSK_STEPS, isBorderline } from './wizard/kioskSteps';
+import { KIOSK_STEPS } from './wizard/kioskSteps';
 import { KIOSK_ID, useKioskAgent } from '../services/kioskAgentService';
 import { completeKioskSession, startKioskSession } from '../services/kioskSessionService';
 import { clearPatientSession, getCurrentPatient } from '../services/authService';
@@ -29,8 +29,8 @@ const IDLE = { phase: 'idle' };
  *    - any reading can be skipped
  *
  *  BOTH
- *    - a reading within the sensor's margin of error of a clinical cut-off
- *      asks for ONE repeat measurement (kioskSteps.js -> BORDERLINE_RULES)
+ *    - whatever reading the agent returns is accepted and shown as it is;
+ *      only an error (no reading) asks the patient to try again
  *    - the results screen shows the readings only - never the risk level
  */
 export default function KioskVitalsWizard() {
@@ -48,7 +48,6 @@ export default function KioskVitalsWizard() {
   const [index, setIndex] = useState(0); // KIOSK_STEPS.length = results screen
   const [readings, setReadings] = useState({}); // stepKey -> agent reading
   const [skipped, setSkipped] = useState(() => new Set());
-  const recheckedRef = useRef(new Set()); // steps that already had their one repeat
   const [run, setRun] = useState(IDLE);
   const [saveState, setSaveState] = useState(isGuest ? 'none' : 'saving');
   const [saveError, setSaveError] = useState('');
@@ -121,8 +120,7 @@ export default function KioskVitalsWizard() {
     scanIdRef.current = null;
     if (result.ok) {
       setReadings((prev) => ({ ...prev, [key]: result.reading }));
-      const needsRepeat = isBorderline(key, result.reading) && !recheckedRef.current.has(key);
-      setRun({ phase: needsRepeat ? 'recheck' : 'done' });
+      setRun({ phase: 'done' }); // the agent's reading is accepted as it is
     } else if (!result.cancelled) {
       if (result.rejected) console.warn('[kiosk] agent refused the scan:', result.error);
       setRun({
@@ -182,11 +180,6 @@ export default function KioskVitalsWizard() {
       prompt: null,
       bmiStage: r.prompt.step === 'stand_under' ? 'height' : r.prompt.step === 'step_on' ? 'weight' : r.bmiStage,
     }));
-  }
-
-  function measureAgain() {
-    recheckedRef.current.add(step.key);
-    startScan();
   }
 
   function next() {
@@ -253,10 +246,7 @@ export default function KioskVitalsWizard() {
         ? 'The kiosk sensors are offline. Please ask the clinic staff for help.'
         : 'Getting ready…';
 
-  // Readings that count as finished (a reading waiting for its repeat doesn't).
-  const done = new Set(
-    Object.keys(readings).filter((k) => !(k === step.key && run.phase === 'recheck' && !isResults))
-  );
+  const done = new Set(Object.keys(readings));
   const frac = progressOf(step, run);
 
   return (
@@ -289,7 +279,6 @@ export default function KioskVitalsWizard() {
               onStart={startScan}
               onConfirm={confirmStep}
               onContinue={next}
-              onRecheck={measureAgain}
               onSkip={skip}
             />
           </>

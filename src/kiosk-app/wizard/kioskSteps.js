@@ -30,7 +30,6 @@ export const KIOSK_STEPS = [
     timerSeconds: 30, // RR_SECONDS in measurements.py (the ring itself uses the agent's countdown)
     measuring: 'Measuring…',
     measuringHint: 'Keep your finger still, breathe normally and avoid talking or moving.',
-    recheckTip: 'Relax for a moment, then gently place your fingertip on the pad and keep still.',
   },
   {
     key: 'bloodPressure',
@@ -54,7 +53,6 @@ export const KIOSK_STEPS = [
     measuring: 'Measuring…',
     measuringHint:
       'The cuff is measuring your blood pressure and heart rate. Keep your arm still and avoid talking. It may finish early.',
-    recheckTip: 'Relax for a minute, then keep your arm supported at heart level and remain still.',
   },
   {
     key: 'temperature',
@@ -75,7 +73,6 @@ export const KIOSK_STEPS = [
     timerSeconds: 5, // TEMP_SECONDS in measurements.py (the ring itself uses the agent's countdown)
     measuring: 'Measuring…',
     measuringHint: 'Hold still in front of the sensor until the reading is complete.',
-    recheckTip: 'Wait a moment, then position yourself near the sensor again and remain still.',
   },
   {
     key: 'bmi',
@@ -184,40 +181,6 @@ export function readingDisplay(key, r) {
     default:
       return null;
   }
-}
-
-// ============================================================
-// BORDERLINE READINGS -> "Let's take that reading once more"
-// ------------------------------------------------------------
-// If a reading lands within the sensor's margin of error of a clinical
-// cut-off, the kiosk asks for ONE repeat measurement. The repeat is then
-// accepted as the final reading.
-//
-// ⚠ PLACEHOLDER VALUES - confirm every cut-off and margin with your
-//   adviser and each sensor's datasheet (its stated accuracy) before use.
-//   Set `margin` to 0 to switch the repeat off for that value.
-// ============================================================
-export const BORDERLINE_RULES = {
-  bloodPressure: [
-    { read: (r) => r.systolic, cutoffs: [140, 180], margin: 3 }, // mmHg
-    { read: (r) => r.diastolic, cutoffs: [90, 120], margin: 3 }, // mmHg
-  ],
-  temperature: [{ read: (r) => r.value, cutoffs: [37.5], margin: 0.2 }], // °C
-  respirationSpo2Hr: [
-    { read: (r) => r.spo2?.value, cutoffs: [95], margin: 2 }, // %
-    { read: (r) => r.respiration?.value, cutoffs: [12, 20], margin: 1 }, // breaths/min
-  ],
-};
-
-/** True when any value of this reading sits within its margin of a cut-off. */
-export function isBorderline(key, reading) {
-  const rules = BORDERLINE_RULES[key];
-  if (!rules || !reading) return false;
-  return rules.some(({ read, cutoffs, margin }) => {
-    const v = Number(read(reading));
-    if (!margin || Number.isNaN(v)) return false;
-    return cutoffs.some((c) => Math.abs(v - c) <= margin);
-  });
 }
 
 /** BP monitor pulse wins; the finger sensor is the fallback (same rule as the backend). */

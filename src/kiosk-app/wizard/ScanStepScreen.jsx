@@ -10,11 +10,10 @@ import { CONFIRM_PROMPTS, formatLive, readingDisplay } from './kioskSteps';
  *   'awaiting'  the agent waits for the person      -> "Your turn" + I'm ready button
  *   'running'   measuring                           -> countdown ring (BMI: weight / height rows)
  *   'done'      got a reading                       -> the values + Next
- *   'recheck'   reading near a clinical cut-off     -> "Let's take that reading once more"
  *   'failed'    no reading                          -> reason + Try again
  *
  * Registered patients can't skip (every reading is required).
- * Guests get "Skip this reading" on the intro, failed and recheck screens.
+ * Guests get "Skip this reading" on the intro and failed screens.
  */
 export default function ScanStepScreen({
   step,
@@ -27,7 +26,6 @@ export default function ScanStepScreen({
   onStart,
   onConfirm,
   onContinue,
-  onRecheck,
   onSkip,
 }) {
   return (
@@ -47,7 +45,6 @@ export default function ScanStepScreen({
         onStart={onStart}
         onConfirm={onConfirm}
         onContinue={onContinue}
-        onRecheck={onRecheck}
         onSkip={onSkip}
       />
     </div>
@@ -166,31 +163,6 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
         </>
       );
     }
-
-    case 'recheck':
-      return (
-        <>
-          <Spacer />
-          <div className="k-callout k-callout--step">
-            <Icon name="retry" size={60} />
-            <div>
-              <strong>Let’s take that reading once more</strong>
-              <p>
-                Your result landed within the sensor’s normal margin of error of a clinical cut-off. Measuring again
-                makes sure it’s accurate.
-              </p>
-              <p className="k-callout__muted">This is a routine check. It doesn’t mean anything is wrong.</p>
-            </div>
-          </div>
-          {step.recheckTip && <NumberedList items={[step.recheckTip]} className="k-steps-list--grey" />}
-          <Spacer />
-          <KioskButton icon="retry" onClick={on.onRecheck} disabled={!sensorsReady}>
-            Measure again
-          </KioskButton>
-          {sensorsNote}
-          {isGuest ? skipButton : !sensorsNote && <Note>A repeat is needed before you can continue</Note>}
-        </>
-      );
 
     case 'failed':
       return (
