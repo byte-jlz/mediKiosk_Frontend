@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
       __APP_VERSION__: JSON.stringify(version),
       __API_PROXY__: JSON.stringify(useProxy),
     },
-    server: { host: true, proxy },
-    preview: { host: true, proxy }, // `npm run build` + `npm run preview` forwards the same way
+    server: { host: 'localhost', proxy },
+    preview: { host: 'localhost', proxy }, // `npm run build` + `npm run preview` forwards the same way
   };
 });
