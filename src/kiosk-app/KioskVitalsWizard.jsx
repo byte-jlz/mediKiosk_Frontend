@@ -11,6 +11,8 @@ import { clearPatientSession, getCurrentPatient } from '../services/authService'
 import { shortName } from './patientName';
 
 const IDLE = { phase: 'idle' };
+// BMI: what the agent does after each confirmed prompt (the scale zeroes after scale_empty)
+const BMI_STAGE_AFTER = { scale_empty: 'zeroing', step_on: 'weight', stand_under: 'height' };
 const SAVE_WAIT_MS = 20000; // how long to wait for the edge service to confirm the save
 
 /** One id per check-in, made here on the kiosk (no backend call needed). */
@@ -132,8 +134,26 @@ export default function KioskVitalsWizard() {
     const extra = isGuest ? {} : { patient: patient.id }; // the edge saves the visit under this patient
     const { id, done } = agent.scan(key, isGuest ? null : sessionId, (st) => {
       if (st.phase === 'awaiting_confirm') {
-        setRun((r) => ({ ...r, phase: 'awaiting', prompt: { step: st.step, message: st.message }, tick: null }));
-      } else if (st.phase === 'confirmed' || st.phase === 'accepted') {
+        // auto = the agent finishes this step by itself (auto-zero scale); the button is a backup
+        setRun((r) => ({
+          ...r,
+          phase: 'awaiting',
+          prompt: { step: st.step, message: st.message, auto: !!st.auto },
+          tick: null,
+          zeroed: st.step === 'step_on' ? true : r.zeroed,
+        }));
+      } else if (st.phase === 'watching') {
+        // the agent is watching the scale (waiting for an empty platform / someone standing still)
+        setRun((r) => ({ ...r, watchKg: st.live?.kg ?? r.watchKg }));
+      } else if (st.phase === 'confirmed') {
+        // also arrives when the agent confirmed the step by itself (st.by === 'auto')
+        setRun((r) => ({
+          ...r,
+          phase: 'running',
+          prompt: null,
+          bmiStage: BMI_STAGE_AFTER[st.step] || r.bmiStage,
+        }));
+      } else if (st.phase === 'accepted') {
         setRun((r) => ({ ...r, phase: 'running', prompt: null }));
       } else if (st.phase === 'measuring' && st.elapsed_s != null) {
         // BP: the monitor decides when it's done, so the agent counts UP -
@@ -156,6 +176,7 @@ export default function KioskVitalsWizard() {
           totalSeconds: r.tick ? r.totalSeconds : Math.max(1, Math.ceil(secondsLeft)),
           tick: { secondsLeft, live: st.live },
           weight: st.live?.kg != null && r.bmiStage !== 'height' ? { value: Number(st.live.kg).toFixed(1) } : r.weight,
+          heightCm: st.live?.cm ?? r.heightCm,
         }));
       } else if (st.phase === 'countdown_end') {
         setRun((r) => ({ ...r, tick: null }));
@@ -173,7 +194,7 @@ export default function KioskVitalsWizard() {
       ...r,
       phase: 'running',
       prompt: null,
-      bmiStage: r.prompt.step === 'stand_under' ? 'height' : r.prompt.step === 'step_on' ? 'weight' : r.bmiStage,
+      bmiStage: BMI_STAGE_AFTER[r.prompt.step] || r.bmiStage,
     }));
   }
 

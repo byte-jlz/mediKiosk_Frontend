@@ -1720,3 +1720,106 @@
 .k-steps-list--lg li > span:last-child {
   padding-top: 8px;
 }
+/* ============================================================
+   BMI picture (wizard/BmiScene.jsx) - the kiosk + person + result cards
+   ============================================================ */
+.k-scene {
+  display: block;
+  width: 100%;
+  max-height: 600px;
+  margin: 8px auto 0;
+  font-family: var(--k-font);
+}
+
+.k-scene__floor { stroke: #b5c9d6; stroke-width: 2; }
+.k-scene__post { fill: #6b7f86; }
+.k-scene__arm { fill: #4a5a60; }
+.k-scene__sensor { fill: var(--k-bmi); }
+.k-scene__column { fill: #5f8f7a; }
+.k-scene__marble { fill: none; stroke: #c9a54a; stroke-width: 1.5; }
+.k-scene__wood { fill: #b07a4f; }
+.k-scene__bezel { fill: #2b3d44; }
+.k-scene__screen { fill: #e6eef2; }
+.k-scene__dot { fill: #ffffff; }
+.k-scene__skin { fill: #2b3d44; }
+.k-scene__body { fill: #566a72; }
+.k-scene__frame { fill: #3f5a5a; }
+.k-scene__frame.is-flash { fill: #378add; }
+
+.k-scene__arrow path {
+  fill: none;
+  stroke: var(--k-bmi);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* weighing: the platform frame pulses */
+.k-scene--weigh .k-scene__frame {
+  animation: k-scene-pulse 1.2s steps(1, end) infinite;
+}
+
+@keyframes k-scene-pulse {
+  0% { fill: #3f5a5a; }
+  50% { fill: #378add; }
+}
+
+/* height: the beam runs down from the overhead sensor */
+.k-scene__beam {
+  stroke: var(--k-bmi);
+  stroke-width: 3;
+  stroke-dasharray: 4 5;
+  opacity: 0;
+}
+
+.k-scene--height .k-scene__beam {
+  opacity: 0.9;
+  animation: k-scene-beam 0.7s linear infinite;
+}
+
+@keyframes k-scene-beam {
+  to { stroke-dashoffset: -18; }
+}
+
+/* result cards */
+.k-scene__card rect { fill: #ffffff; stroke: #b5c9d6; stroke-width: 2; }
+.k-scene__card.is-active rect { stroke: var(--k-bmi); stroke-width: 3; }
+.k-scene__card.is-done rect { stroke: #1d9e75; stroke-width: 2.5; }
+.k-scene__card-label { font-size: 12px; font-weight: 600; fill: var(--k-muted); }
+.k-scene__card-status { font-size: 11px; fill: var(--k-muted); }
+.k-scene__card.is-active .k-scene__card-status { fill: var(--k-bmi); }
+.k-scene__card.is-done .k-scene__card-status { fill: #0f6e56; }
+.k-scene__card-value { font-size: 26px; font-weight: 700; fill: var(--k-bmi-ink); }
+.k-scene__card.is-done .k-scene__card-value { fill: #0f6e56; }
+.k-scene__card-unit { font-size: 14px; font-weight: 500; fill: var(--k-muted); }
+
+.k-scene__link { fill: none; stroke: var(--k-bmi); stroke-width: 1.5; stroke-dasharray: 3 3; opacity: 0.25; }
+.k-scene__link.is-active { opacity: 1; }
+
+.k-scene__bmi rect { fill: var(--k-bmi-ink); }
+.k-scene__bmi text { font-size: 14px; font-weight: 600; fill: #ffffff; }
+
+.k-scene__pill rect { fill: #ffffff; stroke: var(--k-bmi); stroke-width: 1.5; }
+.k-scene__pill text { font-size: 14px; font-weight: 600; fill: var(--k-bmi-ink); }
+.k-scene__pill.is-ok text { fill: #0f6e56; }
+
+/* the BMI panel that holds the picture */
+.k-panel--scene {
+  padding: 32px 36px 40px;
+}
+
+.k-panel--scene .k-panel__big {
+  margin-top: 16px;
+}
+
+.k-scene-note {
+  margin: 18px 0 0;
+  text-align: center;
+  font: 400 24px/1.4 var(--k-font);
+  color: var(--k-muted);
+}
+
+/* step off / step on screens also hold a backup button + note - keep the picture a bit smaller */
+.k-panel--turn .k-scene {
+  max-height: 470px;
+}

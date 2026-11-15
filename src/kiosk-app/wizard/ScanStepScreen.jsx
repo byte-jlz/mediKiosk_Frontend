@@ -1,4 +1,5 @@
 import Icon from '../ui/Icon';
+import BmiScene from './BmiScene';
 import { IconTile, KioskButton, Note, NumberedList, Pill, Spacer } from '../ui/KioskUI';
 import { CONFIRM_PROMPTS, formatLive, readingDisplay } from './kioskSteps';
 
@@ -14,6 +15,12 @@ import { CONFIRM_PROMPTS, formatLive, readingDisplay } from './kioskSteps';
  *
  * Registered patients can't skip (every reading is required).
  * Guests get "Skip this reading" on the intro and failed screens.
+ *
+ * BMI (Nov 2026, auto-zero scale): 'awaiting' / 'running' / 'done' show the
+ * BmiScene picture. Normally there is no prompt at all - the patient stays on
+ * the platform. The step off / step on prompts only come in the safety
+ * fallback, and then the agent finishes them by itself (prompt.auto): the
+ * button is shown as a smaller backup.
  */
 export default function ScanStepScreen({
   step,
@@ -79,6 +86,7 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
 
     case 'awaiting': {
       const prompt = CONFIRM_PROMPTS[run.prompt?.step] || { text: run.prompt?.message, button: 'I’m ready' };
+      if (step.key === 'bmi') return <BmiAwaiting run={run} prompt={prompt} onConfirm={on.onConfirm} />;
       return (
         <>
           <Spacer />
@@ -100,25 +108,44 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
     }
 
     case 'running':
+      if (step.key === 'bmi') return <BmiRunning run={run} step={step} />;
       return (
         <>
           <Spacer />
-          {step.key === 'bmi' ? <BmiProgress run={run} /> : <TimerRing run={run} step={step} />}
+          <TimerRing run={run} step={step} />
           <div className="k-measuring">
-            <p className="k-measuring__title">
-              {step.key === 'bmi' && run.bmiStage !== 'height' ? 'Stand still' : step.measuring}
-            </p>
-            <p className="k-measuring__hint">
-              {step.key === 'bmi' && run.bmiStage !== 'height'
-                ? 'Stay in the middle of the platform while we weigh you.'
-                : step.measuringHint}
-            </p>
+            <p className="k-measuring__title">{step.measuring}</p>
+            <p className="k-measuring__hint">{step.measuringHint}</p>
           </div>
           <Spacer />
         </>
       );
 
     case 'done': {
+      if (step.key === 'bmi') {
+        return (
+          <>
+            <Spacer />
+            <div className="k-panel k-panel--center k-panel--tint k-panel--scene">
+              <p className="k-reading__ok">
+                <Icon name="check" size={34} stroke={2.6} />
+                Reading complete
+              </p>
+              <BmiScene
+                mode="done"
+                weight={reading?.weight?.value}
+                heightCm={reading?.height?.value}
+                bmi={reading?.value}
+              />
+            </div>
+            <p className="k-after">You can step off the platform now.</p>
+            <Spacer />
+            <KioskButton icon="arrow" onClick={on.onContinue}>
+              {isLast ? 'See my results' : 'Next reading'}
+            </KioskButton>
+          </>
+        );
+      }
       const d = readingDisplay(step.key, reading);
       return (
         <>
@@ -273,45 +300,92 @@ function TimerRing({ run, step }) {
   );
 }
 
-/** BMI: weight first (live kg), then height. */
-function BmiProgress({ run }) {
-  const live = formatLive(run.tick?.live);
-  const weighing = run.bmiStage !== 'height';
-  const weight = weighing ? live : run.weight;
-  // seconds left of the agent's countdown for the row being measured
-  const left = run.tick?.secondsLeft != null ? Math.max(0, Math.ceil(run.tick.secondsLeft)) : null;
-  const measuringText = left != null ? `Measuring now… ${left}s left` : 'Measuring now…';
+/** BMI, waiting for the person: step off / step on (safety re-zero) or "stand up straight". */
+function BmiAwaiting({ run, prompt, onConfirm }) {
+  const stepKey = run.prompt?.step;
+  const mode = stepKey === 'scale_empty' ? 'stepOff' : stepKey === 'step_on' ? 'stepOn' : 'height';
+  const auto = !!run.prompt?.auto;
+  const heightNext = stepKey === 'stand_under';
   return (
-    <div className="k-panel k-panel--tint k-bmi">
-      <div className={`k-bmi__row${weighing ? ' is-active' : ' is-done'}`}>
-        {weighing ? <span className="k-spinner k-spinner--small" /> : <BadgeCheck />}
-        <div className="k-bmi__label">
-          <strong>Weight</strong>
-          <span>{weighing ? measuringText : 'Measured'}</span>
-        </div>
-        <p className="k-bmi__value">
-          {weight ? weight.value : '—'}
-          <span> kg</span>
-        </p>
+    <>
+      <Spacer />
+      <div className="k-panel k-panel--turn k-panel--scene">
+        <span className="k-badge">
+          <span className="k-badge__dot" />
+          {heightNext ? 'NEXT · HEIGHT' : 'YOUR TURN'}
+        </span>
+        <BmiScene
+          mode={mode}
+          kg={run.watchKg}
+          weight={run.weight?.value}
+          heightCm={null}
+          zeroed={!!run.zeroed}
+        />
+        <p className="k-panel__big">{prompt.text}</p>
+        {prompt.sub && <p className="k-panel__sub">{prompt.sub}</p>}
       </div>
-      <div className={`k-bmi__row${weighing ? '' : ' is-active'}`}>
-        {weighing ? <span className="k-bmi__pending" /> : <span className="k-spinner k-spinner--small" />}
-        <div className="k-bmi__label">
-          <strong>Height</strong>
-          <span>{weighing ? 'Next' : measuringText}</span>
-        </div>
-        <p className="k-bmi__value k-bmi__value--muted">
-          —<span> cm</span>
-        </p>
-      </div>
-    </div>
+      <Spacer />
+      {auto && heightNext ? (
+        <p className="k-scene-note">{prompt.autoNote}</p>
+      ) : (
+        <>
+          <KioskButton variant={auto ? 'secondary' : 'primary'} icon="check" onClick={onConfirm}>
+            {prompt.button}
+          </KioskButton>
+          {auto && prompt.autoNote && <p className="k-scene-note">{prompt.autoNote}</p>}
+        </>
+      )}
+    </>
   );
 }
 
-function BadgeCheck() {
+/** BMI, measuring: weight (live kg) first, then height (live cm). */
+function BmiRunning({ run, step }) {
+  if (run.bmiStage === 'zeroing') {
+    // safety re-zero: the platform is empty, the scale is being zeroed right now
+    return (
+      <>
+        <Spacer />
+        <div className="k-panel k-panel--turn k-panel--scene">
+          <span className="k-badge">
+            <span className="k-badge__dot" />
+            ZEROING
+          </span>
+          <BmiScene mode="stepOff" kg={run.watchKg} />
+          <p className="k-panel__big">Zeroing the scale…</p>
+          <p className="k-panel__sub">Stay off the platform for a moment.</p>
+        </div>
+        <Spacer />
+      </>
+    );
+  }
+  const height = run.bmiStage === 'height';
+  const left = run.tick?.secondsLeft != null ? Math.max(0, Math.ceil(run.tick.secondsLeft)) : null;
+  const liveKg = run.tick?.live?.kg ?? run.watchKg ?? null;
   return (
-    <span className="k-bmi__badge">
-      <Icon name="check" size={34} stroke={2.6} />
-    </span>
+    <>
+      <Spacer />
+      <div className="k-panel k-panel--center k-panel--tint k-panel--scene">
+        <span className="k-badge">
+          <span className="k-badge__dot" />
+          {height ? 'MEASURING · HEIGHT' : 'MEASURING · WEIGHT'}
+        </span>
+        <BmiScene
+          mode={height ? 'height' : 'weigh'}
+          kg={liveKg}
+          weight={run.weight?.value}
+          heightCm={run.heightCm ?? null}
+        />
+      </div>
+      <div className="k-measuring">
+        <p className="k-measuring__title">{height ? step.measuring : 'Stand still'}</p>
+        <p className="k-measuring__hint">
+          {height
+            ? step.measuringHint
+            : `Stay in the middle of the platform while we weigh you${left != null ? ` · ${left}s left` : '.'}`}
+        </p>
+      </div>
+      <Spacer />
+    </>
   );
 }

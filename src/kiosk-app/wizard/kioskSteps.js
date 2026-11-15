@@ -21,12 +21,12 @@ export const KIOSK_STEPS = [
     icon: 'bmi',
     color: 'bmi',
     description:
-      'We’ll measure your weight using the platform and your height using the sensor above you. Your BMI will automatically be calculated using these measurements.',
+      'Stay on the platform - no need to step off. We’ll weigh you first, then measure your height with the sensor above you. Your BMI is calculated automatically.',
     duration: 'Takes about 20 seconds',
     tips: [
       'Remove your shoes and any heavy items from your pockets.',
-      'Stand upright on the platform and face forward.',
-      'Keep your feet still and look straight ahead while your height and weight are measured.',
+      'Stand in the middle of the platform and face forward.',
+      'Tap “Start measuring”, then keep still and look straight ahead until it’s done.',
     ],
     measuring: 'Stand up straight',
     measuringHint: 'Keep your feet still and look straight ahead while your height is measured.',
@@ -100,26 +100,35 @@ export const STEP_BY_KEY = Object.fromEntries(KIOSK_STEPS.map((s) => [s.key, s])
 
 /**
  * The "Your turn" moments the agent asks for (its `step` names -> kiosk wording).
- *   text    the big instruction
- *   sub     the smaller line under it
- *   pill    the timing note under the panel
- *   button  what the patient taps when they're ready
+ *   text      the big instruction
+ *   sub       the smaller line under it
+ *   pill      the timing note under the panel
+ *   button    what the patient taps when they're ready
+ *   autoNote  shown under the button when the agent finishes this step BY ITSELF
+ *             (auto-zero scale, Nov 2026) - the button is then only a backup
+ *
+ * BMI normally has NO prompts at all: the scale zeroes itself between patients,
+ * so the patient stays on the platform. scale_empty / step_on only appear in the
+ * safety fallback (the zero couldn't be trusted).
  */
 export const CONFIRM_PROMPTS = {
   scale_empty: {
-    text: 'Please step OFF the platform so we can zero the scale.',
-    sub: 'Keep the platform empty for a moment.',
-    button: 'The platform is empty',
+    text: 'Please step off the platform for a moment.',
+    sub: 'We need to zero the scale before weighing you. Make sure nothing is left on it.',
+    button: 'Zero the scale now',
+    autoNote: 'Zeroing automatically · tap only if it doesn’t start',
   },
   step_on: {
-    text: 'Now step onto the platform and stand still.',
-    sub: 'Stand in the middle of the platform with both feet.',
+    text: 'Now step back onto the platform.',
+    sub: 'Stand in the middle with both feet and keep still.',
     button: 'I’m on the platform',
+    autoNote: 'Weighing starts automatically · tap only if it doesn’t start',
   },
   stand_under: {
-    text: 'Stand up straight under the sensor and look straight ahead.',
+    text: 'Stand up straight and look ahead.',
     sub: 'Stay on the platform and keep your heels down.',
     button: 'I’m standing straight',
+    autoNote: 'Your height is measured next - it starts by itself',
   },
   finger_rest: {
     text: 'Stand and relax. Gently place your index fingertip on the sensor pad.',
