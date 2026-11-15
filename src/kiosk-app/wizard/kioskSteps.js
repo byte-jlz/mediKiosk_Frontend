@@ -83,12 +83,12 @@ export const KIOSK_STEPS = [
     icon: 'temp',
     color: 'temp',
     description:
-      'Your body temperature will be measured automatically using the infrared sensor integrated into the kiosk. Follow the on-screen instructions and remain still while the reading is taken.',
+      'Your body temperature is measured from the inside of your wrist with the infrared sensor at the top, next to the screen. Nothing touches your skin.',
     duration: 'Takes about 5 seconds', // TEMP_SECONDS in measurements.py
     tips: [
-      'Locate the temperature sensor on the kiosk.',
-      'Position the required body part near the sensor as indicated on the screen.',
-      'Remain still until the temperature reading is complete.',
+      'Pull back your right sleeve.',
+      'Hold the inside of your wrist 2–5 cm in front of the top sensor.',
+      'The reading starts by itself. Keep your wrist still until it’s done.',
     ],
     timerSeconds: 5, // TEMP_SECONDS in measurements.py (the ring itself uses the agent's countdown)
     measuring: 'Measuring…',
@@ -162,11 +162,18 @@ export const CONFIRM_PROMPTS = {
     note: 'The cuff inflates by itself after you tap.',
   },
   forehead: {
-    // (the agent still calls this step "forehead" - only the wording changed to the wrist)
-    text: 'Hold the inside of your wrist 2–5 cm in front of the infrared sensor.',
-    sub: 'Pull back your sleeve, turn your palm up, and keep still until the reading is complete.',
-    pill: 'A 5-second reading starts when you tap the button', // TEMP_SECONDS
+    // (the agent still calls this step "forehead" - the wording is for the wrist)
+    text: 'Hold the inside of your right wrist 2–5 cm in front of the top sensor.',
+    sub: 'Pull back your sleeve and turn the inside of your wrist toward the sensor. The reading starts by itself.',
     button: 'I’m in position',
+    autoNote: 'Starts automatically · tap only if it doesn’t start',
+  },
+  // after an automatic restart (the readings were too unsteady) and the wrist is not detected
+  temp_again: {
+    text: 'Hold your wrist in front of the top sensor again',
+    sub: 'Keep the inside of your wrist 2–5 cm from the sensor and hold it still. The reading starts again by itself.',
+    button: 'I’m in position',
+    autoNote: 'Starts automatically · tap only if it doesn’t start',
   },
 };
 

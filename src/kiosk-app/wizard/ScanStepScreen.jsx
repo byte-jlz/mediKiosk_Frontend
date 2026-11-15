@@ -3,11 +3,13 @@ import Icon from '../ui/Icon';
 import BmiScene from './BmiScene';
 import FingerScene from './FingerScene';
 import BpScene from './BpScene';
+import TempScene from './TempScene';
 import { IconTile, KioskButton, Note, NumberedList, Pill, Spacer } from '../ui/KioskUI';
 import { CONFIRM_PROMPTS, FINGER_WAIT_LIMIT_S, STILL_THERE_S, formatLive, readingDisplay } from './kioskSteps';
 
 const FINGER = 'respirationSpo2Hr'; // the SpO2 & RR step (live finger detection)
 const BP = 'bloodPressure'; // the BP step (the monitor is hidden inside the kiosk)
+const TEMP = 'temperature'; // the temperature step (wrist detection + safety checks)
 
 /**
  * One reading of the check-in. What it shows depends on run.phase:
@@ -105,6 +107,8 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
       if (step.key === FINGER)
         return <FingerAwaiting run={run} prompt={prompt} onConfirm={on.onConfirm} onAbandon={on.onAbandon} />;
       if (step.key === BP) return <BpAwaiting prompt={prompt} onConfirm={on.onConfirm} />;
+      if (step.key === TEMP)
+        return <TempAwaiting run={run} prompt={prompt} onConfirm={on.onConfirm} onAbandon={on.onAbandon} />;
       return (
         <>
           <Spacer />
@@ -129,6 +133,7 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
       if (step.key === 'bmi') return <BmiRunning run={run} step={step} />;
       if (step.key === FINGER) return <FingerRunning run={run} />;
       if (step.key === BP) return <BpRunning run={run} />;
+      if (step.key === TEMP) return <TempRunning run={run} />;
       return (
         <>
           <Spacer />
@@ -142,6 +147,25 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
       );
 
     case 'done': {
+      if (step.key === TEMP) {
+        return (
+          <>
+            <Spacer />
+            <ScenePanel
+              tone="green"
+              badge="READING COMPLETE"
+              banner={{ tone: 'green', text: '✓ Reading complete' }}
+              scene={<TempScene mode="done" value={reading?.value} />}
+              big="Reading complete"
+              sub="You can lower your arm now."
+            />
+            <Spacer />
+            <KioskButton icon="arrow" onClick={on.onContinue}>
+              {isLast ? 'See my results' : 'Next reading'}
+            </KioskButton>
+          </>
+        );
+      }
       if (step.key === BP) {
         return (
           <>
@@ -252,6 +276,34 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
     }
 
     case 'failed':
+      if (step.key === TEMP) {
+        const t = tempFailure(run.rawError || '');
+        const coldTip = t.mode === 'low' && (run.lowStreak || 0) >= 2;
+        return (
+          <>
+            <Spacer />
+            <ScenePanel
+              tone={t.tone}
+              badge={t.badge}
+              banner={{ tone: t.tone, text: t.banner }}
+              scene={<TempScene mode={t.mode} />}
+              big={t.big}
+              sub={coldTip ? 'Hold your wrist closer, about 2–5 cm away, and keep it still.' : t.sub}
+              extra={
+                coldTip ? (
+                  <p className="k-scene-tip">Tip: if your hands feel cold, rub the inside of your wrist for a few seconds first.</p>
+                ) : null
+              }
+            />
+            <Spacer />
+            <KioskButton variant={t.tone === 'red' ? 'secondary' : 'primary'} icon="retry" onClick={on.onStart} disabled={!sensorsReady}>
+              Try again
+            </KioskButton>
+            {sensorsNote}
+            {skipButton}
+          </>
+        );
+      }
       if (step.key === BP) {
         const raw = run.rawError || '';
         // the monitor's own error screen / nobody tapped "The cuff is on" = the patient can fix it (orange);
@@ -516,7 +568,7 @@ function BmiRunning({ run, step }) {
 }
 
 /** One SpO2 & RR panel: colour on the border + a big banner + the picture. */
-function ScenePanel({ tone, badge, banner, scene, big, sub }) {
+function ScenePanel({ tone, badge, banner, scene, big, sub, extra = null }) {
   return (
     <div className={`k-panel k-panel--turn k-panel--scene k-panel--finger${tone ? ` k-panel--tone-${tone}` : ''}`}>
       <span className="k-badge">
@@ -531,6 +583,7 @@ function ScenePanel({ tone, badge, banner, scene, big, sub }) {
       {scene}
       <p className="k-panel__big">{big}</p>
       {sub && <p className="k-panel__sub">{sub}</p>}
+      {extra}
     </div>
   );
 }
@@ -586,7 +639,7 @@ function FingerAwaiting({ run, prompt, onConfirm, onAbandon }) {
           {auto && prompt.autoNote && <p className="k-scene-note">{prompt.autoNote}</p>}
         </>
       )}
-      <StillThere waiting={!fingerOn} onAbandon={onAbandon} />
+      <StillThere waiting={!fingerOn} onAbandon={onAbandon} what="a finger on the sensor" />
     </>
   );
 }
@@ -644,7 +697,7 @@ function FingerRunning({ run }) {
  * the wait again; "I need help" keeps the screen open (no more questions for
  * this step); no answer within STILL_THERE_S -> onAbandon (check-in closed).
  */
-function StillThere({ waiting, onAbandon }) {
+function StillThere({ waiting, onAbandon, what = 'a finger on the sensor' }) {
   const [asking, setAsking] = useState(false);
   const [help, setHelp] = useState(false);
   const [left, setLeft] = useState(STILL_THERE_S);
@@ -683,7 +736,7 @@ function StillThere({ waiting, onAbandon }) {
   if (help) {
     return (
       <Note icon="info" role="status">
-        A staff member can help you. The reading starts by itself once your finger is on the sensor.
+        A staff member can help you. The reading starts by itself once {what === 'a finger on the sensor' ? 'your finger is on the sensor' : 'your wrist is in front of the sensor'}.
       </Note>
     );
   }
@@ -694,7 +747,7 @@ function StillThere({ waiting, onAbandon }) {
         <p id="k-still-title" className="k-still__title">
           Are you still there?
         </p>
-        <p className="k-still__text">We haven’t detected a finger on the sensor.</p>
+        <p className="k-still__text">We haven’t detected {what}.</p>
         <p className="k-still__count">This check-in closes in {left} s</p>
         <KioskButton
           icon="check"
@@ -768,6 +821,165 @@ function BpRunning({ run }) {
         scene={<BpScene mode={phase} elapsed={started ? run.tick.elapsed : null} />}
         big={p.big}
         sub={p.sub}
+      />
+      <Spacer />
+    </>
+  );
+}
+
+/** Temperature: what each failure from the agent means for the patient. */
+function tempFailure(raw) {
+  if (raw.startsWith('sensor problem'))
+    return {
+      tone: 'red',
+      mode: 'sensor',
+      badge: 'SENSOR PROBLEM',
+      banner: '⚠ The temperature sensor isn’t working',
+      big: 'This isn’t your fault',
+      sub: 'The temperature sensor isn’t responding. Please ask the clinic staff for help.',
+    };
+  if (raw.startsWith('no steady reading'))
+    return {
+      tone: 'red',
+      mode: 'limit',
+      badge: 'NO READING',
+      banner: 'We couldn’t get a steady reading',
+      big: 'Please ask the clinic staff',
+      sub: 'We tried a few times but the reading kept moving. A staff member can help you.',
+    };
+  if (raw.startsWith('too low'))
+    return {
+      tone: 'orange',
+      mode: 'low',
+      badge: 'NO READING',
+      banner: '⚠ That reading was too low',
+      big: 'Let’s try once more',
+      sub: 'Hold the inside of your wrist closer to the sensor, about 2–5 cm away, and keep it still.',
+    };
+  if (raw.startsWith('too high'))
+    return {
+      tone: 'orange',
+      mode: 'high',
+      badge: 'NO READING',
+      banner: '⚠ That reading doesn’t look right',
+      big: 'Let’s try once more',
+      sub: 'Make sure nothing else is in front of the sensor (like a cup or a phone), then hold up your wrist again.',
+    };
+  if (raw.startsWith('nobody confirmed'))
+    return {
+      tone: 'orange',
+      mode: 'nowrist',
+      badge: 'NO READING',
+      banner: '⚠ We waited a while for you',
+      big: 'Let’s try once more',
+      sub: 'Hold the inside of your right wrist 2–5 cm in front of the top sensor. The reading starts by itself.',
+    };
+  return {
+    tone: 'orange',
+    mode: 'nowrist',
+    badge: 'NO READING',
+    banner: '⚠ We couldn’t detect your wrist',
+    big: 'Let’s try once more',
+    sub: 'Hold the inside of your wrist close to the top sensor, about 2–5 cm away, and keep it still.',
+  };
+}
+
+/** Temperature, waiting for the wrist (first time, or after an automatic restart). */
+function TempAwaiting({ run, prompt, onConfirm, onAbandon }) {
+  const again = run.prompt?.step === 'temp_again';
+  const wristOn = !!run.wrist;
+  const auto = !!run.prompt?.auto;
+  let view;
+  if (wristOn && again) {
+    view = {
+      mode: 'restartBack',
+      tone: 'orange',
+      badge: 'STARTING AGAIN',
+      banner: { tone: 'orange', text: '↻ Starting again — hold your wrist still' },
+      big: 'Let’s try that again',
+      sub: 'Keep your wrist where it is. The new reading starts by itself — no need to tap anything.',
+    };
+  } else if (wristOn) {
+    view = {
+      mode: 'detected',
+      tone: 'green',
+      badge: 'YOUR TURN',
+      banner: { tone: 'green', text: '✓ Wrist detected — hold still' },
+      big: 'Good. Starting…',
+      sub: 'Keep your wrist where it is.',
+    };
+  } else if (again) {
+    view = {
+      mode: 'again',
+      tone: 'orange',
+      badge: 'STARTING AGAIN',
+      banner: { tone: 'orange', text: '↻ Hold your wrist up again' },
+      big: prompt.text,
+      sub: prompt.sub,
+    };
+  } else {
+    view = { mode: 'wait', badge: 'YOUR TURN', big: prompt.text, sub: prompt.sub };
+  }
+  return (
+    <>
+      <Spacer />
+      <ScenePanel {...view} scene={<TempScene mode={view.mode} />} />
+      <Spacer />
+      {!wristOn && (
+        <>
+          <KioskButton variant={auto ? 'secondary' : 'primary'} icon="check" onClick={onConfirm}>
+            {prompt.button}
+          </KioskButton>
+          {auto && prompt.autoNote && <p className="k-scene-note">{prompt.autoNote}</p>}
+        </>
+      )}
+      <StillThere waiting={!wristOn} onAbandon={onAbandon} what="a wrist in front of the sensor" />
+    </>
+  );
+}
+
+/** Temperature, the 5 s reading: green = good, orange = wrist moving / too far (warnings only). */
+function TempRunning({ run }) {
+  const live = run.tick?.live || {};
+  const far = live.wrist === false;
+  const moving = !far && !!live.moving;
+  const view = far
+    ? {
+        mode: 'far',
+        tone: 'orange',
+        banner: { tone: 'orange', text: '⚠ Hold your wrist closer to the sensor' },
+        big: 'Your wrist moved away',
+        sub: 'Bring it back to 2–5 cm from the sensor. The reading continues.',
+      }
+    : moving
+      ? {
+          mode: 'wobble',
+          tone: 'orange',
+          banner: { tone: 'orange', text: '⚠ Hold your wrist still' },
+          big: 'Your wrist is moving',
+          sub: 'Keep it still — the reading is still going.',
+        }
+      : {
+          mode: 'measure',
+          tone: 'green',
+          banner: { tone: 'green', text: '✓ Good — hold still' },
+          big: 'Hold still',
+          sub: 'Keep your wrist 2–5 cm from the sensor until it’s done.',
+        };
+  return (
+    <>
+      <Spacer />
+      <ScenePanel
+        {...view}
+        badge="MEASURING · TEMPERATURE"
+        scene={
+          <TempScene
+            mode={view.mode}
+            liveC={live.object_c ?? null}
+            secondsLeft={run.tick?.secondsLeft ?? null}
+            totalSeconds={run.totalSeconds || 5}
+          />
+        }
       />
       <Spacer />
     </>

@@ -2082,3 +2082,83 @@
 .k-panel--finger .k-bpscene { max-height: 350px; }
 .k-panel--finger.k-panel--tone-orange .k-bpscene,
 .k-panel--finger.k-panel--tone-red .k-bpscene { max-height: 320px; }
+
+/* ============================================================
+   Temperature picture (wizard/TempScene.jsx)
+   ============================================================ */
+.k-tscene {
+  --tone: var(--k-temp);
+  --tone-ink: var(--k-temp-ink);
+  display: block;
+  width: 100%;
+  max-height: 400px;
+  margin: 10px auto 0;
+  font-family: var(--k-font);
+}
+.k-tscene--green { --tone: #1d9e75; --tone-ink: #0f6e56; }
+.k-tscene--orange { --tone: #c2410c; --tone-ink: #9a3412; }
+.k-tscene--red { --tone: #b42318; --tone-ink: #7a1a12; }
+.k-panel--finger .k-tscene { max-height: 360px; }
+.k-panel--finger.k-panel--tone-orange .k-tscene,
+.k-panel--finger.k-panel--tone-red .k-tscene { max-height: 330px; }
+.k-panel--finger:has(.k-scene-tip) .k-tscene { max-height: 290px; }
+
+.k-tscene__wood { fill: #b07a4f; }
+.k-tscene__bezel { fill: #2b3d44; }
+.k-tscene__screen { fill: #fffaf4; }
+.k-tscene__therm { fill: none; stroke: var(--k-temp); stroke-width: 3; }
+.k-tscene__bulb { fill: var(--k-temp); }
+.k-tscene__mercury { stroke: var(--k-temp); stroke-width: 3; }
+.k-tscene__label { font-size: 18px; font-weight: 700; fill: var(--k-temp); }
+.k-tscene__msg { font-size: 13px; font-weight: 700; fill: var(--tone-ink); }
+.k-tscene__small { font-size: 11px; fill: var(--k-muted); }
+.k-tscene__okdot { fill: #1d9e75; }
+.k-tscene__errdot { fill: #b42318; }
+.k-tscene__warn { fill: #c2410c; }
+.k-tscene__tick { fill: none; stroke: #ffffff; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.k-tscene__bang { font-size: 25px; font-weight: 700; fill: #ffffff; }
+.k-tscene__track { fill: none; stroke: #f6dcc0; stroke-width: 6; }
+.k-tscene__arc { fill: none; stroke: var(--tone); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.3s linear; }
+.k-tscene__live { font-size: 19px; font-weight: 700; fill: var(--k-temp-ink); }
+.k-tscene__redo { fill: none; stroke: #c2410c; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.k-tscene__ok { font-size: 12px; font-weight: 700; fill: #0f6e56; }
+.k-tscene__val { font-size: 30px; font-weight: 700; fill: #0f6e56; }
+.k-tscene__unit { font-size: 13px; font-weight: 500; fill: var(--k-muted); }
+.k-tscene__pad { fill: #ffffff; }
+.k-tscene__eye { fill: var(--k-temp); }
+.k-tscene__otherpad { fill: #d6e0e4; }
+.k-tscene__arm { stroke: #2b3d44; stroke-width: 24; stroke-linecap: round; }
+.k-tscene__sleeve { stroke: #566a72; stroke-width: 32; stroke-linecap: round; }
+.k-tscene__hand { fill: #2b3d44; }
+.k-tscene__ring {
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 4;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: k-fscene-ring 1.6s ease-in-out infinite;
+}
+.k-tscene__side { fill: #ffffff; stroke: #f0d2b4; stroke-width: 1.5; }
+.k-tscene__sidetitle { font-size: 11px; fill: var(--k-temp-ink); }
+.k-tscene__face { stroke: #b07a4f; stroke-width: 8; stroke-linecap: round; }
+.k-tscene__sidesensor { fill: var(--k-temp); }
+.k-tscene__waves path { fill: none; stroke: var(--k-temp); stroke-width: 2; stroke-linecap: round; opacity: 0.25; animation: k-bp-dot 0.54s steps(1, end) infinite; }
+.k-tscene__waves path:nth-child(2) { animation-delay: 0.18s; }
+.k-tscene__waves path:nth-child(3) { animation-delay: 0.36s; }
+.k-tscene__skin { fill: #2b3d44; }
+.k-tscene__inside { stroke: #f0c8a0; stroke-width: 3; stroke-linecap: round; }
+.k-tscene__gap path { fill: none; stroke: #0f6e56; stroke-width: 1.5; }
+.k-tscene__hint { font-size: 12px; font-weight: 700; fill: #0f6e56; }
+.k-tscene__inlabel { font-size: 10px; fill: var(--k-temp-ink); }
+
+/* cold-wrist tip on a second low reading */
+.k-scene-tip {
+  margin: 10px 0 0;
+  padding: 12px 20px;
+  border: 3px dashed var(--k-temp);
+  border-radius: 20px;
+  background: #ffffff;
+  font: 400 24px/1.35 var(--k-font);
+  color: var(--k-temp-ink);
+  text-align: left;
+}

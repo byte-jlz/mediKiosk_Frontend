@@ -65,6 +65,7 @@ export default function KioskVitalsWizard() {
   const [closed, setClosed] = useState(false); // nobody answered "Are you still there?"
 
   const scanIdRef = useRef(null);
+  const lowStreakRef = useRef(0); // temperature: low readings in a row
   const agentRef = useRef(null);
   agentRef.current = agent;
 
@@ -117,13 +118,17 @@ export default function KioskVitalsWizard() {
     }
     scanIdRef.current = null;
     if (result.ok) {
+      lowStreakRef.current = 0;
       setReadings((prev) => ({ ...prev, [key]: result.reading }));
       setRun({ phase: 'done' }); // the agent's reading is accepted as it is
     } else if (!result.cancelled) {
       if (result.rejected) console.warn('[kiosk] agent refused the scan:', result.error);
+      // temperature: count low readings in a row (the 2nd one shows the cold-wrist tip)
+      lowStreakRef.current = key === 'temperature' && /^too low/.test(result.error || '') ? lowStreakRef.current + 1 : 0;
       setRun({
         phase: 'failed',
         rawError: result.error || '',
+        lowStreak: lowStreakRef.current,
         error: !result.rejected
           ? friendlyError(result.error, key)
           : /^busy/.test(result.error || '')
@@ -144,13 +149,19 @@ export default function KioskVitalsWizard() {
           prompt: { step: st.step, message: st.message, auto: !!st.auto },
           tick: null,
           zeroed: st.step === 'step_on' ? true : r.zeroed,
-          // finger step: keep what the sensor last said (decides "starting again" 6a / 6b)
+          // finger / temperature step: keep what the sensor last said (decides "starting again" a / b)
           finger: r.tick?.live?.finger ?? r.finger,
+          wrist: r.tick?.live?.wrist ?? r.wrist,
         }));
       } else if (st.phase === 'watching') {
         // the agent is watching the scale (empty platform / someone standing still)
         // or the finger sensor (is a finger on it?)
-        setRun((r) => ({ ...r, watchKg: st.live?.kg ?? r.watchKg, finger: st.live?.finger ?? r.finger }));
+        setRun((r) => ({
+          ...r,
+          watchKg: st.live?.kg ?? r.watchKg,
+          finger: st.live?.finger ?? r.finger,
+          wrist: st.live?.wrist ?? r.wrist,
+        }));
       } else if (st.phase === 'restart') {
         // finger step: the finger was off too long - the agent starts the reading again
         setRun((r) => ({ ...r, restarts: (r.restarts || 0) + 1 }));
