@@ -4,9 +4,10 @@
 // ============================================================
 import logo from '../../assets/medikiosk-logo.png';
 import Icon from './Icon';
+import { LANGUAGES, getLang, setLang, t } from '../i18n';
 
 export const APP_VERSION = __APP_VERSION__; // from package.json (vite.config.js)
-const versionLabel = `Version ${APP_VERSION.split('.').slice(0, 2).join('.')}`;
+const shortVersion = APP_VERSION.split('.').slice(0, 2).join('.');
 
 export function Logo({ width = 210 }) {
   return <img src={logo} alt="MediKiosk" className="k-logo" style={{ width }} />;
@@ -32,11 +33,40 @@ export function Footer({ children }) {
     <footer className="k-footer">
       {children ?? (
         <>
-          <span className="k-footer__lang">English</span>
-          <span className="k-footer__version">{versionLabel}</span>
+          <LanguageSwitcher />
+          <span className="k-footer__version">{t('Version {v}', { v: shortVersion })}</span>
         </>
       )}
     </footer>
+  );
+}
+
+/**
+ * English / Tagalog / Bisaya buttons (start + welcome screens). The screen must call
+ * useLang() so it re-renders when one is tapped.
+ */
+export function LanguageSwitcher() {
+  const lang = getLang();
+  return (
+    <div className="k-lang" role="group" aria-label="Language">
+      <span className="k-lang__label">
+        <Icon name="globe" size={34} />
+        Language · Wika · Pinulongan
+      </span>
+      <div className="k-lang__options">
+        {LANGUAGES.map((l) => (
+          <button
+            key={l.code}
+            type="button"
+            className={`k-lang__btn${l.code === lang ? ' is-active' : ''}`}
+            aria-pressed={l.code === lang}
+            onClick={() => setLang(l.code)}
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -47,7 +77,7 @@ export function TopBar({ name, onLeave, onBack }) {
       {onBack ? (
         <button type="button" className="k-chip k-chip--button" onClick={onBack}>
           <Icon name="back" size={30} />
-          Back
+          {t('Back')}
         </button>
       ) : (
         <Logo width={200} />
@@ -62,7 +92,7 @@ export function TopBar({ name, onLeave, onBack }) {
         {onLeave && (
           <button type="button" className="k-chip k-chip--button k-chip--muted" onClick={onLeave}>
             <Icon name="x" size={26} />
-            Leave
+            {t('Leave')}
           </button>
         )}
         {onBack && <Logo width={186} />}
@@ -81,7 +111,7 @@ export function KioskButton({ variant = 'primary', icon, children, className = '
   return (
     <button type="button" className={`k-btn k-btn--${variant} ${className}`} {...props}>
       {variant !== 'primary' && iconEl}
-      <span>{children}</span>
+      <span>{typeof children === 'string' ? t(children) : children}</span>
       {variant === 'primary' && iconEl}
     </button>
   );
@@ -91,7 +121,7 @@ export function Pill({ icon = 'clock', children }) {
   return (
     <div className="k-pill">
       <Icon name={icon} size={26} />
-      {children}
+      {typeof children === 'string' ? t(children) : children}
     </div>
   );
 }
@@ -100,7 +130,7 @@ export function Note({ icon = 'lock', className = '', children, ...props }) {
   return (
     <p className={`k-note ${className}`} {...props}>
       <Icon name={icon} size={28} />
-      {children}
+      {typeof children === 'string' ? t(children) : children}
     </p>
   );
 }
@@ -116,10 +146,10 @@ export function IconTile({ icon, size = 148, white = false }) {
 export function NumberedList({ items, className = '' }) {
   return (
     <ol className={`k-steps-list ${className}`}>
-      {items.map((t, i) => (
-        <li key={t}>
+      {items.map((t2, i) => (
+        <li key={t2}>
           <span className="k-steps-list__num">{i + 1}</span>
-          <span>{t}</span>
+          <span>{t(t2)}</span>
         </li>
       ))}
     </ol>
@@ -142,18 +172,19 @@ export function LeaveDialog({ destination, onStay, onLeave }) {
           <Icon name="alert" size={64} />
         </span>
         <h2 id="k-leave-title" className="k-dialog__title">
-          Leave this check-in?
+          {t('Leave this check-in?')}
         </h2>
         <p className="k-dialog__text">
-          If you leave now, the readings you’ve taken so far will be lost and the whole process will be wiped out. You’ll
-          need to start again from the beginning.
+          {t(
+            'If you leave now, the readings you’ve taken so far will be lost and the whole process will be wiped out. You’ll need to start again from the beginning.'
+          )}
         </p>
         <p className="k-dialog__muted">{destination}</p>
         <KioskButton icon="back" onClick={onStay}>
-          Stay and continue
+          {t('Stay and continue')}
         </KioskButton>
         <KioskButton variant="secondary" icon="x" onClick={onLeave}>
-          Leave and lose my readings
+          {t('Leave and lose my readings')}
         </KioskButton>
       </div>
     </div>

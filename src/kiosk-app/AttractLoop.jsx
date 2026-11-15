@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { dateFormat, timeFormat, useNow } from './useNow';
+import { formatDate, formatTime, useNow } from './useNow';
+import { t } from './i18n';
 
 // The intro video (made from src/attract/Movie.jsx - re-render it with tools/attract/render.py).
 // It has no clock or button drawn in: those are live, on top of it.
@@ -32,7 +33,7 @@ export default function AttractLoop({ onExit, onFail }) {
   };
 
   return (
-    <div className="k-attract" role="button" tabIndex={0} aria-label="Touch anywhere to start" onClick={exit}>
+    <div className="k-attract" role="button" tabIndex={0} aria-label={t('Touch anywhere to start')} onClick={exit}>
       <video
         ref={videoRef}
         className="k-attract__video"
@@ -45,11 +46,11 @@ export default function AttractLoop({ onExit, onFail }) {
         onError={() => onFail?.()}
       />
       <div className="k-attract__clock">
-        <time dateTime={now.toISOString()}>{dateFormat.format(now)}</time>
-        <time dateTime={now.toISOString()}>{timeFormat.format(now)}</time>
+        <time dateTime={now.toISOString()}>{formatDate(now)}</time>
+        <time dateTime={now.toISOString()}>{formatTime(now)}</time>
       </div>
       <div className="k-attract__hint">
-        <span>Touch anywhere to start</span>
+        <span>{t('Touch anywhere to start')}</span>
       </div>
     </div>
   );

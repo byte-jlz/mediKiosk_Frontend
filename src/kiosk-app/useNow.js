@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 
-export const dateFormat = new Intl.DateTimeFormat('en-US', {
-  weekday: 'short',
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-});
-export const timeFormat = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
+import { localeTag } from './i18n';
+
+/** "Sun, Nov 15, 2026" - in the kiosk's current language. */
+export function formatDate(d) {
+  return new Intl.DateTimeFormat(localeTag(), { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).format(d);
+}
+
+/** "2:51 PM" - in the kiosk's current language. */
+export function formatTime(d) {
+  return new Intl.DateTimeFormat(localeTag(), { hour: 'numeric', minute: '2-digit' }).format(d);
+}
 
 /** The current time, refreshed right when the minute changes. */
 export function useNow() {

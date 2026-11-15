@@ -1,5 +1,6 @@
 import Icon from '../ui/Icon';
 import { KIOSK_STEPS } from './kioskSteps';
+import { t } from '../i18n';
 
 /**
  * The step bar at the top of every check-in screen:
@@ -19,13 +20,15 @@ export default function StepProgress({ current, done, skipped, frac = 0 }) {
   const color = KIOSK_STEPS[Math.min(current, KIOSK_STEPS.length - 1)].color;
 
   return (
-    <nav className="k-progress" aria-label="Check-in progress">
+    <nav className="k-progress" aria-label={t('Check-in progress')}>
       <div className="k-progress__summary" data-color={color}>
         <span className="k-progress__count">
-          {percent >= 100 ? 'All readings done' : `Reading ${current + 1} of ${KIOSK_STEPS.length}`}
+          {percent >= 100
+            ? t('All readings done')
+            : t('Reading {n} of {total}', { n: current + 1, total: KIOSK_STEPS.length })}
         </span>
         <span className="k-progress__percent">
-          <strong>{percent}%</strong> complete
+          <strong>{percent}%</strong> {t('complete')}
         </span>
       </div>
 
@@ -43,7 +46,7 @@ export default function StepProgress({ current, done, skipped, frac = 0 }) {
                 <span className="k-progress__dot">
                   {state === 'done' ? <Icon name="check" size={30} stroke={2.6} /> : state === 'skipped' ? '–' : i + 1}
                 </span>
-                <span className="k-progress__label">{s.label}</span>
+                <span className="k-progress__label">{t(s.label)}</span>
               </div>
               {i < KIOSK_STEPS.length - 1 && (
                 <span className="k-progress__line" aria-hidden="true">

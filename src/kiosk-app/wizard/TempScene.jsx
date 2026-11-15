@@ -1,4 +1,12 @@
 import { useEffect, useRef } from 'react';
+import { t } from '../i18n';
+
+/** A two-line message on the drawn screen, translated as one phrase ('line 1\nline 2'). */
+function two(text) {
+  const key = Array.isArray(text) ? text.join('\n') : text;
+  const [a = '', b = ''] = t(key).split('\n');
+  return [a, b];
+}
 
 /**
  * The temperature picture: the kiosk console (screen + the TOP sensor =
@@ -123,16 +131,16 @@ export default function TempScene({ mode = 'wait', liveC = null, secondsLeft = n
           <path d="M78 60 L78 112 A12 12 0 1 0 86 112 L86 60 A4 4 0 0 0 78 60 Z" className="k-tscene__therm" />
           <circle cx="82" cy="122" r="7" className="k-tscene__bulb" />
           <line x1="82" y1="80" x2="82" y2="118" className="k-tscene__mercury" />
-          <text x="82" y="160" textAnchor="middle" className="k-tscene__label">Temp</text>
+          <text x="82" y="160" textAnchor="middle" className="k-tscene__label">{t('Temp')}</text>
         </g>
       )}
       {cfg.screen === 'detected' && (
         <g>
           <circle cx="82" cy="88" r="24" className="k-tscene__okdot" />
           <path d="M71 88 L79 96 L94 80" className="k-tscene__tick" />
-          <text x="82" y="134" textAnchor="middle" className="k-tscene__msg">Wrist</text>
-          <text x="82" y="149" textAnchor="middle" className="k-tscene__msg">detected</text>
-          <text x="82" y="170" textAnchor="middle" className="k-tscene__small">Starting…</text>
+          <text x="82" y="134" textAnchor="middle" className="k-tscene__msg">{two('Wrist\ndetected')[0]}</text>
+          <text x="82" y="149" textAnchor="middle" className="k-tscene__msg">{two('Wrist\ndetected')[1]}</text>
+          <text x="82" y="170" textAnchor="middle" className="k-tscene__small">{t('Starting…')}</text>
         </g>
       )}
       {cfg.screen === 'live' && (
@@ -148,42 +156,42 @@ export default function TempScene({ mode = 'wait', liveC = null, secondsLeft = n
             transform="rotate(-90 82 86)"
           />
           <text x="82" y="92" textAnchor="middle" className="k-tscene__live">{fmt(liveC)}°</text>
-          <text x="82" y="140" textAnchor="middle" className="k-tscene__small">{Math.ceil(left)} s left</text>
-          <text x="82" y="160" textAnchor="middle" className="k-tscene__msg">{mode === 'wobble' ? 'Hold still!' : 'Hold still'}</text>
+          <text x="82" y="140" textAnchor="middle" className="k-tscene__small">{t('{n} s left', { n: Math.ceil(left) })}</text>
+          <text x="82" y="160" textAnchor="middle" className="k-tscene__msg">{mode === 'wobble' ? t('Hold still!') : t('Hold still')}</text>
         </g>
       )}
       {cfg.screen === 'warn' && (
         <g>
           <path d="M82 62 L108 108 L56 108 Z" className="k-tscene__warn" />
           <text x="82" y="103" textAnchor="middle" className="k-tscene__bang">!</text>
-          <text x="82" y="134" textAnchor="middle" className="k-tscene__msg">{cfg.lines[0]}</text>
-          <text x="82" y="149" textAnchor="middle" className="k-tscene__msg">{cfg.lines[1]}</text>
+          <text x="82" y="134" textAnchor="middle" className="k-tscene__msg">{two(cfg.lines)[0]}</text>
+          <text x="82" y="149" textAnchor="middle" className="k-tscene__msg">{two(cfg.lines)[1]}</text>
         </g>
       )}
       {cfg.screen === 'restart' && (
         <g>
           <path d="M98 76 A22 22 0 1 0 104 96" className="k-tscene__redo" />
           <path d="M92 70 L100 77 L91 82" className="k-tscene__redo" />
-          <text x="82" y="134" textAnchor="middle" className="k-tscene__msg">{cfg.lines[0]}</text>
-          <text x="82" y="149" textAnchor="middle" className="k-tscene__msg">{cfg.lines[1]}</text>
+          <text x="82" y="134" textAnchor="middle" className="k-tscene__msg">{two(cfg.lines)[0]}</text>
+          <text x="82" y="149" textAnchor="middle" className="k-tscene__msg">{two(cfg.lines)[1]}</text>
         </g>
       )}
       {cfg.screen === 'error' && (
         <g>
           <circle cx="82" cy="88" r="24" className="k-tscene__errdot" />
           <text x="82" y="97" textAnchor="middle" className="k-tscene__bang">!</text>
-          <text x="82" y="134" textAnchor="middle" className="k-tscene__msg">{cfg.lines[0]}</text>
-          <text x="82" y="149" textAnchor="middle" className="k-tscene__msg">{cfg.lines[1]}</text>
+          <text x="82" y="134" textAnchor="middle" className="k-tscene__msg">{two(cfg.lines)[0]}</text>
+          <text x="82" y="149" textAnchor="middle" className="k-tscene__msg">{two(cfg.lines)[1]}</text>
         </g>
       )}
       {cfg.screen === 'done' && (
         <g>
-          <text x="82" y="56" textAnchor="middle" className="k-tscene__ok">✓ Done</text>
+          <text x="82" y="56" textAnchor="middle" className="k-tscene__ok">{t('✓ Done')}</text>
           <text x="82" y="108" textAnchor="middle" className="k-tscene__val">
             {fmt(value)}
             <tspan className="k-tscene__unit"> °C</tspan>
           </text>
-          <text x="82" y="128" textAnchor="middle" className="k-tscene__small">Body temperature</text>
+          <text x="82" y="128" textAnchor="middle" className="k-tscene__small">{t('Body temperature')}</text>
         </g>
       )}
 
@@ -202,7 +210,7 @@ export default function TempScene({ mode = 'wait', liveC = null, secondsLeft = n
 
       {/* side view: the inside of the wrist (light stripe) 2-5 cm from the sensor */}
       <rect x="222" y="8" width="90" height="196" rx="10" className="k-tscene__side" />
-      <text x="267" y="26" textAnchor="middle" className="k-tscene__sidetitle">Side view</text>
+      <text x="267" y="26" textAnchor="middle" className="k-tscene__sidetitle">{t('Side view')}</text>
       <g transform="translate(288,100) rotate(24)">
         <line x1="0" y1="-62" x2="0" y2="66" className="k-tscene__face" />
         <rect x="-6" y="-7" width="5" height="14" rx="1" className="k-tscene__sidesensor" />
@@ -224,7 +232,7 @@ export default function TempScene({ mode = 'wait', liveC = null, secondsLeft = n
       {(mode === 'wait' || mode === 'again' || mode === 'detected') && (
         <text x="267" y="168" textAnchor="middle" className="k-tscene__hint">2–5 cm ✓</text>
       )}
-      <text x="267" y="190" textAnchor="middle" className="k-tscene__inlabel">inside of wrist</text>
+      <text x="267" y="190" textAnchor="middle" className="k-tscene__inlabel">{t('inside of wrist')}</text>
     </svg>
   );
 }

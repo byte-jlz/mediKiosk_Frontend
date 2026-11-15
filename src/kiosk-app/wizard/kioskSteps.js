@@ -22,12 +22,15 @@ export const KIOSK_STEPS = [
     color: 'bmi',
     description:
       'Stay on the platform - no need to step off. We’ll weigh you first, then measure your height with the sensor above you. Your BMI is calculated automatically.',
-    duration: 'Takes about 20 seconds',
+    duration: 'Takes about 10 seconds',
     tips: [
       'Remove your shoes and any heavy items from your pockets.',
       'Stand in the middle of the platform and face forward.',
       'Tap “Start measuring”, then keep still and look straight ahead until it’s done.',
     ],
+    // Nov 2026: what the intro screen shows - short Do / Don't bullets (tips above kept for reference)
+    dos: ['Take off your shoes', 'Empty your pockets', 'Stand in the middle, face forward', 'Look straight ahead'],
+    donts: ['Hold on to anything', 'Move until it’s done'],
     measuring: 'Stand up straight',
     measuringHint: 'Keep your feet still and look straight ahead while your height is measured.',
   },
@@ -47,6 +50,8 @@ export const KIOSK_STEPS = [
       'Rest your hand flat with your index fingertip on the finger sensor - don’t press hard.',
       'The reading starts by itself. Breathe normally and avoid talking or moving until it’s done.',
     ],
+    dos: ['Rest your hand flat on the console', 'Index fingertip on the sensor', 'Breathe normally'],
+    donts: ['Press hard', 'Talk or move'],
     timerSeconds: 30, // RR_SECONDS in measurements.py (the ring itself uses the agent's countdown)
     measuring: 'Measuring…',
     measuringHint: 'Keep your finger still, breathe normally and avoid talking or moving.',
@@ -67,6 +72,8 @@ export const KIOSK_STEPS = [
       'Close it snugly — one finger should fit under it.',
       'Rest your arm on the shelf, palm up, at heart level, and keep still until it’s done.',
     ],
+    dos: ['Use your right arm', 'Cuff just above the elbow, snug', 'Rest your arm on the shelf, palm up'],
+    donts: ['Talk or move', 'Wrap the cuff over thick sleeves'],
     timerSeconds: 100, // the agent's timeout (bp_auto.TIMEOUT) - only used for the ring
     countUp: true, // show the agent's elapsed seconds, not a countdown
     startingLabel: 'Starting the monitor…',
@@ -90,6 +97,8 @@ export const KIOSK_STEPS = [
       'Hold the inside of your wrist 2–5 cm in front of the top sensor.',
       'The reading starts by itself. Keep your wrist still until it’s done.',
     ],
+    dos: ['Pull back your right sleeve', 'Inside of wrist 2–5 cm from the top sensor', 'Keep your wrist still'],
+    donts: ['Touch the sensor', 'Move until it’s done'],
     timerSeconds: 5, // TEMP_SECONDS in measurements.py (the ring itself uses the agent's countdown)
     measuring: 'Measuring…',
     measuringHint: 'Hold still in front of the sensor until the reading is complete.',

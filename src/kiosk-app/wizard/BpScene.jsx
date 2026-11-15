@@ -1,4 +1,12 @@
 import { useEffect, useRef } from 'react';
+import { t } from '../i18n';
+
+/** A two-line message on the drawn screen, translated as one phrase ('line 1\nline 2'). */
+function two(text) {
+  const key = Array.isArray(text) ? text.join('\n') : text;
+  const [a = '', b = ''] = t(key).split('\n');
+  return [a, b];
+}
 
 /**
  * The blood pressure picture: the kiosk console (screen + sensors), the shelf on
@@ -117,12 +125,12 @@ export default function BpScene({ mode = 'wait', elapsed = null, systolic, diast
 
       {mode === 'wait' && (
         <g className="k-bpscene__steps">
-          <text x="59" y="46" textAnchor="middle" className="k-bpscene__title">BP &amp; HR</text>
+          <text x="59" y="46" textAnchor="middle" className="k-bpscene__title">{t('BP & HR')}</text>
           {['Wrap', 'Close', 'Rest'].map((label, i) => (
             <g key={label} ref={[r.s1, r.s2, r.s3][i]}>
               <circle cx="38" cy={78 + 34 * i} r="11" className="k-bpscene__num" />
               <text x="38" y={83 + 34 * i} textAnchor="middle" className="k-bpscene__numtext">{i + 1}</text>
-              <text x="56" y={83 + 34 * i} className="k-bpscene__msg">{label}</text>
+              <text x="56" y={83 + 34 * i} className="k-bpscene__msg">{t(label)}</text>
             </g>
           ))}
         </g>
@@ -131,23 +139,23 @@ export default function BpScene({ mode = 'wait', elapsed = null, systolic, diast
         <g>
           <circle cx="59" cy="88" r="18" className="k-bpscene__track" />
           <path d="M59 70 A18 18 0 0 1 77 88" className="k-bpscene__spin" />
-          <text x="59" y="130" textAnchor="middle" className="k-bpscene__msg">Starting</text>
-          <text x="59" y="145" textAnchor="middle" className="k-bpscene__msg">monitor…</text>
+          <text x="59" y="130" textAnchor="middle" className="k-bpscene__msg">{two('Starting\nmonitor…')[0]}</text>
+          <text x="59" y="145" textAnchor="middle" className="k-bpscene__msg">{two('Starting\nmonitor…')[1]}</text>
         </g>
       )}
       {mode === 'pumping' && (
         <g>
           <path d="M50 98 L59 86 L68 98 M50 82 L59 70 L68 82" className="k-bpscene__up" />
-          <text x="59" y="124" textAnchor="middle" className="k-bpscene__msg">Cuff</text>
-          <text x="59" y="138" textAnchor="middle" className="k-bpscene__msg">tightening</text>
+          <text x="59" y="124" textAnchor="middle" className="k-bpscene__msg">{two('Cuff\ntightening')[0]}</text>
+          <text x="59" y="138" textAnchor="middle" className="k-bpscene__msg">{two('Cuff\ntightening')[1]}</text>
           {secs != null && <text x="59" y="165" textAnchor="middle" className="k-bpscene__secs">{secs} s</text>}
         </g>
       )}
       {mode === 'measuring' && (
         <g>
           <path d="M59 102 L45 88 A8 8 0 0 1 59 78 A8 8 0 0 1 73 88 Z" className="k-bpscene__heart" />
-          <text x="59" y="124" textAnchor="middle" className="k-bpscene__msg">Measuring</text>
-          <text x="59" y="138" textAnchor="middle" className="k-bpscene__small">keep still</text>
+          <text x="59" y="124" textAnchor="middle" className="k-bpscene__msg">{t('Measuring')}</text>
+          <text x="59" y="138" textAnchor="middle" className="k-bpscene__small">{t('keep still')}</text>
           {secs != null && <text x="59" y="165" textAnchor="middle" className="k-bpscene__secs">{secs} s</text>}
         </g>
       )}
@@ -156,13 +164,13 @@ export default function BpScene({ mode = 'wait', elapsed = null, systolic, diast
           <circle cx="45" cy="88" r="6" />
           <circle cx="59" cy="88" r="6" />
           <circle cx="73" cy="88" r="6" />
-          <text x="59" y="124" textAnchor="middle" className="k-bpscene__msg">Getting your</text>
-          <text x="59" y="138" textAnchor="middle" className="k-bpscene__msg">result…</text>
+          <text x="59" y="124" textAnchor="middle" className="k-bpscene__msg">{two('Getting your\nresult…')[0]}</text>
+          <text x="59" y="138" textAnchor="middle" className="k-bpscene__msg">{two('Getting your\nresult…')[1]}</text>
         </g>
       )}
       {mode === 'done' && (
         <g className="k-bpscene__done">
-          <text x="59" y="44" textAnchor="middle" className="k-bpscene__ok">✓ Done</text>
+          <text x="59" y="44" textAnchor="middle" className="k-bpscene__ok">{t('✓ Done')}</text>
           <text x="59" y="84" textAnchor="middle" className="k-bpscene__val">{systolic ?? '—'}</text>
           <line x1="40" y1="92" x2="78" y2="92" className="k-bpscene__bar" />
           <text x="59" y="114" textAnchor="middle" className="k-bpscene__val">{diastolic ?? '—'}</text>
@@ -173,7 +181,7 @@ export default function BpScene({ mode = 'wait', elapsed = null, systolic, diast
                 {pulse}
                 <tspan className="k-bpscene__unit"> bpm</tspan>
               </text>
-              <text x="59" y="174" textAnchor="middle" className="k-bpscene__small">Heart rate</text>
+              <text x="59" y="174" textAnchor="middle" className="k-bpscene__small">{t('Heart rate')}</text>
             </>
           )}
         </g>
@@ -182,16 +190,16 @@ export default function BpScene({ mode = 'wait', elapsed = null, systolic, diast
         <g>
           <path d="M59 66 L81 106 L37 106 Z" className="k-bpscene__warn" />
           <text x="59" y="101" textAnchor="middle" className="k-bpscene__bang">!</text>
-          <text x="59" y="130" textAnchor="middle" className="k-bpscene__msg">Re-wrap</text>
-          <text x="59" y="145" textAnchor="middle" className="k-bpscene__msg">the cuff</text>
+          <text x="59" y="130" textAnchor="middle" className="k-bpscene__msg">{two('Re-wrap\nthe cuff')[0]}</text>
+          <text x="59" y="145" textAnchor="middle" className="k-bpscene__msg">{two('Re-wrap\nthe cuff')[1]}</text>
         </g>
       )}
       {mode === 'fault' && (
         <g>
           <circle cx="59" cy="86" r="20" className="k-bpscene__err" />
           <text x="59" y="94" textAnchor="middle" className="k-bpscene__bang">!</text>
-          <text x="59" y="130" textAnchor="middle" className="k-bpscene__msg">Monitor not</text>
-          <text x="59" y="145" textAnchor="middle" className="k-bpscene__msg">responding</text>
+          <text x="59" y="130" textAnchor="middle" className="k-bpscene__msg">{two('Monitor not\nresponding')[0]}</text>
+          <text x="59" y="145" textAnchor="middle" className="k-bpscene__msg">{two('Monitor not\nresponding')[1]}</text>
         </g>
       )}
 
@@ -223,7 +231,7 @@ export default function BpScene({ mode = 'wait', elapsed = null, systolic, diast
 
       {/* side view: half a body, arm on the shelf at heart level, cuff on the upper arm */}
       <rect x="236" y="8" width="76" height="196" rx="10" className="k-bpscene__side" />
-      <text x="274" y="24" textAnchor="middle" className="k-bpscene__sidetitle">Side view</text>
+      <text x="274" y="24" textAnchor="middle" className="k-bpscene__sidetitle">{t('Side view')}</text>
       <clipPath id="k-bp-half">
         <rect x="237" y="30" width="74" height="150" />
       </clipPath>
@@ -236,7 +244,7 @@ export default function BpScene({ mode = 'wait', elapsed = null, systolic, diast
         <path d="M258 108 L253 103 A3 3 0 0 1 258 99 A3 3 0 0 1 263 103 Z" className="k-bpscene__sideheart" />
         <line x1="263" y1="106" x2="310" y2="106" className="k-bpscene__level" />
       </g>
-      <text x="274" y="196" textAnchor="middle" className="k-bpscene__hint">heart level ✓</text>
+      <text x="274" y="196" textAnchor="middle" className="k-bpscene__hint">{t('heart level ✓')}</text>
     </svg>
   );
 }

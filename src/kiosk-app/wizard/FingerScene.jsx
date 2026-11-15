@@ -1,4 +1,12 @@
 import { useEffect, useRef } from 'react';
+import { t } from '../i18n';
+
+/** A two-line message on the drawn screen, translated as one phrase ('line 1\nline 2'). */
+function two(text) {
+  const key = Array.isArray(text) ? text.join('\n') : text;
+  const [a = '', b = ''] = t(key).split('\n');
+  return [a, b];
+}
 
 /**
  * The SpO2 & RR picture: the kiosk console seen from the front (screen on the
@@ -121,9 +129,9 @@ export default function FingerScene({ mode = 'wait', secondsLeft = null, totalSe
         <g>
           <circle cx="82" cy="88" r="24" className="k-fscene__okdot" />
           <path d="M71 88 L79 96 L94 80" className="k-fscene__tick" />
-          <text x="82" y="134" textAnchor="middle" className="k-fscene__msg">Finger</text>
-          <text x="82" y="149" textAnchor="middle" className="k-fscene__msg">detected</text>
-          <text x="82" y="170" textAnchor="middle" className="k-fscene__small">Starting…</text>
+          <text x="82" y="134" textAnchor="middle" className="k-fscene__msg">{two('Finger\ndetected')[0]}</text>
+          <text x="82" y="149" textAnchor="middle" className="k-fscene__msg">{two('Finger\ndetected')[1]}</text>
+          <text x="82" y="170" textAnchor="middle" className="k-fscene__small">{t('Starting…')}</text>
         </g>
       )}
       {cfg.screen === 'count' && (
@@ -139,9 +147,9 @@ export default function FingerScene({ mode = 'wait', secondsLeft = null, totalSe
             transform="rotate(-90 82 92)"
           />
           <text x="82" y="101" textAnchor="middle" className="k-fscene__secs">{left}</text>
-          <text x="82" y="140" textAnchor="middle" className="k-fscene__small">seconds left</text>
+          <text x="82" y="140" textAnchor="middle" className="k-fscene__small">{t('seconds left')}</text>
           <text x="82" y="162" textAnchor="middle" className="k-fscene__msg">
-            {mode === 'move' ? 'Keep still!' : 'Keep still'}
+            {mode === 'move' ? t('Keep still!') : t('Keep still')}
           </text>
         </g>
       )}
@@ -149,10 +157,10 @@ export default function FingerScene({ mode = 'wait', secondsLeft = null, totalSe
         <g>
           <path d="M82 62 L108 108 L56 108 Z" className="k-fscene__warn" />
           <text x="82" y="103" textAnchor="middle" className="k-fscene__bang">!</text>
-          <text x="82" y="134" textAnchor="middle" className="k-fscene__msg">Finger</text>
-          <text x="82" y="149" textAnchor="middle" className="k-fscene__msg">off sensor</text>
+          <text x="82" y="134" textAnchor="middle" className="k-fscene__msg">{two('Finger\noff sensor')[0]}</text>
+          <text x="82" y="149" textAnchor="middle" className="k-fscene__msg">{two('Finger\noff sensor')[1]}</text>
           <text x="82" y="170" textAnchor="middle" className="k-fscene__small">
-            off {Math.max(1, Math.ceil(offSeconds || 0))} s
+            {t('off {n} s', { n: Math.max(1, Math.ceil(offSeconds || 0)) })}
           </text>
         </g>
       )}
@@ -160,32 +168,32 @@ export default function FingerScene({ mode = 'wait', secondsLeft = null, totalSe
         <g>
           <path d="M98 76 A22 22 0 1 0 104 96" className="k-fscene__redo" />
           <path d="M92 70 L100 77 L91 82" className="k-fscene__redo" />
-          <text x="82" y="134" textAnchor="middle" className="k-fscene__msg">{cfg.lines[0]}</text>
-          <text x="82" y="149" textAnchor="middle" className="k-fscene__msg">{cfg.lines[1]}</text>
+          <text x="82" y="134" textAnchor="middle" className="k-fscene__msg">{two(cfg.lines)[0]}</text>
+          <text x="82" y="149" textAnchor="middle" className="k-fscene__msg">{two(cfg.lines)[1]}</text>
         </g>
       )}
       {cfg.screen === 'error' && (
         <g>
           <circle cx="82" cy="88" r="24" className="k-fscene__errdot" />
           <text x="82" y="97" textAnchor="middle" className="k-fscene__bang">!</text>
-          <text x="82" y="134" textAnchor="middle" className="k-fscene__msg">{cfg.lines[0]}</text>
-          <text x="82" y="149" textAnchor="middle" className="k-fscene__msg">{cfg.lines[1]}</text>
+          <text x="82" y="134" textAnchor="middle" className="k-fscene__msg">{two(cfg.lines)[0]}</text>
+          <text x="82" y="149" textAnchor="middle" className="k-fscene__msg">{two(cfg.lines)[1]}</text>
         </g>
       )}
       {cfg.screen === 'done' && (
         <g className="k-fscene__done">
-          <text x="82" y="48" textAnchor="middle" className="k-fscene__msg">✓ Done</text>
+          <text x="82" y="48" textAnchor="middle" className="k-fscene__msg">{t('✓ Done')}</text>
           <text x="82" y="90" textAnchor="middle" className="k-fscene__val">
             {rr ?? '—'}
             <tspan className="k-fscene__unit"> /min</tspan>
           </text>
-          <text x="82" y="106" textAnchor="middle" className="k-fscene__small">Breathing</text>
+          <text x="82" y="106" textAnchor="middle" className="k-fscene__small">{t('Breathing')}</text>
           <line x1="52" y1="118" x2="112" y2="118" className="k-fscene__rule" />
           <text x="82" y="152" textAnchor="middle" className="k-fscene__val">
             {spo2 ?? '—'}
             <tspan className="k-fscene__unit"> %</tspan>
           </text>
-          <text x="82" y="168" textAnchor="middle" className="k-fscene__small">Oxygen</text>
+          <text x="82" y="168" textAnchor="middle" className="k-fscene__small">{t('Oxygen')}</text>
         </g>
       )}
 
@@ -212,9 +220,7 @@ export default function FingerScene({ mode = 'wait', secondsLeft = null, totalSe
 
       {/* side view: the fingertip resting lightly on the sensor, red light under it */}
       <rect x="222" y="8" width="90" height="196" rx="10" className="k-fscene__side" />
-      <text x="267" y="26" textAnchor="middle" className="k-fscene__sidetitle">
-        Side view
-      </text>
+      <text x="267" y="26" textAnchor="middle" className="k-fscene__sidetitle">{t('Side view')}</text>
       <g transform="translate(284,104) rotate(24)">
         <line x1="0" y1="-62" x2="0" y2="66" className="k-fscene__face" />
         <rect x="-6" y="-8" width="5" height="16" rx="1" className="k-fscene__sidepad" />
@@ -224,9 +230,7 @@ export default function FingerScene({ mode = 'wait', secondsLeft = null, totalSe
         </g>
       </g>
       {(mode === 'wait' || mode === 'again') && (
-        <text x="267" y="194" textAnchor="middle" className="k-fscene__hint">
-          Rest lightly
-        </text>
+        <text x="267" y="194" textAnchor="middle" className="k-fscene__hint">{t('Rest lightly')}</text>
       )}
     </svg>
   );

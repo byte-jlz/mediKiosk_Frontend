@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { t } from '../i18n';
 
 /**
  * The BMI picture: the real kiosk (side view, drawn from the photo) with a
@@ -148,8 +149,8 @@ export default function BmiScene({ mode, kg = null, weight = null, heightCm = nu
         <g className="k-scene__cards">
           <path d="M154 76 L170 76 L170 34 L189 34" className={`k-scene__link is-${heightState}`} />
           <path d="M154 154 L162 154 L162 220" className={`k-scene__link is-${weightState}`} />
-          <ResultCard y={44} label="Height" unit="cm" state={heightState} value={heightShown} />
-          <ResultCard y={122} label="Weight" unit="kg" state={weightState} value={weightShown} />
+          <ResultCard y={44} label={t('Height')} unit="cm" state={heightState} value={heightShown} />
+          <ResultCard y={122} label={t('Weight')} unit="kg" state={weightState} value={weightShown} />
           {mode === 'done' && bmi != null && (
             <g className="k-scene__bmi">
               <rect x="14" y="196" width="140" height="28" rx="14" />
@@ -202,7 +203,7 @@ function ResultCard({ y, label, unit, state, value }) {
         {label}
       </text>
       <text x="142" y={y + 20} textAnchor="end" className="k-scene__card-status">
-        {state === 'active' && value === '—' ? 'starting…' : STATUS[state]}
+        {state === 'active' && value === '—' ? t('starting…') : t(STATUS[state])}
       </text>
       <text x="26" y={y + 54} className="k-scene__card-value">
         {value}

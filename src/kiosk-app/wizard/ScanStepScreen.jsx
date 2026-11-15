@@ -4,8 +4,9 @@ import BmiScene from './BmiScene';
 import FingerScene from './FingerScene';
 import BpScene from './BpScene';
 import TempScene from './TempScene';
-import { IconTile, KioskButton, Note, NumberedList, Pill, Spacer } from '../ui/KioskUI';
+import { IconTile, KioskButton, Note, Pill, Spacer } from '../ui/KioskUI';
 import { CONFIRM_PROMPTS, FINGER_WAIT_LIMIT_S, STILL_THERE_S, formatLive, readingDisplay } from './kioskSteps';
+import { t } from '../i18n';
 
 const FINGER = 'respirationSpo2Hr'; // the SpO2 & RR step (live finger detection)
 const BP = 'bloodPressure'; // the BP step (the monitor is hidden inside the kiosk)
@@ -55,7 +56,7 @@ export default function ScanStepScreen({
     <div className="k-step" key={`${step.key}-${run.phase}`}>
       <div className="k-step__heading">
         <IconTile icon={step.icon} size={132} />
-        <h1 className="k-h1 k-h1--step">{step.title}</h1>
+        <h1 className="k-h1 k-h1--step">{t(step.title)}</h1>
       </div>
       <Body
         step={step}
@@ -78,7 +79,7 @@ export default function ScanStepScreen({
 function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessage, ...on }) {
   const skipButton = isGuest && (
     <KioskButton variant="secondary" icon="skip" onClick={on.onSkip}>
-      Skip this reading
+      {t('Skip this reading')}
     </KioskButton>
   );
   // Shown under the main button while the sensors / server aren't ready.
@@ -95,14 +96,14 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
           <Spacer />
           <div className="k-panel k-panel--center k-panel--tint">
             <span className="k-spinner" aria-hidden="true" />
-            <p className="k-panel__title">Getting the sensors ready…</p>
+            <p className="k-panel__title">{t('Getting the sensors ready…')}</p>
           </div>
           <Spacer />
         </>
       );
 
     case 'awaiting': {
-      const prompt = CONFIRM_PROMPTS[run.prompt?.step] || { text: run.prompt?.message, button: 'I’m ready' };
+      const prompt = translatePrompt(CONFIRM_PROMPTS[run.prompt?.step] || { text: run.prompt?.message, button: 'I’m ready' });
       if (step.key === 'bmi') return <BmiAwaiting run={run} prompt={prompt} onConfirm={on.onConfirm} />;
       if (step.key === FINGER)
         return <FingerAwaiting run={run} prompt={prompt} onConfirm={on.onConfirm} onAbandon={on.onAbandon} />;
@@ -115,7 +116,7 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
           <div className="k-panel k-panel--turn">
             <span className="k-badge">
               <span className="k-badge__dot" />
-              YOUR TURN
+              {t('YOUR TURN')}
             </span>
             <p className="k-panel__big">{prompt.text}</p>
             {prompt.sub && <p className="k-panel__sub">{prompt.sub}</p>}
@@ -139,8 +140,8 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
           <Spacer />
           <TimerRing run={run} step={step} />
           <div className="k-measuring">
-            <p className="k-measuring__title">{step.measuring}</p>
-            <p className="k-measuring__hint">{step.measuringHint}</p>
+            <p className="k-measuring__title">{t(step.measuring)}</p>
+            <p className="k-measuring__hint">{t(step.measuringHint)}</p>
           </div>
           <Spacer />
         </>
@@ -154,14 +155,14 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
             <ScenePanel
               tone="green"
               badge="READING COMPLETE"
-              banner={{ tone: 'green', text: '✓ Reading complete' }}
+              banner={{ tone: 'green', text: t('✓ Reading complete') }}
               scene={<TempScene mode="done" value={reading?.value} />}
               big="Reading complete"
               sub="You can lower your arm now."
             />
             <Spacer />
             <KioskButton icon="arrow" onClick={on.onContinue}>
-              {isLast ? 'See my results' : 'Next reading'}
+              {isLast ? t('See my results') : t('Next reading')}
             </KioskButton>
           </>
         );
@@ -173,7 +174,7 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
             <ScenePanel
               tone="green"
               badge="READING COMPLETE"
-              banner={{ tone: 'green', text: '✓ Reading complete' }}
+              banner={{ tone: 'green', text: t('✓ Reading complete') }}
               scene={
                 <BpScene mode="done" systolic={reading?.systolic} diastolic={reading?.diastolic} pulse={reading?.pulse} />
               }
@@ -182,7 +183,7 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
             />
             <Spacer />
             <KioskButton icon="arrow" onClick={on.onContinue}>
-              {isLast ? 'See my results' : 'Next reading'}
+              {isLast ? t('See my results') : t('Next reading')}
             </KioskButton>
           </>
         );
@@ -194,14 +195,14 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
             <ScenePanel
               tone="green"
               badge="READING COMPLETE"
-              banner={{ tone: 'green', text: '✓ Reading complete' }}
+              banner={{ tone: 'green', text: t('✓ Reading complete') }}
               scene={<FingerScene mode="done" rr={reading?.respiration?.value} spo2={reading?.spo2?.value} />}
               big="Reading complete"
               sub="You can lift your hand now."
             />
             <Spacer />
             <KioskButton icon="arrow" onClick={on.onContinue}>
-              {isLast ? 'See my results' : 'Next reading'}
+              {isLast ? t('See my results') : t('Next reading')}
             </KioskButton>
           </>
         );
@@ -213,7 +214,7 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
             <div className="k-panel k-panel--center k-panel--tint k-panel--scene">
               <p className="k-reading__ok">
                 <Icon name="check" size={34} stroke={2.6} />
-                Reading complete
+                {t('Reading complete')}
               </p>
               <BmiScene
                 mode="done"
@@ -222,10 +223,10 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
                 bmi={reading?.value}
               />
             </div>
-            <p className="k-after">You can step off the platform now.</p>
+            <p className="k-after">{t('You can step off the platform now.')}</p>
             <Spacer />
             <KioskButton icon="arrow" onClick={on.onContinue}>
-              {isLast ? 'See my results' : 'Next reading'}
+              {isLast ? t('See my results') : t('Next reading')}
             </KioskButton>
           </>
         );
@@ -237,7 +238,7 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
           <div className="k-panel k-panel--center k-panel--tint k-reading">
             <p className="k-reading__ok">
               <Icon name="check" size={34} stroke={2.6} />
-              Reading complete
+              {t('Reading complete')}
             </p>
             {d?.main && (
               <p className={`k-reading__value${String(d.main.value).length > 5 ? ' k-reading__value--long' : ''}`}>
@@ -245,12 +246,12 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
                 <span> {d.main.unit}</span>
               </p>
             )}
-            {d?.main && <p className="k-reading__label">{d.main.label}</p>}
+            {d?.main && <p className="k-reading__label">{t(d.main.label)}</p>}
             {d?.extra.length > 0 && (
               <div className="k-reading__extra">
                 {d.extra.map((x) => (
                   <div key={x.label}>
-                    <p>{x.label}</p>
+                    <p>{t(x.label)}</p>
                     <strong>
                       {x.value}
                       <span> {x.unit}</span>
@@ -262,14 +263,14 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
           </div>
           <p className="k-after">
             {step.key === 'bmi'
-              ? 'You can step off the platform now.'
+              ? t('You can step off the platform now.')
               : isLast
-                ? 'Great job — that’s the last reading.'
-                : 'Well done. On to the next reading.'}
+                ? t('Great job — that’s the last reading.')
+                : t('Well done. On to the next reading.')}
           </p>
           <Spacer />
           <KioskButton icon="arrow" onClick={on.onContinue}>
-            {isLast ? 'See my results' : 'Next reading'}
+            {isLast ? t('See my results') : t('Next reading')}
           </KioskButton>
         </>
       );
@@ -277,27 +278,27 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
 
     case 'failed':
       if (step.key === TEMP) {
-        const t = tempFailure(run.rawError || '');
-        const coldTip = t.mode === 'low' && (run.lowStreak || 0) >= 2;
+        const tf = tempFailure(run.rawError || '');
+        const coldTip = tf.mode === 'low' && (run.lowStreak || 0) >= 2;
         return (
           <>
             <Spacer />
             <ScenePanel
-              tone={t.tone}
-              badge={t.badge}
-              banner={{ tone: t.tone, text: t.banner }}
-              scene={<TempScene mode={t.mode} />}
-              big={t.big}
-              sub={coldTip ? 'Hold your wrist closer, about 2–5 cm away, and keep it still.' : t.sub}
+              tone={tf.tone}
+              badge={tf.badge}
+              banner={{ tone: tf.tone, text: tf.banner }}
+              scene={<TempScene mode={tf.mode} />}
+              big={tf.big}
+              sub={coldTip ? t('Hold your wrist closer, about 2–5 cm away, and keep it still.') : tf.sub}
               extra={
                 coldTip ? (
-                  <p className="k-scene-tip">Tip: if your hands feel cold, rub the inside of your wrist for a few seconds first.</p>
+                  <p className="k-scene-tip">{t('Tip: if your hands feel cold, rub the inside of your wrist for a few seconds first.')}</p>
                 ) : null
               }
             />
             <Spacer />
-            <KioskButton variant={t.tone === 'red' ? 'secondary' : 'primary'} icon="retry" onClick={on.onStart} disabled={!sensorsReady}>
-              Try again
+            <KioskButton variant={tf.tone === 'red' ? 'secondary' : 'primary'} icon="retry" onClick={on.onStart} disabled={!sensorsReady}>
+              {t('Try again')}
             </KioskButton>
             {sensorsNote}
             {skipButton}
@@ -314,26 +315,26 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
             <Spacer />
             <ScenePanel
               tone={fixable ? 'orange' : 'red'}
-              badge={fixable ? 'NO READING' : 'MONITOR PROBLEM'}
+              badge={fixable ? t('NO READING') : t('MONITOR PROBLEM')}
               banner={{
                 tone: fixable ? 'orange' : 'red',
                 text: raw.startsWith('nobody confirmed')
-                  ? '⚠ We waited a while for you'
+                  ? t('⚠ We waited a while for you')
                   : fixable
-                    ? '⚠ The monitor couldn’t measure'
-                    : '⚠ The blood pressure monitor isn’t responding',
+                    ? t('⚠ The monitor couldn’t measure')
+                    : t('⚠ The blood pressure monitor isn’t responding'),
               }}
               scene={<BpScene mode={fixable ? 'error' : 'fault'} />}
-              big={fixable ? 'Let’s re-wrap the cuff' : 'This isn’t your fault'}
+              big={fixable ? t('Let’s re-wrap the cuff') : t('This isn’t your fault')}
               sub={
                 fixable
-                  ? 'Open the cuff and wrap it again snugly above the elbow. Keep still and don’t talk, then try again.'
-                  : 'The monitor didn’t respond. Please ask the clinic staff for help.'
+                  ? t('Open the cuff and wrap it again snugly above the elbow. Keep still and don’t talk, then try again.')
+                  : t('The monitor didn’t respond. Please ask the clinic staff for help.')
               }
             />
             <Spacer />
             <KioskButton variant={fixable ? 'primary' : 'secondary'} icon="retry" onClick={on.onStart} disabled={!sensorsReady}>
-              Try again
+              {t('Try again')}
             </KioskButton>
             {sensorsNote}
             {skipButton}
@@ -347,22 +348,22 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
             <Spacer />
             <ScenePanel
               tone="red"
-              badge={sensor ? 'SENSOR PROBLEM' : 'NO READING'}
+              badge={sensor ? t('SENSOR PROBLEM') : t('NO READING')}
               banner={{
                 tone: 'red',
-                text: sensor ? '⚠ The finger sensor isn’t working' : 'We couldn’t get a steady reading',
+                text: sensor ? t('⚠ The finger sensor isn’t working') : t('We couldn’t get a steady reading'),
               }}
               scene={<FingerScene mode={sensor ? 'sensor' : 'fail'} />}
-              big={sensor ? 'This isn’t your fault' : 'Let’s try once more'}
+              big={sensor ? t('This isn’t your fault') : t('Let’s try once more')}
               sub={
                 sensor
-                  ? 'The finger sensor isn’t responding. Please ask the clinic staff for help.'
-                  : 'Rest your hand flat and keep it still, or ask the clinic staff for help.'
+                  ? t('The finger sensor isn’t responding. Please ask the clinic staff for help.')
+                  : t('Rest your hand flat and keep it still, or ask the clinic staff for help.')
               }
             />
             <Spacer />
             <KioskButton variant={sensor ? 'secondary' : 'primary'} icon="retry" onClick={on.onStart} disabled={!sensorsReady}>
-              Try again
+              {t('Try again')}
             </KioskButton>
             {sensorsNote}
             {skipButton}
@@ -375,21 +376,21 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
           <div className="k-callout k-callout--error" role="alert">
             <Icon name="alert" size={60} />
             <div>
-              <strong>We couldn’t get a reading</strong>
+              <strong>{t('We couldn’t get a reading')}</strong>
               <p>{run.error}</p>
             </div>
           </div>
           <Spacer />
           <KioskButton icon="retry" onClick={on.onStart} disabled={!sensorsReady}>
-            Try again
+            {t('Try again')}
           </KioskButton>
           {sensorsNote}
           {skipButton}
           {!sensorsNote && (
           <Note icon={isGuest ? 'info' : 'lock'}>
             {isGuest
-              ? 'Still not working? Skip it or ask the clinic staff.'
-              : 'Required — still not working? Ask the clinic staff for help.'}
+              ? t('Still not working? Skip it or ask the clinic staff.')
+              : t('Required — still not working? Ask the clinic staff for help.')}
           </Note>
           )}
         </>
@@ -398,18 +399,56 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
     default: // 'idle'
       return (
         <>
-          <p className="k-body k-body--lg">{step.description}</p>
+          {/* Nov 2026: no paragraph here any more - short Do / Don't bullets instead; the animation
+              on the next screen shows the rest. step.description / step.tips stay in kioskSteps.js. */}
           <Pill>{step.duration}</Pill>
-          <NumberedList items={step.tips} className="k-steps-list--lg" />
+          <DoDont dos={step.dos} donts={step.donts} />
           <Spacer />
           <KioskButton icon="arrow" onClick={on.onStart} disabled={!sensorsReady}>
-            Start measuring
+            {t('Start measuring')}
           </KioskButton>
           {sensorsNote}
           {isGuest ? skipButton : !sensorsNote && <Note>Required — complete this reading to continue</Note>}
         </>
       );
   }
+}
+
+/** The intro's short "Do" and "Don't" bullets. */
+function DoDont({ dos = [], donts = [] }) {
+  return (
+    <div className="k-dodont">
+      <div className="k-dodont__group k-dodont__group--do">
+        <p className="k-dodont__label">Do</p>
+        <ul>
+          {dos.map((d) => (
+            <li key={d}>
+              <Icon name="check" size={40} stroke={2.6} />
+              <span>{t(d)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="k-dodont__group k-dodont__group--dont">
+        <p className="k-dodont__label">Don’t</p>
+        <ul>
+          {donts.map((d) => (
+            <li key={d}>
+              <Icon name="x" size={40} stroke={2.6} />
+              <span>{t(d)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/** A "Your turn" prompt (kioskSteps.js CONFIRM_PROMPTS) in the kiosk's language. */
+function translatePrompt(p) {
+  const out = { ...p };
+  for (const k of ['text', 'sub', 'button', 'autoNote', 'note', 'pill']) if (out[k]) out[k] = t(out[k]);
+  return out;
 }
 
 const RING_R = 200;
@@ -442,7 +481,7 @@ function ElapsedRing({ tick, step }) {
       </svg>
       <div className="k-ring__center">
         <strong>{started ? seconds : '…'}</strong>
-        <span>{started ? BP_PHASE_TEXT[tick.bpPhase] || 'seconds' : step.startingLabel || 'Starting…'}</span>
+        <span>{started ? t(BP_PHASE_TEXT[tick.bpPhase] || 'seconds') : t(step.startingLabel || 'Starting…')}</span>
       </div>
     </div>
   );
@@ -471,7 +510,7 @@ function TimerRing({ run, step }) {
       </svg>
       <div className="k-ring__center">
         <strong>{left}</strong>
-        <span>{live ? `${live.value} ${live.unit}` : run.tick ? `seconds left · of ${total}` : 'Starting…'}</span>
+        <span>{live ? `${live.value} ${live.unit}` : run.tick ? t('seconds left · of {total}', { total }) : t('Starting…')}</span>
       </div>
     </div>
   );
@@ -489,7 +528,7 @@ function BmiAwaiting({ run, prompt, onConfirm }) {
       <div className="k-panel k-panel--turn k-panel--scene">
         <span className="k-badge">
           <span className="k-badge__dot" />
-          {heightNext ? 'NEXT · HEIGHT' : 'YOUR TURN'}
+          {heightNext ? t('NEXT · HEIGHT') : t('YOUR TURN')}
         </span>
         <BmiScene
           mode={mode}
@@ -545,7 +584,7 @@ function BmiRunning({ run, step }) {
       <div className="k-panel k-panel--center k-panel--tint k-panel--scene">
         <span className="k-badge">
           <span className="k-badge__dot" />
-          {height ? 'MEASURING · HEIGHT' : 'MEASURING · WEIGHT'}
+          {height ? t('MEASURING · HEIGHT') : t('MEASURING · WEIGHT')}
         </span>
         <BmiScene
           mode={height ? 'height' : 'weigh'}
@@ -555,11 +594,13 @@ function BmiRunning({ run, step }) {
         />
       </div>
       <div className="k-measuring">
-        <p className="k-measuring__title">{height ? step.measuring : 'Stand still'}</p>
+        <p className="k-measuring__title">{height ? t(step.measuring) : t('Stand still')}</p>
         <p className="k-measuring__hint">
           {height
-            ? step.measuringHint
-            : `Stay in the middle of the platform while we weigh you${left != null ? ` · ${left}s left` : '.'}`}
+            ? t(step.measuringHint)
+            : left != null
+              ? t('Stay in the middle of the platform while we weigh you · {n}s left', { n: left })
+              : t('Stay in the middle of the platform while we weigh you.')}
         </p>
       </div>
       <Spacer />
@@ -573,16 +614,16 @@ function ScenePanel({ tone, badge, banner, scene, big, sub, extra = null }) {
     <div className={`k-panel k-panel--turn k-panel--scene k-panel--finger${tone ? ` k-panel--tone-${tone}` : ''}`}>
       <span className="k-badge">
         <span className="k-badge__dot" />
-        {badge}
+        {t(badge)}
       </span>
       {banner && (
         <div className={`k-banner k-banner--${banner.tone}`} role="status" aria-live="polite">
-          {banner.text}
+          {t(banner.text)}
         </div>
       )}
       {scene}
-      <p className="k-panel__big">{big}</p>
-      {sub && <p className="k-panel__sub">{sub}</p>}
+      <p className="k-panel__big">{t(big)}</p>
+      {sub && <p className="k-panel__sub">{t(sub)}</p>}
       {extra}
     </div>
   );
@@ -599,32 +640,32 @@ function FingerAwaiting({ run, prompt, onConfirm, onAbandon }) {
     view = {
       mode: 'restartBack',
       tone: 'orange',
-      badge: 'STARTING AGAIN',
-      banner: { tone: 'orange', text: '↻ Starting again — keep your finger still' },
-      big: 'Let’s try that again',
-      sub: 'Keep your hand where it is. The new reading starts in a moment — no need to tap anything.',
+      badge: t('STARTING AGAIN'),
+      banner: { tone: 'orange', text: t('↻ Starting again — keep your finger still') },
+      big: t('Let’s try that again'),
+      sub: t('Keep your hand where it is. The new reading starts in a moment — no need to tap anything.'),
     };
   } else if (fingerOn) {
     view = {
       mode: 'detected',
       tone: 'green',
-      badge: 'YOUR TURN',
-      banner: { tone: 'green', text: '✓ Finger detected — keep still' },
-      big: 'Good contact. Starting…',
-      sub: 'Keep your hand still and breathe normally.',
+      badge: t('YOUR TURN'),
+      banner: { tone: 'green', text: t('✓ Finger detected — keep still') },
+      big: t('Good contact. Starting…'),
+      sub: t('Keep your hand still and breathe normally.'),
     };
   } else if (again) {
     // 6b: the finger is still off - wait for it like the first time
     view = {
       mode: 'again',
       tone: 'orange',
-      badge: 'STARTING AGAIN',
-      banner: { tone: 'orange', text: '↻ Put your finger back to start again' },
+      badge: t('STARTING AGAIN'),
+      banner: { tone: 'orange', text: t('↻ Put your finger back to start again') },
       big: prompt.text,
       sub: prompt.sub,
     };
   } else {
-    view = { mode: 'wait', badge: 'YOUR TURN', big: prompt.text, sub: prompt.sub };
+    view = { mode: 'wait', badge: t('YOUR TURN'), big: prompt.text, sub: prompt.sub };
   }
   return (
     <>
@@ -653,24 +694,24 @@ function FingerRunning({ run }) {
     ? {
         mode: 'lift',
         tone: 'orange',
-        banner: { tone: 'orange', text: '⚠ Put your finger back on the sensor' },
-        big: 'Your finger left the sensor',
-        sub: 'Put it back quickly. If it stays off for more than 2 seconds, the reading starts again.',
+        banner: { tone: 'orange', text: t('⚠ Put your finger back on the sensor') },
+        big: t('Your finger left the sensor'),
+        sub: t('Put it back quickly. If it stays off for more than 2 seconds, the reading starts again.'),
       }
     : moving
       ? {
           mode: 'move',
           tone: 'orange',
-          banner: { tone: 'orange', text: '⚠ Keep your hand still' },
-          big: 'Your hand is moving',
-          sub: 'Hold still — the reading is still going.',
+          banner: { tone: 'orange', text: t('⚠ Keep your hand still') },
+          big: t('Your hand is moving'),
+          sub: t('Hold still — the reading is still going.'),
         }
       : {
           mode: 'measure',
           tone: 'green',
-          banner: { tone: 'green', text: '✓ Good contact — keep still' },
-          big: 'Keep your hand still',
-          sub: 'Breathe normally and avoid talking or moving.',
+          banner: { tone: 'green', text: t('✓ Good contact — keep still') },
+          big: t('Keep your hand still'),
+          sub: t('Breathe normally and avoid talking or moving.'),
         };
   return (
     <>
@@ -736,7 +777,9 @@ function StillThere({ waiting, onAbandon, what = 'a finger on the sensor' }) {
   if (help) {
     return (
       <Note icon="info" role="status">
-        A staff member can help you. The reading starts by itself once {what === 'a finger on the sensor' ? 'your finger is on the sensor' : 'your wrist is in front of the sensor'}.
+        {what === 'a finger on the sensor'
+          ? t('A staff member can help you. The reading starts by itself once your finger is on the sensor.')
+          : t('A staff member can help you. The reading starts by itself once your wrist is in front of the sensor.')}
       </Note>
     );
   }
@@ -745,10 +788,14 @@ function StillThere({ waiting, onAbandon, what = 'a finger on the sensor' }) {
     <div className="k-still" role="alertdialog" aria-modal="true" aria-labelledby="k-still-title">
       <div className="k-still__box">
         <p id="k-still-title" className="k-still__title">
-          Are you still there?
+          {t('Are you still there?')}
         </p>
-        <p className="k-still__text">We haven’t detected {what}.</p>
-        <p className="k-still__count">This check-in closes in {left} s</p>
+        <p className="k-still__text">
+          {what === 'a finger on the sensor'
+            ? t('We haven’t detected a finger on the sensor.')
+            : t('We haven’t detected a wrist in front of the sensor.')}
+        </p>
+        <p className="k-still__count">{t('This check-in closes in {n} s', { n: left })}</p>
         <KioskButton
           icon="check"
           onClick={() => {
@@ -756,7 +803,7 @@ function StillThere({ waiting, onAbandon, what = 'a finger on the sensor' }) {
             setAsking(false);
           }}
         >
-          Continue
+          {t('Continue')}
         </KioskButton>
         <KioskButton
           variant="secondary"
@@ -766,7 +813,7 @@ function StillThere({ waiting, onAbandon, what = 'a finger on the sensor' }) {
             setAsking(false);
           }}
         >
-          I need help
+          {t('I need help')}
         </KioskButton>
       </div>
     </div>
@@ -789,21 +836,21 @@ function BpAwaiting({ prompt, onConfirm }) {
 }
 
 const BP_PHASES = {
-  starting: { banner: null, big: 'Starting the monitor…', sub: 'Keep your arm relaxed on the shelf.', badge: 'STARTING' },
+  starting: { banner: null, big: t('Starting the monitor…'), sub: t('Keep your arm relaxed on the shelf.'), badge: 'STARTING' },
   pumping: {
-    banner: 'The cuff is tightening — this is normal',
-    big: 'Keep still and don’t talk',
-    sub: 'It may feel tight for a moment. It loosens by itself.',
+    banner: t('The cuff is tightening — this is normal'),
+    big: t('Keep still and don’t talk'),
+    sub: t('It may feel tight for a moment. It loosens by itself.'),
   },
   measuring: {
-    banner: 'Measuring — keep still, don’t talk',
-    big: 'Almost there',
-    sub: 'The cuff is slowly loosening. This usually takes about 40 to 70 seconds.',
+    banner: t('Measuring — keep still, don’t talk'),
+    big: t('Almost there'),
+    sub: t('The cuff is slowly loosening. This usually takes about 40 to 70 seconds.'),
   },
   checking: {
-    banner: 'Getting your result…',
-    big: 'Getting your result…',
-    sub: 'You can relax your arm. Keep the cuff on for a moment.',
+    banner: t('Getting your result…'),
+    big: t('Getting your result…'),
+    sub: t('You can relax your arm. Keep the cuff on for a moment.'),
   },
 };
 
@@ -816,7 +863,7 @@ function BpRunning({ run }) {
     <>
       <Spacer />
       <ScenePanel
-        badge={p.badge || 'MEASURING · BLOOD PRESSURE'}
+        badge={p.badge || t('MEASURING · BLOOD PRESSURE')}
         banner={p.banner ? { tone: 'accent', text: p.banner } : null}
         scene={<BpScene mode={phase} elapsed={started ? run.tick.elapsed : null} />}
         big={p.big}
@@ -833,54 +880,54 @@ function tempFailure(raw) {
     return {
       tone: 'red',
       mode: 'sensor',
-      badge: 'SENSOR PROBLEM',
-      banner: '⚠ The temperature sensor isn’t working',
-      big: 'This isn’t your fault',
-      sub: 'The temperature sensor isn’t responding. Please ask the clinic staff for help.',
+      badge: t('SENSOR PROBLEM'),
+      banner: t('⚠ The temperature sensor isn’t working'),
+      big: t('This isn’t your fault'),
+      sub: t('The temperature sensor isn’t responding. Please ask the clinic staff for help.'),
     };
   if (raw.startsWith('no steady reading'))
     return {
       tone: 'red',
       mode: 'limit',
-      badge: 'NO READING',
-      banner: 'We couldn’t get a steady reading',
-      big: 'Please ask the clinic staff',
-      sub: 'We tried a few times but the reading kept moving. A staff member can help you.',
+      badge: t('NO READING'),
+      banner: t('We couldn’t get a steady reading'),
+      big: t('Please ask the clinic staff'),
+      sub: t('We tried a few times but the reading kept moving. A staff member can help you.'),
     };
   if (raw.startsWith('too low'))
     return {
       tone: 'orange',
       mode: 'low',
-      badge: 'NO READING',
-      banner: '⚠ That reading was too low',
-      big: 'Let’s try once more',
-      sub: 'Hold the inside of your wrist closer to the sensor, about 2–5 cm away, and keep it still.',
+      badge: t('NO READING'),
+      banner: t('⚠ That reading was too low'),
+      big: t('Let’s try once more'),
+      sub: t('Hold the inside of your wrist closer to the sensor, about 2–5 cm away, and keep it still.'),
     };
   if (raw.startsWith('too high'))
     return {
       tone: 'orange',
       mode: 'high',
-      badge: 'NO READING',
-      banner: '⚠ That reading doesn’t look right',
-      big: 'Let’s try once more',
-      sub: 'Make sure nothing else is in front of the sensor (like a cup or a phone), then hold up your wrist again.',
+      badge: t('NO READING'),
+      banner: t('⚠ That reading doesn’t look right'),
+      big: t('Let’s try once more'),
+      sub: t('Make sure nothing else is in front of the sensor (like a cup or a phone), then hold up your wrist again.'),
     };
   if (raw.startsWith('nobody confirmed'))
     return {
       tone: 'orange',
       mode: 'nowrist',
-      badge: 'NO READING',
-      banner: '⚠ We waited a while for you',
-      big: 'Let’s try once more',
-      sub: 'Hold the inside of your right wrist 2–5 cm in front of the top sensor. The reading starts by itself.',
+      badge: t('NO READING'),
+      banner: t('⚠ We waited a while for you'),
+      big: t('Let’s try once more'),
+      sub: t('Hold the inside of your right wrist 2–5 cm in front of the top sensor. The reading starts by itself.'),
     };
   return {
     tone: 'orange',
     mode: 'nowrist',
-    badge: 'NO READING',
-    banner: '⚠ We couldn’t detect your wrist',
-    big: 'Let’s try once more',
-    sub: 'Hold the inside of your wrist close to the top sensor, about 2–5 cm away, and keep it still.',
+    badge: t('NO READING'),
+    banner: t('⚠ We couldn’t detect your wrist'),
+    big: t('Let’s try once more'),
+    sub: t('Hold the inside of your wrist close to the top sensor, about 2–5 cm away, and keep it still.'),
   };
 }
 
@@ -894,31 +941,31 @@ function TempAwaiting({ run, prompt, onConfirm, onAbandon }) {
     view = {
       mode: 'restartBack',
       tone: 'orange',
-      badge: 'STARTING AGAIN',
-      banner: { tone: 'orange', text: '↻ Starting again — hold your wrist still' },
-      big: 'Let’s try that again',
-      sub: 'Keep your wrist where it is. The new reading starts by itself — no need to tap anything.',
+      badge: t('STARTING AGAIN'),
+      banner: { tone: 'orange', text: t('↻ Starting again — hold your wrist still') },
+      big: t('Let’s try that again'),
+      sub: t('Keep your wrist where it is. The new reading starts by itself — no need to tap anything.'),
     };
   } else if (wristOn) {
     view = {
       mode: 'detected',
       tone: 'green',
-      badge: 'YOUR TURN',
-      banner: { tone: 'green', text: '✓ Wrist detected — hold still' },
-      big: 'Good. Starting…',
-      sub: 'Keep your wrist where it is.',
+      badge: t('YOUR TURN'),
+      banner: { tone: 'green', text: t('✓ Wrist detected — hold still') },
+      big: t('Good. Starting…'),
+      sub: t('Keep your wrist where it is.'),
     };
   } else if (again) {
     view = {
       mode: 'again',
       tone: 'orange',
-      badge: 'STARTING AGAIN',
-      banner: { tone: 'orange', text: '↻ Hold your wrist up again' },
+      badge: t('STARTING AGAIN'),
+      banner: { tone: 'orange', text: t('↻ Hold your wrist up again') },
       big: prompt.text,
       sub: prompt.sub,
     };
   } else {
-    view = { mode: 'wait', badge: 'YOUR TURN', big: prompt.text, sub: prompt.sub };
+    view = { mode: 'wait', badge: t('YOUR TURN'), big: prompt.text, sub: prompt.sub };
   }
   return (
     <>
@@ -947,24 +994,24 @@ function TempRunning({ run }) {
     ? {
         mode: 'far',
         tone: 'orange',
-        banner: { tone: 'orange', text: '⚠ Hold your wrist closer to the sensor' },
-        big: 'Your wrist moved away',
-        sub: 'Bring it back to 2–5 cm from the sensor. The reading continues.',
+        banner: { tone: 'orange', text: t('⚠ Hold your wrist closer to the sensor') },
+        big: t('Your wrist moved away'),
+        sub: t('Bring it back to 2–5 cm from the sensor. The reading continues.'),
       }
     : moving
       ? {
           mode: 'wobble',
           tone: 'orange',
-          banner: { tone: 'orange', text: '⚠ Hold your wrist still' },
-          big: 'Your wrist is moving',
-          sub: 'Keep it still — the reading is still going.',
+          banner: { tone: 'orange', text: t('⚠ Hold your wrist still') },
+          big: t('Your wrist is moving'),
+          sub: t('Keep it still — the reading is still going.'),
         }
       : {
           mode: 'measure',
           tone: 'green',
-          banner: { tone: 'green', text: '✓ Good — hold still' },
-          big: 'Hold still',
-          sub: 'Keep your wrist 2–5 cm from the sensor until it’s done.',
+          banner: { tone: 'green', text: t('✓ Good — hold still') },
+          big: t('Hold still'),
+          sub: t('Keep your wrist 2–5 cm from the sensor until it’s done.'),
         };
   return (
     <>

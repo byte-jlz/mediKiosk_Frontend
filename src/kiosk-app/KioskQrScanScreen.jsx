@@ -5,6 +5,7 @@ import Icon from './ui/Icon';
 import { KioskCard, TopBar } from './ui/KioskUI';
 import { clearPatientSession, patientLoginWithQr } from '../services/authService';
 import { useKioskAgent } from '../services/kioskAgentService';
+import { t, useLang } from './i18n';
 
 // The QR cam is opened by the kiosk agent on the Pi (by its USB port, hub
 // port 1.2), NOT by the browser: the BP cam is the same webcam model, so the
@@ -16,6 +17,7 @@ const AGENT_GRACE_MS = 4000; // wait this long for the agent before saying the c
 
 export default function KioskQrScanScreen() {
   const navigate = useNavigate();
+  useLang();
   const { agent, agentOnline } = useKioskAgent();
   const busyRef = useRef(false);
   const previewUrlRef = useRef('');
@@ -38,7 +40,7 @@ export default function KioskQrScanScreen() {
         await patientLoginWithQr(value);
         navigate('/kiosk/signed-in');
       } catch (err) {
-        setError(err.message || 'QR code not recognized.');
+        setError(err.message || t('QR code not recognized.'));
         setStatus('idle');
         // Short pause so the same invalid code isn't re-submitted straight away,
         // then look for a code again.
@@ -83,7 +85,7 @@ export default function KioskQrScanScreen() {
         } else if (ev.phase === 'error') {
           console.warn('[qr] agent:', ev.error);
           setCameraState('unavailable');
-          setCameraError('The QR camera isn’t working right now.');
+          setCameraError(t('The QR camera isn’t working right now.'));
           retry = setTimeout(() => setScanKey((k) => k + 1), 5000); // e.g. re-plugged - try again
         }
       },
@@ -102,7 +104,7 @@ export default function KioskQrScanScreen() {
   );
 
   const cameraShown = agentMissing ? 'unavailable' : cameraState;
-  const cameraText = agentMissing ? 'The QR camera is offline.' : cameraError;
+  const cameraText = agentMissing ? t('The QR camera is offline.') : cameraError;
 
   function handleManualSubmit(e) {
     e.preventDefault();
@@ -117,12 +119,12 @@ export default function KioskQrScanScreen() {
 
   const statusText =
     status === 'verifying'
-      ? 'Signing you in…'
+      ? t('Signing you in…')
       : cameraShown === 'starting'
-        ? 'Starting camera…'
+        ? t('Starting camera…')
         : cameraShown === 'unavailable'
           ? cameraText
-          : 'Looking for a code…';
+          : t('Looking for a code…');
 
   return (
     <KioskShell>
@@ -130,11 +132,11 @@ export default function KioskQrScanScreen() {
         <TopBar onBack={() => navigate('/kiosk/welcome')} />
 
         <div className="k-hero">
-          <h1 className="k-h1">Scan your QR code</h1>
+          <h1 className="k-h1">{t('Scan your QR code')}</h1>
           <p className="k-lead">
             {cameraShown === 'unavailable'
-              ? 'Type the code below, or ask the clinic staff for help.'
-              : 'Open the MediKiosk app and hold your QR code up to the camera.'}
+              ? t('Type the code below, or ask the clinic staff for help.')
+              : t('Open the MediKiosk app and hold your QR code up to the camera.')}
           </p>
         </div>
 
@@ -159,30 +161,30 @@ export default function KioskQrScanScreen() {
         )}
 
         <div className="k-divider">
-          <span>OR TYPE YOUR CODE</span>
+          <span>{t('OR TYPE YOUR CODE')}</span>
         </div>
 
         {/* Works for typing a code and for USB QR scanners, which type the code then press Enter. */}
         <form className="k-codeform" onSubmit={handleManualSubmit}>
           <label htmlFor="k-qr-code" className="k-visually-hidden">
-            QR code
+            {t('QR code')}
           </label>
           <input
             id="k-qr-code"
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
-            placeholder="Enter code"
+            placeholder={t('Enter code')}
             autoFocus={cameraShown === 'unavailable'}
             autoComplete="off"
           />
           <button type="submit" disabled={status === 'verifying' || !manualCode.trim()}>
-            Sign in
+            {t('Sign in')}
           </button>
         </form>
 
         <footer className="k-footer k-footer--center">
           <button type="button" className="k-link" onClick={continueAsGuest}>
-            No app? Continue as Guest
+            {t('No app? Continue as Guest')}
           </button>
         </footer>
       </KioskCard>

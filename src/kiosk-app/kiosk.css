@@ -65,9 +65,9 @@
 }
 
 .k-card--welcome {
-  top: 180px;
-  height: 1560px;
-  padding: 88px 72px 60px;
+  top: 90px;
+  height: 1740px; /* Nov 2026: taller for the language buttons */
+  padding: 80px 72px 52px;
   align-items: center;
 }
 
@@ -188,6 +188,58 @@
 .k-footer__version {
   font-weight: 500;
   font-size: 26px;
+}
+
+/* Language switcher (Nov 2026): English / Tagalog / Bisaya, on the start + welcome screens */
+.k-footer:has(.k-lang) {
+  flex-wrap: wrap;
+  row-gap: 14px;
+  padding-top: 28px;
+}
+
+.k-lang {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.k-lang__label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 700 28px var(--k-font);
+  color: var(--k-heading);
+}
+
+.k-lang__options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.k-lang__btn {
+  height: 84px;
+  border-radius: 42px;
+  border: 3px solid var(--k-primary);
+  background: #fff;
+  color: var(--k-primary);
+  font: 700 32px var(--k-font);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.k-lang__btn.is-active {
+  background: var(--k-primary);
+  color: #fff;
+}
+
+.k-lang__btn:active {
+  transform: scale(0.97);
+}
+
+.k-footer:has(.k-lang) .k-footer__version {
+  margin-left: auto;
 }
 
 .k-footer--center {
@@ -597,6 +649,72 @@
   color: var(--k-text);
 }
 
+/* The animation / result panel sits right under the step heading instead of being
+   centred in the free space (Nov 2026). The spacer under it still pushes the buttons down. */
+.k-step__heading + .k-spacer:has(+ .k-panel) {
+  flex: 0 0 32px;
+  min-height: 32px;
+}
+
+/* Intro: Do / Don't bullets (Nov 2026) */
+.k-dodont {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.k-dodont__group {
+  border-radius: 28px;
+  padding: 24px 32px 28px;
+}
+
+.k-dodont__group--do {
+  background: #e7f6ee;
+}
+
+.k-dodont__group--dont {
+  background: #fdeceb;
+}
+
+.k-dodont__label {
+  margin: 0 0 12px;
+  font: 800 30px var(--k-font);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.k-dodont__group--do .k-dodont__label,
+.k-dodont__group--do svg {
+  color: #13774a;
+}
+
+.k-dodont__group--dont .k-dodont__label,
+.k-dodont__group--dont svg {
+  color: #b42318;
+}
+
+.k-dodont ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.k-dodont li {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font: 600 38px/1.25 var(--k-font);
+  color: var(--k-text);
+}
+
+.k-dodont li svg {
+  flex: none;
+}
+
 /* ---------- Attract loop (intro video while idle) ---------- */
 .k-attract {
   position: absolute;
@@ -675,6 +793,12 @@
   font: 800 104px/1 var(--k-font);
   letter-spacing: -0.02em;
   color: var(--k-heading);
+}
+
+/* a long "Welcome" (Tagalog / Bisaya) fits on one line */
+.k-welcome__title--long {
+  font-size: 80px;
+  margin-top: 48px;
 }
 
 .k-welcome__subtitle {

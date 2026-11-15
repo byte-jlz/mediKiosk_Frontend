@@ -10,6 +10,7 @@ import Icon from './ui/Icon';
 import { KIOSK_ID, useKioskAgent } from '../services/kioskAgentService';
 import { clearPatientSession, getCurrentPatient } from '../services/authService';
 import { shortName } from './patientName';
+import { t, useLang } from './i18n';
 
 const IDLE = { phase: 'idle' };
 // BMI: what the agent does after each confirmed prompt (the scale zeroes after scale_empty)
@@ -46,6 +47,7 @@ function newCheckInId() {
  */
 export default function KioskVitalsWizard() {
   const navigate = useNavigate();
+  useLang();
   const [patient] = useState(getCurrentPatient);
   const isGuest = !patient;
 
@@ -132,8 +134,8 @@ export default function KioskVitalsWizard() {
         error: !result.rejected
           ? friendlyError(result.error, key)
           : /^busy/.test(result.error || '')
-            ? 'The sensors are busy. Please wait a moment and try again.'
-            : 'The kiosk couldn’t start this reading. Please try again or ask the clinic staff for help.',
+            ? t('The sensors are busy. Please wait a moment and try again.')
+            : t('The kiosk couldn’t start this reading. Please try again or ask the clinic staff for help.'),
       });
     }
   }
@@ -281,7 +283,7 @@ export default function KioskVitalsWizard() {
     setSaveError('');
     redoRef.current = null;
     const timer = setTimeout(() => {
-      setSaveError('The kiosk could not confirm the save. Please ask the clinic staff for help.');
+      setSaveError(t('The kiosk could not confirm the save. Please ask the clinic staff for help.'));
       setSaveState('error');
     }, SAVE_WAIT_MS);
     const unsub = agent.onAssessment(sessionId, (msg) => {
@@ -291,11 +293,11 @@ export default function KioskVitalsWizard() {
       } else {
         // incomplete / rejected: the edge says which reading to take again
         redoRef.current = msg.redo_vitals || [];
-        const names = redoRef.current.map((k) => KIOSK_STEPS.find((s) => s.key === k)?.name || k);
+        const names = redoRef.current.map((k) => t(KIOSK_STEPS.find((s) => s.key === k)?.name || k));
         setSaveError(
           names.length
-            ? `This reading needs to be taken again: ${names.join(', ')}.`
-            : 'The kiosk could not use these readings. Please try again.'
+            ? t('This reading needs to be taken again: {names}.', { names: names.join(', ') })
+            : t('The kiosk could not use these readings. Please try again.')
         );
         setSaveState('error');
       }
@@ -323,10 +325,10 @@ export default function KioskVitalsWizard() {
   const sensorsReady = Boolean(agent) && connection === 'connected' && agentOnline;
   const sensorsMessage =
     connection !== 'connected'
-      ? 'Connecting to the kiosk sensors…'
+      ? t('Connecting to the kiosk sensors…')
       : !agentOnline
-        ? 'The kiosk sensors are offline. Please ask the clinic staff for help.'
-        : 'Getting ready…';
+        ? t('The kiosk sensors are offline. Please ask the clinic staff for help.')
+        : t('Getting ready…');
 
   const done = new Set(Object.keys(readings));
   const frac = progressOf(step, run);
@@ -339,11 +341,11 @@ export default function KioskVitalsWizard() {
             <span className="k-closed__icon">
               <Icon name="home" size={72} />
             </span>
-            <p className="k-closed__title">This check-in was closed</p>
+            <p className="k-closed__title">{t('This check-in was closed')}</p>
             <p className="k-closed__text">
-              No one was detected for a while. Readings from this check-in were not saved.
+              {t('No one was detected for a while. Readings from this check-in were not saved.')}
             </p>
-            <p className="k-closed__back">Returning to the start screen…</p>
+            <p className="k-closed__back">{t('Returning to the start screen…')}</p>
           </div>
         </KioskCard>
       </KioskShell>
@@ -353,7 +355,7 @@ export default function KioskVitalsWizard() {
   return (
     <KioskShell>
       <KioskCard color={isResults ? undefined : step.color}>
-        <TopBar name={isGuest ? 'Guest' : shortName(patient)} onLeave={isResults ? undefined : () => setLeaving(true)} />
+        <TopBar name={isGuest ? t('Guest') : shortName(patient)} onLeave={isResults ? undefined : () => setLeaving(true)} />
 
         {isResults ? (
           <KioskResults
@@ -387,7 +389,7 @@ export default function KioskVitalsWizard() {
         )}
         {leaving && (
           <LeaveDialog
-            destination={isGuest ? 'You’ll go back to the guest welcome page.' : 'You’ll go back to your Signed-in page.'}
+            destination={isGuest ? t('You’ll go back to the guest welcome page.') : t('You’ll go back to your Signed-in page.')}
             onStay={() => setLeaving(false)}
             onLeave={leaveCheckIn}
           />
@@ -423,7 +425,7 @@ const RETRY_HELP = {
 
 /** Agent error texts are written for logs - turn them into plain wording for the screen. */
 function friendlyError(error, stepKey) {
-  if (error?.startsWith('nobody confirmed')) return 'We waited a while for you. Tap “Try again” when you are ready.';
-  if (error?.startsWith('sensor problem')) return 'There’s a problem with this sensor. You can try again or ask the clinic staff for help.';
-  return RETRY_HELP[stepKey] || 'Please try again.';
+  if (error?.startsWith('nobody confirmed')) return t('We waited a while for you. Tap “Try again” when you are ready.');
+  if (error?.startsWith('sensor problem')) return t('There’s a problem with this sensor. You can try again or ask the clinic staff for help.');
+  return t(RETRY_HELP[stepKey] || 'Please try again.');
 }
