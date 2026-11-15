@@ -597,6 +597,78 @@
   color: var(--k-text);
 }
 
+/* ---------- Attract loop (intro video while idle) ---------- */
+.k-attract {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: var(--k-page);
+  cursor: pointer;
+  animation: k-attract-in 600ms ease both;
+}
+
+.k-attract__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* same spot and look as the bar drawn in the video's design (top 130 px) */
+.k-attract__clock {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 70px;
+  border-bottom: 2px solid var(--k-line);
+  font: 600 32px var(--k-font);
+  color: var(--k-muted);
+  pointer-events: none;
+}
+
+.k-attract__hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 70px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.k-attract__hint span {
+  display: inline-block;
+  padding: 26px 64px;
+  border-radius: 999px;
+  background: var(--k-primary);
+  color: #fff;
+  font: 700 44px var(--k-font);
+  box-shadow: 0 14px 34px rgba(23, 114, 127, 0.28);
+  animation: k-breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes k-attract-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-attract,
+  .k-attract__hint span {
+    animation: none;
+  }
+}
+
 /* ---------- Welcome ---------- */
 .k-welcome__title {
   margin: 64px 0 0;

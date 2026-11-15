@@ -1,39 +1,40 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import KioskShell from './KioskShell';
+import AttractLoop from './AttractLoop';
+import { dateFormat, timeFormat, useNow } from './useNow';
 import { Footer, KioskCard, Logo } from './ui/KioskUI';
 import { clearPatientSession } from '../services/authService';
 
-const dateFormat = new Intl.DateTimeFormat('en-US', {
-  weekday: 'short',
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-});
-const timeFormat = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
-
-/** The current time, refreshed right when the minute changes. */
-function useNow() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    let timer;
-    const msToNextMinute = () => {
-      const d = new Date();
-      return 60000 - (d.getSeconds() * 1000 + d.getMilliseconds()) + 50;
-    };
-    const tick = () => {
-      setNow(new Date());
-      timer = setTimeout(tick, msToNextMinute());
-    };
-    timer = setTimeout(tick, msToNextMinute());
-    return () => clearTimeout(timer);
-  }, []);
-  return now;
-}
+// After this long with no touch on the start screen, the intro video starts.
+const ATTRACT_AFTER_MS = 30000;
 
 export default function StartScreen() {
   const navigate = useNavigate();
   const now = useNow();
+  const [attract, setAttract] = useState(false);
+  const [videoBroken, setVideoBroken] = useState(false);
+  const closeAttract = useCallback(() => setAttract(false), []);
+  const videoFailed = useCallback(() => {
+    setVideoBroken(true);
+    setAttract(false);
+  }, []);
+
+  // Idle timer: any touch restarts it; when it runs out the intro video plays.
+  useEffect(() => {
+    if (attract || videoBroken) return undefined;
+    let timer;
+    const restart = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setAttract(true), ATTRACT_AFTER_MS);
+    };
+    restart();
+    window.addEventListener('pointerdown', restart);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('pointerdown', restart);
+    };
+  }, [attract, videoBroken]);
 
   // Whoever used the kiosk before is always signed out here.
   useEffect(() => {
@@ -56,6 +57,7 @@ export default function StartScreen() {
         <p className="k-start__hint">Touch the button to begin</p>
         <Footer />
       </KioskCard>
+      {attract && <AttractLoop onExit={closeAttract} onFail={videoFailed} />}
     </KioskShell>
   );
 }

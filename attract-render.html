@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>MediKiosk attract loop (render)</title>
+<script>
+(function () {
+  var vt = 0, q = [], id = 0, birth = new WeakMap();
+  performance.now = function () { return vt; };
+  window.requestAnimationFrame = function (cb) { q.push([++id, cb]); return id; };
+  window.cancelAnimationFrame = function (i) { var k = q.findIndex(function (e) { return e[0] === i; }); if (k >= 0) q.splice(k, 1); };
+  window.__vt = function (t) { vt = t; };
+  window.__tick = function () {
+    q.splice(0).forEach(function (e) { e[1](vt); });
+    document.getAnimations().forEach(function (a) {
+      if (!birth.has(a)) birth.set(a, vt);
+      a.pause(); a.currentTime = vt - birth.get(a);
+    });
+  };
+})();
+</script>
+</head>
+<body style="margin:0">
+<div id="root"></div>
+<script type="module" src="/src/attract/render-main.jsx"></script>
+</body>
+</html>
