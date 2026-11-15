@@ -1,7 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
 import Icon from '../ui/Icon';
 import BmiScene from './BmiScene';
+import FingerScene from './FingerScene';
 import { IconTile, KioskButton, Note, NumberedList, Pill, Spacer } from '../ui/KioskUI';
-import { CONFIRM_PROMPTS, formatLive, readingDisplay } from './kioskSteps';
+import { CONFIRM_PROMPTS, FINGER_WAIT_LIMIT_S, STILL_THERE_S, formatLive, readingDisplay } from './kioskSteps';
+
+const FINGER = 'respirationSpo2Hr'; // the SpO2 & RR step (live finger detection)
 
 /**
  * One reading of the check-in. What it shows depends on run.phase:
@@ -21,6 +25,13 @@ import { CONFIRM_PROMPTS, formatLive, readingDisplay } from './kioskSteps';
  * the platform. The step off / step on prompts only come in the safety
  * fallback, and then the agent finishes them by itself (prompt.auto): the
  * button is shown as a smaller backup.
+ *
+ * SpO2 & RR (Nov 2026, live finger detection): the agent reports live whether a
+ * finger is on the sensor, whether the hand moves and how long the finger has
+ * been off. Green = good contact, orange = movement / finger off / starting
+ * again, red = no steady reading / sensor problem - shown on the panel border,
+ * a big banner and the drawn kiosk screen together. No finger for
+ * FINGER_WAIT_LIMIT_S -> "Are you still there?" (onAbandon closes the check-in).
  */
 export default function ScanStepScreen({
   step,
@@ -34,6 +45,7 @@ export default function ScanStepScreen({
   onConfirm,
   onContinue,
   onSkip,
+  onAbandon,
 }) {
   return (
     <div className="k-step" key={`${step.key}-${run.phase}`}>
@@ -53,6 +65,7 @@ export default function ScanStepScreen({
         onConfirm={onConfirm}
         onContinue={onContinue}
         onSkip={onSkip}
+        onAbandon={onAbandon}
       />
     </div>
   );
@@ -87,6 +100,8 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
     case 'awaiting': {
       const prompt = CONFIRM_PROMPTS[run.prompt?.step] || { text: run.prompt?.message, button: 'I’m ready' };
       if (step.key === 'bmi') return <BmiAwaiting run={run} prompt={prompt} onConfirm={on.onConfirm} />;
+      if (step.key === FINGER)
+        return <FingerAwaiting run={run} prompt={prompt} onConfirm={on.onConfirm} onAbandon={on.onAbandon} />;
       return (
         <>
           <Spacer />
@@ -109,6 +124,7 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
 
     case 'running':
       if (step.key === 'bmi') return <BmiRunning run={run} step={step} />;
+      if (step.key === FINGER) return <FingerRunning run={run} />;
       return (
         <>
           <Spacer />
@@ -122,6 +138,25 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
       );
 
     case 'done': {
+      if (step.key === FINGER) {
+        return (
+          <>
+            <Spacer />
+            <FingerPanel
+              tone="green"
+              badge="READING COMPLETE"
+              banner={{ tone: 'green', text: '✓ Reading complete' }}
+              scene={<FingerScene mode="done" rr={reading?.respiration?.value} spo2={reading?.spo2?.value} />}
+              big="Reading complete"
+              sub="You can lift your hand now."
+            />
+            <Spacer />
+            <KioskButton icon="arrow" onClick={on.onContinue}>
+              {isLast ? 'See my results' : 'Next reading'}
+            </KioskButton>
+          </>
+        );
+      }
       if (step.key === 'bmi') {
         return (
           <>
@@ -192,6 +227,35 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
     }
 
     case 'failed':
+      if (step.key === FINGER) {
+        const sensor = (run.rawError || '').startsWith('sensor problem');
+        return (
+          <>
+            <Spacer />
+            <FingerPanel
+              tone="red"
+              badge={sensor ? 'SENSOR PROBLEM' : 'NO READING'}
+              banner={{
+                tone: 'red',
+                text: sensor ? '⚠ The finger sensor isn’t working' : 'We couldn’t get a steady reading',
+              }}
+              scene={<FingerScene mode={sensor ? 'sensor' : 'fail'} />}
+              big={sensor ? 'This isn’t your fault' : 'Let’s try once more'}
+              sub={
+                sensor
+                  ? 'The finger sensor isn’t responding. Please ask the clinic staff for help.'
+                  : 'Rest your hand flat and keep it still, or ask the clinic staff for help.'
+              }
+            />
+            <Spacer />
+            <KioskButton variant={sensor ? 'secondary' : 'primary'} icon="retry" onClick={on.onStart} disabled={!sensorsReady}>
+              Try again
+            </KioskButton>
+            {sensorsNote}
+            {skipButton}
+          </>
+        );
+      }
       return (
         <>
           <Spacer />
@@ -387,5 +451,210 @@ function BmiRunning({ run, step }) {
       </div>
       <Spacer />
     </>
+  );
+}
+
+/** One SpO2 & RR panel: colour on the border + a big banner + the picture. */
+function FingerPanel({ tone, badge, banner, scene, big, sub }) {
+  return (
+    <div className={`k-panel k-panel--turn k-panel--scene k-panel--finger${tone ? ` k-panel--tone-${tone}` : ''}`}>
+      <span className="k-badge">
+        <span className="k-badge__dot" />
+        {badge}
+      </span>
+      {banner && (
+        <div className={`k-banner k-banner--${banner.tone}`} role="status" aria-live="polite">
+          {banner.text}
+        </div>
+      )}
+      {scene}
+      <p className="k-panel__big">{big}</p>
+      {sub && <p className="k-panel__sub">{sub}</p>}
+    </div>
+  );
+}
+
+/** SpO2 & RR, waiting for the finger (first time, or after a restart). */
+function FingerAwaiting({ run, prompt, onConfirm, onAbandon }) {
+  const again = run.prompt?.step === 'finger_again';
+  const fingerOn = !!run.finger;
+  const auto = !!run.prompt?.auto;
+  let view;
+  if (fingerOn && again) {
+    // 6a: the finger is already back - the new reading starts by itself
+    view = {
+      mode: 'restartBack',
+      tone: 'orange',
+      badge: 'STARTING AGAIN',
+      banner: { tone: 'orange', text: '↻ Starting again — keep your finger still' },
+      big: 'Let’s try that again',
+      sub: 'Keep your hand where it is. The new reading starts in a moment — no need to tap anything.',
+    };
+  } else if (fingerOn) {
+    view = {
+      mode: 'detected',
+      tone: 'green',
+      badge: 'YOUR TURN',
+      banner: { tone: 'green', text: '✓ Finger detected — keep still' },
+      big: 'Good contact. Starting…',
+      sub: 'Keep your hand still and breathe normally.',
+    };
+  } else if (again) {
+    // 6b: the finger is still off - wait for it like the first time
+    view = {
+      mode: 'again',
+      tone: 'orange',
+      badge: 'STARTING AGAIN',
+      banner: { tone: 'orange', text: '↻ Put your finger back to start again' },
+      big: prompt.text,
+      sub: prompt.sub,
+    };
+  } else {
+    view = { mode: 'wait', badge: 'YOUR TURN', big: prompt.text, sub: prompt.sub };
+  }
+  return (
+    <>
+      <Spacer />
+      <FingerPanel {...view} scene={<FingerScene mode={view.mode} />} />
+      <Spacer />
+      {!fingerOn && (
+        <>
+          <KioskButton variant={auto ? 'secondary' : 'primary'} icon="check" onClick={onConfirm}>
+            {prompt.button}
+          </KioskButton>
+          {auto && prompt.autoNote && <p className="k-scene-note">{prompt.autoNote}</p>}
+        </>
+      )}
+      <StillThere waiting={!fingerOn} onAbandon={onAbandon} />
+    </>
+  );
+}
+
+/** SpO2 & RR, the 30 s reading: green = good contact, orange = moving / finger off. */
+function FingerRunning({ run }) {
+  const live = run.tick?.live || {};
+  const lifted = live.finger === false;
+  const moving = !lifted && !!live.moving;
+  const view = lifted
+    ? {
+        mode: 'lift',
+        tone: 'orange',
+        banner: { tone: 'orange', text: '⚠ Put your finger back on the sensor' },
+        big: 'Your finger left the sensor',
+        sub: 'Put it back quickly. If it stays off for more than 2 seconds, the reading starts again.',
+      }
+    : moving
+      ? {
+          mode: 'move',
+          tone: 'orange',
+          banner: { tone: 'orange', text: '⚠ Keep your hand still' },
+          big: 'Your hand is moving',
+          sub: 'Hold still — the reading is still going.',
+        }
+      : {
+          mode: 'measure',
+          tone: 'green',
+          banner: { tone: 'green', text: '✓ Good contact — keep still' },
+          big: 'Keep your hand still',
+          sub: 'Breathe normally and avoid talking or moving.',
+        };
+  return (
+    <>
+      <Spacer />
+      <FingerPanel
+        {...view}
+        badge="MEASURING · SpO₂ & RR"
+        scene={
+          <FingerScene
+            mode={view.mode}
+            secondsLeft={run.tick?.secondsLeft ?? null}
+            totalSeconds={run.totalSeconds || 30}
+            offSeconds={live.off_s || 0}
+          />
+        }
+      />
+      <Spacer />
+    </>
+  );
+}
+
+/**
+ * "Are you still there?" - no finger for FINGER_WAIT_LIMIT_S. Continue starts
+ * the wait again; "I need help" keeps the screen open (no more questions for
+ * this step); no answer within STILL_THERE_S -> onAbandon (check-in closed).
+ */
+function StillThere({ waiting, onAbandon }) {
+  const [asking, setAsking] = useState(false);
+  const [help, setHelp] = useState(false);
+  const [left, setLeft] = useState(STILL_THERE_S);
+  const sinceRef = useRef(0);
+  const deadlineRef = useRef(0);
+  const doneRef = useRef(false);
+
+  // a finger on the sensor resets the waiting time (and closes the question)
+  useEffect(() => {
+    sinceRef.current = Date.now();
+    if (!waiting) setAsking(false);
+  }, [waiting]);
+
+  useEffect(() => {
+    if (help) return undefined;
+    const id = setInterval(() => {
+      const now = Date.now();
+      if (!asking) {
+        if (waiting && now - sinceRef.current >= FINGER_WAIT_LIMIT_S * 1000) {
+          deadlineRef.current = now + STILL_THERE_S * 1000;
+          setLeft(STILL_THERE_S);
+          setAsking(true);
+        }
+        return;
+      }
+      const secs = Math.max(0, Math.ceil((deadlineRef.current - now) / 1000));
+      setLeft(secs);
+      if (secs === 0 && !doneRef.current) {
+        doneRef.current = true;
+        onAbandon?.();
+      }
+    }, 250);
+    return () => clearInterval(id);
+  }, [asking, waiting, help, onAbandon]);
+
+  if (help) {
+    return (
+      <Note icon="info" role="status">
+        A staff member can help you. The reading starts by itself once your finger is on the sensor.
+      </Note>
+    );
+  }
+  if (!asking) return null;
+  return (
+    <div className="k-still" role="alertdialog" aria-modal="true" aria-labelledby="k-still-title">
+      <div className="k-still__box">
+        <p id="k-still-title" className="k-still__title">
+          Are you still there?
+        </p>
+        <p className="k-still__text">We haven’t detected a finger on the sensor.</p>
+        <p className="k-still__count">This check-in closes in {left} s</p>
+        <KioskButton
+          icon="check"
+          onClick={() => {
+            sinceRef.current = Date.now();
+            setAsking(false);
+          }}
+        >
+          Continue
+        </KioskButton>
+        <KioskButton
+          variant="secondary"
+          icon="info"
+          onClick={() => {
+            setHelp(true);
+            setAsking(false);
+          }}
+        >
+          I need help
+        </KioskButton>
+      </div>
+    </div>
   );
 }

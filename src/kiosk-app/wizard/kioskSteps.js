@@ -40,12 +40,12 @@ export const KIOSK_STEPS = [
     icon: 'breath',
     color: 'breath',
     description:
-      'Please stand comfortably and relax for a moment. Place your fingertip on the sensor to measure your breathing rate and blood oxygen level.',
+      'Please stand comfortably and relax for a moment. Rest your hand flat on the console with your index fingertip on the finger sensor to measure your breathing rate and blood oxygen level.',
     duration: 'Takes about 30 seconds',
     tips: [
       'Stand still and relax your body.',
-      'Gently place your index fingertip on the sensor pad.',
-      'Breathe normally and avoid talking or moving until the measurement is complete.',
+      'Rest your hand flat with your index fingertip on the finger sensor - don’t press hard.',
+      'The reading starts by itself. Breathe normally and avoid talking or moving until it’s done.',
     ],
     timerSeconds: 30, // RR_SECONDS in measurements.py (the ring itself uses the agent's countdown)
     measuring: 'Measuring…',
@@ -99,6 +99,17 @@ export const KIOSK_STEPS = [
 export const STEP_BY_KEY = Object.fromEntries(KIOSK_STEPS.map((s) => [s.key, s]));
 
 /**
+ * SpO2 & RR waiting limit (Nov 2026). No finger on the sensor for
+ * FINGER_WAIT_LIMIT_S -> "Are you still there?"; nobody answers within
+ * STILL_THERE_S -> the check-in is closed (nothing saved) and the kiosk goes
+ * back to the start screen after CLOSED_RETURN_S. The agent logs how long each
+ * patient needed to place the finger (finger_wait_s) - use that to tune these.
+ */
+export const FINGER_WAIT_LIMIT_S = 30;
+export const STILL_THERE_S = 15;
+export const CLOSED_RETURN_S = 5;
+
+/**
  * The "Your turn" moments the agent asks for (its `step` names -> kiosk wording).
  *   text      the big instruction
  *   sub       the smaller line under it
@@ -131,10 +142,17 @@ export const CONFIRM_PROMPTS = {
     autoNote: 'Your height is measured next - it starts by itself',
   },
   finger_rest: {
-    text: 'Stand and relax. Gently place your index fingertip on the sensor pad.',
-    sub: 'Don’t press hard. This one reading measures your breathing rate and blood oxygen.',
-    pill: 'A 30-second reading starts when you tap the button', // RR_SECONDS
+    text: 'Rest your hand flat on the console, with your index fingertip on the finger sensor.',
+    sub: 'Don’t press hard. The reading starts by itself once your finger is steady.',
     button: 'My finger is on the sensor',
+    autoNote: 'Starts automatically · tap only if it doesn’t start',
+  },
+  // after a restart (the finger was off for more than 2 s) and the finger is still off
+  finger_again: {
+    text: 'Put your finger back on the sensor',
+    sub: 'Rest your hand flat with your index fingertip on the sensor. The reading starts again by itself.',
+    button: 'My finger is on the sensor',
+    autoNote: 'Starts automatically · tap only if it doesn’t start',
   },
   cuff_on: {
     text: 'Slide your arm into the cuff with your palm facing upward.',

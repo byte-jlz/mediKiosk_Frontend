@@ -5,7 +5,8 @@ import { KioskCard, LeaveDialog, TopBar } from './ui/KioskUI';
 import StepProgress from './wizard/StepProgress';
 import ScanStepScreen from './wizard/ScanStepScreen';
 import KioskResults from './wizard/KioskResults';
-import { KIOSK_STEPS } from './wizard/kioskSteps';
+import { CLOSED_RETURN_S, KIOSK_STEPS } from './wizard/kioskSteps';
+import Icon from './ui/Icon';
 import { KIOSK_ID, useKioskAgent } from '../services/kioskAgentService';
 import { clearPatientSession, getCurrentPatient } from '../services/authService';
 import { shortName } from './patientName';
@@ -61,6 +62,7 @@ export default function KioskVitalsWizard() {
   const [saveState, setSaveState] = useState(isGuest ? 'none' : 'saving');
   const [saveError, setSaveError] = useState('');
   const [leaving, setLeaving] = useState(false); // "leave this check-in?" popup
+  const [closed, setClosed] = useState(false); // nobody answered "Are you still there?"
 
   const scanIdRef = useRef(null);
   const agentRef = useRef(null);
@@ -121,6 +123,7 @@ export default function KioskVitalsWizard() {
       if (result.rejected) console.warn('[kiosk] agent refused the scan:', result.error);
       setRun({
         phase: 'failed',
+        rawError: result.error || '',
         error: !result.rejected
           ? friendlyError(result.error, key)
           : /^busy/.test(result.error || '')
@@ -141,10 +144,16 @@ export default function KioskVitalsWizard() {
           prompt: { step: st.step, message: st.message, auto: !!st.auto },
           tick: null,
           zeroed: st.step === 'step_on' ? true : r.zeroed,
+          // finger step: keep what the sensor last said (decides "starting again" 6a / 6b)
+          finger: r.tick?.live?.finger ?? r.finger,
         }));
       } else if (st.phase === 'watching') {
-        // the agent is watching the scale (waiting for an empty platform / someone standing still)
-        setRun((r) => ({ ...r, watchKg: st.live?.kg ?? r.watchKg }));
+        // the agent is watching the scale (empty platform / someone standing still)
+        // or the finger sensor (is a finger on it?)
+        setRun((r) => ({ ...r, watchKg: st.live?.kg ?? r.watchKg, finger: st.live?.finger ?? r.finger }));
+      } else if (st.phase === 'restart') {
+        // finger step: the finger was off too long - the agent starts the reading again
+        setRun((r) => ({ ...r, restarts: (r.restarts || 0) + 1 }));
       } else if (st.phase === 'confirmed') {
         // also arrives when the agent confirmed the step by itself (st.by === 'auto')
         setRun((r) => ({
@@ -223,6 +232,28 @@ export default function KioskVitalsWizard() {
     navigate(isGuest ? '/kiosk/guest' : '/kiosk/signed-in');
   }
 
+  /**
+   * Nobody answered "Are you still there?": stop the scan, drop EVERY reading
+   * of this check-in (guest or patient - nothing is saved or sent), sign out
+   * and go back to the start screen for the next person.
+   */
+  function abandonCheckIn() {
+    if (scanIdRef.current && agent) agent.cancel(scanIdRef.current);
+    scanIdRef.current = null;
+    setReadings({});
+    setRun(IDLE);
+    setClosed(true);
+  }
+
+  useEffect(() => {
+    if (!closed) return undefined;
+    const t = setTimeout(() => {
+      clearPatientSession();
+      navigate('/kiosk', { replace: true });
+    }, CLOSED_RETURN_S * 1000);
+    return () => clearTimeout(t);
+  }, [closed, navigate]);
+
   /** Sign the patient out and go back to the Start screen. */
   function leave() {
     clearPatientSession();
@@ -289,6 +320,25 @@ export default function KioskVitalsWizard() {
   const done = new Set(Object.keys(readings));
   const frac = progressOf(step, run);
 
+  if (closed) {
+    return (
+      <KioskShell>
+        <KioskCard>
+          <div className="k-closed" role="status">
+            <span className="k-closed__icon">
+              <Icon name="home" size={72} />
+            </span>
+            <p className="k-closed__title">This check-in was closed</p>
+            <p className="k-closed__text">
+              No one was detected for a while. Readings from this check-in were not saved.
+            </p>
+            <p className="k-closed__back">Returning to the start screen…</p>
+          </div>
+        </KioskCard>
+      </KioskShell>
+    );
+  }
+
   return (
     <KioskShell>
       <KioskCard color={isResults ? undefined : step.color}>
@@ -320,6 +370,7 @@ export default function KioskVitalsWizard() {
               onConfirm={confirmStep}
               onContinue={next}
               onSkip={skip}
+              onAbandon={abandonCheckIn}
             />
           </>
         )}

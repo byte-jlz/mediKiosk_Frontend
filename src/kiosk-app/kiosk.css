@@ -1823,3 +1823,165 @@
 .k-panel--turn .k-scene {
   max-height: 470px;
 }
+
+/* ============================================================
+   SpO2 & RR picture (wizard/FingerScene.jsx) + live finger indicators
+   ============================================================ */
+.k-fscene {
+  --tone: var(--k-breath);
+  --tone-ink: var(--k-breath-ink);
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  margin: 12px auto 0;
+  font-family: var(--k-font);
+}
+.k-fscene--green { --tone: #1d9e75; --tone-ink: #0f6e56; }
+.k-fscene--orange { --tone: #c2410c; --tone-ink: #9a3412; }
+.k-fscene--red { --tone: #b42318; --tone-ink: #7a1a12; }
+
+.k-fscene__wood { fill: #b07a4f; }
+.k-fscene__bezel { fill: #2b3d44; }
+.k-fscene__screen { fill: #f4fafb; }
+.k-fscene__label text { font-size: 22px; font-weight: 700; fill: var(--k-breath); }
+.k-fscene__label .k-fscene__amp { font-size: 20px; }
+.k-fscene__msg { font-size: 13px; font-weight: 700; fill: var(--tone-ink); }
+.k-fscene__small { font-size: 11px; fill: var(--k-muted); }
+.k-fscene__okdot { fill: #1d9e75; }
+.k-fscene__errdot { fill: #b42318; }
+.k-fscene__warn { fill: #c2410c; }
+.k-fscene__tick { fill: none; stroke: #ffffff; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.k-fscene__bang { font-size: 25px; font-weight: 700; fill: #ffffff; }
+.k-fscene__track { fill: none; stroke: #d3e8eb; stroke-width: 6; }
+.k-fscene__arc { fill: none; stroke: var(--tone); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.4s linear; }
+.k-fscene__secs { font-size: 26px; font-weight: 700; fill: var(--k-breath-ink); }
+.k-fscene__redo { fill: none; stroke: #c2410c; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.k-fscene__val { font-size: 30px; font-weight: 700; fill: #0f6e56; }
+.k-fscene__unit { font-size: 11px; font-weight: 500; fill: var(--k-muted); }
+.k-fscene__rule { stroke: #d3e8eb; stroke-width: 1.5; }
+.k-fscene__otherpad { fill: #d6e0e4; }
+.k-fscene__pad { fill: #ffffff; }
+.k-fscene__led { fill: #d64545; }
+.k-fscene__hand rect { fill: #2b3d44; }
+.k-fscene__arm { stroke: #2b3d44; stroke-width: 34; stroke-linecap: round; }
+.k-fscene__sleeve { stroke: #566a72; stroke-width: 40; stroke-linecap: round; }
+.k-fscene__gap { stroke: #4a6470; stroke-width: 1.5; }
+.k-fscene__ring {
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 4;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: k-fscene-ring 1.6s ease-in-out infinite;
+}
+@keyframes k-fscene-ring {
+  0%, 100% { transform: scale(0.92); opacity: 0.9; }
+  50% { transform: scale(1.08); opacity: 0.55; }
+}
+.k-fscene__side { fill: #ffffff; stroke: #b9dade; stroke-width: 1.5; }
+.k-fscene__sidetitle { font-size: 11px; fill: var(--k-breath-ink); }
+.k-fscene__face { stroke: #b07a4f; stroke-width: 8; stroke-linecap: round; }
+.k-fscene__sidepad { fill: #ffffff; stroke: #9fb3bb; stroke-width: 1; }
+.k-fscene__skin { fill: #2b3d44; }
+.k-fscene__glow { fill: #d64545; animation: k-fscene-glow 1.8s ease-in-out infinite; }
+@keyframes k-fscene-glow {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.7; }
+}
+.k-fscene__hint { font-size: 12px; font-weight: 700; fill: #0f6e56; }
+
+/* the panel border + a big full-width banner change colour together */
+.k-panel--tone-green { border-color: #1d9e75 !important; animation: none; }
+.k-panel--tone-orange { border-color: #c2410c !important; animation: none; }
+.k-panel--tone-red { border-color: #b42318 !important; animation: none; }
+.k-panel--tone-green .k-badge__dot { background: #1d9e75; }
+.k-panel--tone-orange .k-badge__dot { background: #c2410c; }
+.k-panel--tone-red .k-badge__dot { background: #b42318; }
+.k-panel.k-panel--finger { border-width: 6px; }
+
+.k-banner {
+  width: 100%;
+  margin: 22px 0 0;
+  padding: 22px 26px;
+  border-radius: 22px;
+  font: 700 34px/1.25 var(--k-font);
+  color: #ffffff;
+  text-align: center;
+}
+.k-banner--green { background: #1d9e75; }
+.k-banner--orange { background: #c2410c; animation: k-banner-blink 0.9s steps(1, end) infinite; }
+.k-banner--red { background: #b42318; }
+@keyframes k-banner-blink {
+  50% { background: #9a3412; }
+}
+
+/* "Are you still there?" - covers the kiosk card */
+.k-still {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px;
+  background: rgba(20, 50, 58, 0.55);
+}
+.k-still__box {
+  width: 760px;
+  padding: 64px 56px 56px;
+  border-radius: 48px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.25);
+}
+.k-still__title { margin: 0; font: 700 52px/1.2 var(--k-font); color: var(--k-heading); }
+.k-still__text { margin: 22px 0 0; font: 400 30px/1.45 var(--k-font); color: var(--k-muted); }
+.k-still__count { margin: 18px 0 30px; font: 700 30px/1.4 var(--k-font); color: #c2410c; }
+.k-still__box .k-btn + .k-btn { margin-top: 20px; }
+
+/* check-in closed (nobody answered) */
+.k-closed {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 60px;
+  text-align: center;
+}
+.k-closed__icon {
+  display: flex;
+  width: 140px;
+  height: 140px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 70px;
+  background: var(--k-tint);
+  color: var(--k-primary);
+}
+.k-closed__title { margin: 40px 0 0; font: 700 52px/1.2 var(--k-font); color: var(--k-heading); }
+.k-closed__text { margin: 24px 0 0; font: 400 30px/1.5 var(--k-font); color: var(--k-muted); }
+.k-closed__back { margin: 34px 0 0; font: 600 30px/1.4 var(--k-font); color: var(--k-primary); }
+
+/* finger screens also hold the big banner + a button + a note - keep them inside the card */
+.k-panel--finger {
+  padding: 26px 32px 32px;
+}
+.k-panel--finger .k-fscene {
+  max-height: 400px;
+  margin-top: 10px;
+}
+.k-panel--finger .k-banner {
+  margin-top: 16px;
+  padding: 16px 22px;
+  font-size: 30px;
+}
+.k-panel--finger .k-panel__big {
+  margin-top: 12px;
+}
+.k-panel--finger .k-panel__sub {
+  margin-top: 12px;
+}
+.k-panel--finger.k-panel--tone-red .k-fscene {
+  max-height: 340px;
+}
