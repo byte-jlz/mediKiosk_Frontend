@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import Icon from '../ui/Icon';
 import BmiScene from './BmiScene';
 import FingerScene from './FingerScene';
+import BpScene from './BpScene';
 import { IconTile, KioskButton, Note, NumberedList, Pill, Spacer } from '../ui/KioskUI';
 import { CONFIRM_PROMPTS, FINGER_WAIT_LIMIT_S, STILL_THERE_S, formatLive, readingDisplay } from './kioskSteps';
 
 const FINGER = 'respirationSpo2Hr'; // the SpO2 & RR step (live finger detection)
+const BP = 'bloodPressure'; // the BP step (the monitor is hidden inside the kiosk)
 
 /**
  * One reading of the check-in. What it shows depends on run.phase:
@@ -102,6 +104,7 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
       if (step.key === 'bmi') return <BmiAwaiting run={run} prompt={prompt} onConfirm={on.onConfirm} />;
       if (step.key === FINGER)
         return <FingerAwaiting run={run} prompt={prompt} onConfirm={on.onConfirm} onAbandon={on.onAbandon} />;
+      if (step.key === BP) return <BpAwaiting prompt={prompt} onConfirm={on.onConfirm} />;
       return (
         <>
           <Spacer />
@@ -125,6 +128,7 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
     case 'running':
       if (step.key === 'bmi') return <BmiRunning run={run} step={step} />;
       if (step.key === FINGER) return <FingerRunning run={run} />;
+      if (step.key === BP) return <BpRunning run={run} />;
       return (
         <>
           <Spacer />
@@ -138,11 +142,32 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
       );
 
     case 'done': {
+      if (step.key === BP) {
+        return (
+          <>
+            <Spacer />
+            <ScenePanel
+              tone="green"
+              badge="READING COMPLETE"
+              banner={{ tone: 'green', text: '✓ Reading complete' }}
+              scene={
+                <BpScene mode="done" systolic={reading?.systolic} diastolic={reading?.diastolic} pulse={reading?.pulse} />
+              }
+              big="Reading complete"
+              sub="Open the cuff and take your arm out."
+            />
+            <Spacer />
+            <KioskButton icon="arrow" onClick={on.onContinue}>
+              {isLast ? 'See my results' : 'Next reading'}
+            </KioskButton>
+          </>
+        );
+      }
       if (step.key === FINGER) {
         return (
           <>
             <Spacer />
-            <FingerPanel
+            <ScenePanel
               tone="green"
               badge="READING COMPLETE"
               banner={{ tone: 'green', text: '✓ Reading complete' }}
@@ -227,12 +252,48 @@ function Body({ step, run, reading, isGuest, isLast, sensorsReady, sensorsMessag
     }
 
     case 'failed':
+      if (step.key === BP) {
+        const raw = run.rawError || '';
+        // the monitor's own error screen / nobody tapped "The cuff is on" = the patient can fix it (orange);
+        // no answer from the monitor or a hardware problem = not the patient's fault (red)
+        const fixable = raw.startsWith('ERROR') || raw.startsWith('nobody confirmed');
+        return (
+          <>
+            <Spacer />
+            <ScenePanel
+              tone={fixable ? 'orange' : 'red'}
+              badge={fixable ? 'NO READING' : 'MONITOR PROBLEM'}
+              banner={{
+                tone: fixable ? 'orange' : 'red',
+                text: raw.startsWith('nobody confirmed')
+                  ? '⚠ We waited a while for you'
+                  : fixable
+                    ? '⚠ The monitor couldn’t measure'
+                    : '⚠ The blood pressure monitor isn’t responding',
+              }}
+              scene={<BpScene mode={fixable ? 'error' : 'fault'} />}
+              big={fixable ? 'Let’s re-wrap the cuff' : 'This isn’t your fault'}
+              sub={
+                fixable
+                  ? 'Open the cuff and wrap it again snugly above the elbow. Keep still and don’t talk, then try again.'
+                  : 'The monitor didn’t respond. Please ask the clinic staff for help.'
+              }
+            />
+            <Spacer />
+            <KioskButton variant={fixable ? 'primary' : 'secondary'} icon="retry" onClick={on.onStart} disabled={!sensorsReady}>
+              Try again
+            </KioskButton>
+            {sensorsNote}
+            {skipButton}
+          </>
+        );
+      }
       if (step.key === FINGER) {
         const sensor = (run.rawError || '').startsWith('sensor problem');
         return (
           <>
             <Spacer />
-            <FingerPanel
+            <ScenePanel
               tone="red"
               badge={sensor ? 'SENSOR PROBLEM' : 'NO READING'}
               banner={{
@@ -455,7 +516,7 @@ function BmiRunning({ run, step }) {
 }
 
 /** One SpO2 & RR panel: colour on the border + a big banner + the picture. */
-function FingerPanel({ tone, badge, banner, scene, big, sub }) {
+function ScenePanel({ tone, badge, banner, scene, big, sub }) {
   return (
     <div className={`k-panel k-panel--turn k-panel--scene k-panel--finger${tone ? ` k-panel--tone-${tone}` : ''}`}>
       <span className="k-badge">
@@ -515,7 +576,7 @@ function FingerAwaiting({ run, prompt, onConfirm, onAbandon }) {
   return (
     <>
       <Spacer />
-      <FingerPanel {...view} scene={<FingerScene mode={view.mode} />} />
+      <ScenePanel {...view} scene={<FingerScene mode={view.mode} />} />
       <Spacer />
       {!fingerOn && (
         <>
@@ -561,7 +622,7 @@ function FingerRunning({ run }) {
   return (
     <>
       <Spacer />
-      <FingerPanel
+      <ScenePanel
         {...view}
         badge="MEASURING · SpO₂ & RR"
         scene={
@@ -656,5 +717,59 @@ function StillThere({ waiting, onAbandon }) {
         </KioskButton>
       </div>
     </div>
+  );
+}
+
+/** BP, waiting for the patient to wrap the cuff (nothing can sense it - the button is the main action). */
+function BpAwaiting({ prompt, onConfirm }) {
+  return (
+    <>
+      <Spacer />
+      <ScenePanel badge="YOUR TURN" scene={<BpScene mode="wait" />} big={prompt.text} sub={prompt.sub} />
+      <Spacer />
+      <KioskButton icon="check" onClick={onConfirm}>
+        {prompt.button}
+      </KioskButton>
+      {prompt.note && <p className="k-scene-note">{prompt.note}</p>}
+    </>
+  );
+}
+
+const BP_PHASES = {
+  starting: { banner: null, big: 'Starting the monitor…', sub: 'Keep your arm relaxed on the shelf.', badge: 'STARTING' },
+  pumping: {
+    banner: 'The cuff is tightening — this is normal',
+    big: 'Keep still and don’t talk',
+    sub: 'It may feel tight for a moment. It loosens by itself.',
+  },
+  measuring: {
+    banner: 'Measuring — keep still, don’t talk',
+    big: 'Almost there',
+    sub: 'The cuff is slowly loosening. This usually takes about 40 to 70 seconds.',
+  },
+  checking: {
+    banner: 'Getting your result…',
+    big: 'Getting your result…',
+    sub: 'You can relax your arm. Keep the cuff on for a moment.',
+  },
+};
+
+/** BP, measuring: follows the agent's bp_phase (pumping -> measuring -> checking) and its seconds. */
+function BpRunning({ run }) {
+  const started = run.tick?.elapsed != null;
+  const phase = started ? (BP_PHASES[run.tick.bpPhase] ? run.tick.bpPhase : 'measuring') : 'starting';
+  const p = BP_PHASES[phase];
+  return (
+    <>
+      <Spacer />
+      <ScenePanel
+        badge={p.badge || 'MEASURING · BLOOD PRESSURE'}
+        banner={p.banner ? { tone: 'accent', text: p.banner } : null}
+        scene={<BpScene mode={phase} elapsed={started ? run.tick.elapsed : null} />}
+        big={p.big}
+        sub={p.sub}
+      />
+      <Spacer />
+    </>
   );
 }

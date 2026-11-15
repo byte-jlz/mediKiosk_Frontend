@@ -60,12 +60,12 @@ export const KIOSK_STEPS = [
     icon: 'bp',
     color: 'bp',
     description:
-      'The blood pressure cuff will measure your blood pressure and heart rate at the same time. Please remain still throughout the measurement.',
-    duration: 'Takes up to 100 seconds',
+      'The cuff on the shelf next to the screen measures your blood pressure and heart rate at the same time. Please remain still and don’t talk during the measurement.',
+    duration: 'Usually 40 to 70 seconds',
     tips: [
-      'Stand comfortably and keep your body relaxed.',
-      'Slide your arm into the cuff with your palm facing upward.',
-      'Keep your arm supported at heart level and remain still until the measurement is complete.',
+      'Wrap the cuff around your right upper arm, just above the elbow.',
+      'Close it snugly — one finger should fit under it.',
+      'Rest your arm on the shelf, palm up, at heart level, and keep still until it’s done.',
     ],
     timerSeconds: 100, // the agent's timeout (bp_auto.TIMEOUT) - only used for the ring
     countUp: true, // show the agent's elapsed seconds, not a countdown
@@ -155,10 +155,11 @@ export const CONFIRM_PROMPTS = {
     autoNote: 'Starts automatically · tap only if it doesn’t start',
   },
   cuff_on: {
-    text: 'Slide your arm into the cuff with your palm facing upward.',
-    sub: 'Keep your arm supported at heart level. The cuff inflates by itself when you tap the button.',
-    pill: 'Measuring takes up to 100 seconds', // bp_auto.TIMEOUT
-    button: 'My arm is in the cuff',
+    // the patient wraps the cuff themselves (right arm, shelf on the right of the console)
+    text: 'Wrap the cuff around your right upper arm, just above the elbow.',
+    sub: 'Close it snugly — one finger should fit under it. Then rest your arm on the shelf, palm up, at heart level.',
+    button: 'The cuff is on',
+    note: 'The cuff inflates by itself after you tap.',
   },
   forehead: {
     // (the agent still calls this step "forehead" - only the wording changed to the wrist)

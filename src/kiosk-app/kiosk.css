@@ -1985,3 +1985,100 @@
 .k-panel--finger.k-panel--tone-red .k-fscene {
   max-height: 340px;
 }
+
+/* ============================================================
+   Blood pressure picture (wizard/BpScene.jsx)
+   ============================================================ */
+.k-bpscene {
+  --tone: var(--k-bp);
+  --tone-ink: var(--k-bp-ink);
+  display: block;
+  width: 100%;
+  max-height: 400px;
+  margin: 10px auto 0;
+  font-family: var(--k-font);
+}
+.k-bpscene--green { --tone: #1d9e75; --tone-ink: #0f6e56; }
+.k-bpscene--orange { --tone: #c2410c; --tone-ink: #9a3412; }
+.k-bpscene--red { --tone: #b42318; --tone-ink: #7a1a12; }
+
+.k-bpscene__wood { fill: #b07a4f; }
+.k-bpscene__bezel { fill: #2b3d44; }
+.k-bpscene__screen { fill: #fdf6f8; }
+.k-bpscene__pad { fill: #d6e0e4; }
+.k-bpscene__title { font-size: 11px; font-weight: 700; fill: var(--k-bp-ink); }
+.k-bpscene__num { fill: var(--k-bp); }
+.k-bpscene__numtext { font-size: 13px; font-weight: 700; fill: #ffffff; }
+.k-bpscene__msg { font-size: 12px; font-weight: 700; fill: var(--tone-ink); }
+.k-bpscene__small { font-size: 10px; fill: var(--k-muted); }
+.k-bpscene__secs { font-size: 20px; font-weight: 700; fill: var(--k-bp-ink); }
+.k-bpscene__track { fill: none; stroke: #f3d3de; stroke-width: 5; }
+.k-bpscene__spin {
+  fill: none;
+  stroke: var(--k-bp);
+  stroke-width: 5;
+  stroke-linecap: round;
+  transform-origin: 59px 88px;
+  animation: k-spin 1s linear infinite;
+}
+.k-bpscene__up { fill: none; stroke: var(--k-bp); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; animation: k-bp-up 1.2s ease-in-out infinite; }
+@keyframes k-bp-up { 50% { transform: translateY(-4px); } }
+.k-bpscene__heart { fill: var(--k-bp); transform-box: fill-box; transform-origin: center; animation: k-bp-beat 1s ease-in-out infinite; }
+@keyframes k-bp-beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.14); } 30% { transform: scale(1); } }
+.k-bpscene__dots circle { fill: var(--k-bp); animation: k-bp-dot 0.9s steps(1, end) infinite; opacity: 0.3; }
+.k-bpscene__dots circle:nth-child(2) { animation-delay: 0.3s; }
+.k-bpscene__dots circle:nth-child(3) { animation-delay: 0.6s; }
+@keyframes k-bp-dot { 0% { opacity: 1; } 33% { opacity: 0.3; } }
+.k-bpscene__ok { font-size: 11px; font-weight: 700; fill: #0f6e56; }
+.k-bpscene__val { font-size: 24px; font-weight: 700; fill: #0f6e56; }
+.k-bpscene__val--sm { font-size: 18px; }
+.k-bpscene__unit { font-size: 10px; font-weight: 500; fill: var(--k-muted); }
+.k-bpscene__bar { stroke: #0f6e56; stroke-width: 2; }
+.k-bpscene__warn { fill: #c2410c; }
+.k-bpscene__err { fill: #b42318; }
+.k-bpscene__bang { font-size: 22px; font-weight: 700; fill: #ffffff; }
+
+.k-bpscene__shelf { fill: #c99a6e; }
+.k-bpscene__shelfedge { fill: #8e5f3a; }
+.k-bpscene__cuffcloth { fill: #b4475a; }
+.k-bpscene__velcro { fill: #7a2a3a; }
+.k-bpscene__armline { stroke: #2b3d44; stroke-width: 22; stroke-linecap: round; }
+.k-bpscene__sleeve { stroke: #566a72; stroke-width: 28; stroke-linecap: round; }
+.k-bpscene__palm { fill: #8a9aa1; }
+.k-bpscene__okdot { fill: #1d9e75; }
+.k-bpscene__tick { fill: none; stroke: #ffffff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.k-bpscene__cuff { transform-box: fill-box; transform-origin: center; }
+.k-bpscene--pumping .k-bpscene__cuff { animation: k-bp-swell 3s ease-in infinite; }
+.k-bpscene--measuring .k-bpscene__cuff { animation: k-bp-shrink 6s linear infinite; }
+@keyframes k-bp-swell { from { transform: scale(1); } to { transform: scale(1.14); } }
+@keyframes k-bp-shrink { from { transform: scale(1.14); } to { transform: scale(1); } }
+.k-bpscene__ring {
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: k-fscene-ring 1.6s ease-in-out infinite;
+}
+.k-bpscene--pumping .k-bpscene__ring,
+.k-bpscene--measuring .k-bpscene__ring,
+.k-bpscene--checking .k-bpscene__ring,
+.k-bpscene--starting .k-bpscene__ring { opacity: 0.4; }
+
+.k-bpscene__side { fill: #ffffff; stroke: #efc7d4; stroke-width: 1.5; }
+.k-bpscene__sidetitle { font-size: 11px; fill: var(--k-bp-ink); }
+.k-bpscene__skin { fill: #2b3d44; }
+.k-bpscene__body { fill: #566a72; }
+.k-bpscene__sidearm { fill: none; stroke: #2b3d44; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.k-bpscene__sideshelf { stroke: #c99a6e; stroke-width: 5; }
+.k-bpscene__sideheart { fill: #d64545; }
+.k-bpscene__level { stroke: #0f6e56; stroke-width: 1.2; stroke-dasharray: 2 2; }
+.k-bpscene__hint { font-size: 10px; font-weight: 700; fill: #0f6e56; }
+
+/* neutral banner in the step's own colour (BP pink) */
+.k-banner--accent { background: var(--accent); }
+.k-panel--finger.k-panel--tone-red .k-bpscene { max-height: 340px; }
+/* BP screens carry longer instructions - keep everything inside the card */
+.k-panel--finger .k-bpscene { max-height: 350px; }
+.k-panel--finger.k-panel--tone-orange .k-bpscene,
+.k-panel--finger.k-panel--tone-red .k-bpscene { max-height: 320px; }
