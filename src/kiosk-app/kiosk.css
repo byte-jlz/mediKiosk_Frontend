@@ -2358,3 +2358,67 @@
   color: var(--k-temp-ink);
   text-align: left;
 }
+
+/* ---- Staff shutdown panel (hold the start-screen clock 5 s - StaffShutdown.jsx) ---- */
+.k-start__clock {
+  touch-action: none; /* a long press must not scroll, select text or open a menu */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.k-staff .k-dialog__box {
+  padding: 48px 56px 48px;
+}
+
+.k-staff__dots {
+  display: flex;
+  gap: 32px;
+  margin-top: 36px;
+}
+
+.k-staff__dot {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--k-heading);
+  border-radius: 50%;
+}
+
+.k-staff__dot.is-filled {
+  background: var(--k-heading);
+}
+
+.k-staff__error {
+  min-height: 40px;
+  margin: 20px 0 0;
+  font: 600 28px var(--k-font);
+  color: var(--k-error);
+}
+
+.k-staff__pad {
+  display: grid;
+  grid-template-columns: repeat(3, 170px);
+  gap: 22px;
+  margin: 20px 0 36px;
+}
+
+.k-staff__key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 116px;
+  border: 2px solid var(--k-line);
+  border-radius: 32px;
+  background: var(--k-tint);
+  color: var(--k-heading);
+  font: 700 52px var(--k-font);
+  cursor: pointer;
+}
+
+.k-staff__key:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.k-staff__key:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

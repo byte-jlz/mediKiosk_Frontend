@@ -13,6 +13,7 @@
 //   medikiosk/<KIOSK_ID>/edge/assessment <- the edge service: a patient's check-in was saved
 //                                (status saved / incomplete / rejected - NEVER the risk tier)
 //   medikiosk/<KIOSK_ID>/qr/preview <- JPEG preview of the QR cam (raw bytes)
+//   medikiosk/<KIOSK_ID>/system  <- answers to staff commands (shutdown)
 //
 // The QR cam is opened by the AGENT (by its USB port), not by the browser:
 // the BP cam is the same webcam model, so the browser can't tell them apart.
@@ -49,6 +50,7 @@ class KioskAgentConnection {
     this.previewListeners = new Set(); // (Uint8Array jpeg) => void
     this.assessments = new Map(); // session id -> last edge/assessment message
     this.assessmentListeners = new Set();
+    this.systemListeners = new Map(); // staff command id -> (msg) => void
     this.status = null; // last agent status message
     this.connected = false;
   }
@@ -72,6 +74,10 @@ class KioskAgentConnection {
     }
     if (kind === 'qr') {
       this.qrListeners.get(msg.id)?.(msg);
+      return;
+    }
+    if (kind === 'system') {
+      this.systemListeners.get(msg.id)?.(msg);
       return;
     }
     if (kind === 'status') {
@@ -161,8 +167,24 @@ class KioskAgentConnection {
     };
   }
 
+  /**
+   * Staff only: ask the agent to turn the Pi off. The AGENT checks the PIN
+   * (the page never knows it) and refuses while a scan is running.
+   *   onReply  called with every `system` answer for this request:
+   *            { ok: true, message: 'shutting down' | 'simulated' } or { ok: false, message }
+   *            (an ok can be followed by { ok: false } if the Pi refused to shut down)
+   * Returns stop() - call it when the panel closes.
+   */
+  shutdown(pin, onReply) {
+    const id = newId();
+    this.systemListeners.set(id, onReply);
+    this._send({ action: 'shutdown', id, pin });
+    return () => this.systemListeners.delete(id);
+  }
+
   close() {
     this.listeners.clear();
+    this.systemListeners.clear();
     this.qrListeners.clear();
     this.previewListeners.clear();
     this.statusListeners.clear();
@@ -182,7 +204,7 @@ export async function connectKioskAgent({ onConnectionChange } = {}) {
   const conn = new KioskAgentConnection(client);
   client.on('connect', () => {
     conn.connected = true;
-    client.subscribe([`${BASE}/state`, `${BASE}/result`, `${BASE}/status`, `${BASE}/qr`, `${BASE}/edge/assessment`], {
+    client.subscribe([`${BASE}/state`, `${BASE}/result`, `${BASE}/status`, `${BASE}/qr`, `${BASE}/edge/assessment`, `${BASE}/system`], {
       qos: 1,
     });
     client.subscribe(`${BASE}/qr/preview`, { qos: 0 });
