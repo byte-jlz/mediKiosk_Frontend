@@ -2422,3 +2422,12 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* Welcome screen: the same date + time row as the start screen (StaffClock.jsx) */
+.k-card--welcome {
+  padding-top: 64px; /* same as the start card, so the clock sits at the same height */
+}
+
+.k-card--welcome .k-start__clock {
+  margin-bottom: 32px;
+}

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
 import KioskShell from './KioskShell';
+import IdleAttract from './IdleAttract';
+import StaffClock from './StaffClock';
 import Icon from './ui/Icon';
 import { Footer, KioskCard, Logo } from './ui/KioskUI';
 import { clearPatientSession } from '../services/authService';
@@ -13,9 +15,14 @@ const APP_DOWNLOAD_URL =
   import.meta.env.VITE_APP_DOWNLOAD_URL ||
   'https://expo.dev/artifacts/eas/4IY_FucWXEtwGTAofht6SWGXb5CCXW4otJKfoQVJKLY.apk';
 
+// After this long with no touch on the welcome screen, the intro video starts.
+// (Longer than the start screen's 10 s: people may be scanning the app QR with their phone.)
+const ATTRACT_AFTER_MS = 20000;
+
 export default function WelcomeScreen() {
   const navigate = useNavigate();
   const [appQr, setAppQr] = useState('');
+  const [staffOpen, setStaffOpen] = useState(false);
   useLang(); // re-render when a language button is tapped
 
   useEffect(() => {
@@ -33,6 +40,8 @@ export default function WelcomeScreen() {
   return (
     <KioskShell>
       <KioskCard variant="welcome">
+        {/* date + time like the start screen; hold it 5 s = staff shutdown panel */}
+        <StaffClock onOpenChange={setStaffOpen} />
         <Logo width={440} />
         <h1 className={`k-welcome__title${t('Welcome').length > 12 ? ' k-welcome__title--long' : ''}`}>{t('Welcome')}</h1>
         <p className="k-welcome__subtitle">
@@ -78,6 +87,8 @@ export default function WelcomeScreen() {
 
         <Footer />
       </KioskCard>
+      {/* not while the staff panel is open */}
+      <IdleAttract afterMs={ATTRACT_AFTER_MS} paused={staffOpen} />
     </KioskShell>
   );
 }
