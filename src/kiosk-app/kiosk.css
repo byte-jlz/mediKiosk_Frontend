@@ -5,6 +5,7 @@
    ============================================================ */
 
 /* ---------- frame ---------- */
+/* Nov 2026: all text sizes in this file were raised by 15% for readability at the kiosk. */
 .k-outer {
   min-height: 100vh;
   display: flex;
@@ -41,32 +42,28 @@
 /* ---------- the card ---------- */
 .k-card {
   position: absolute;
-  left: 100px;
-  width: 880px;
+  top: 32px; /* Nov 2026: narrow 32px margin on every screen (was 100px, looked like a phone app) */
+  left: 32px;
+  width: 1016px; /* 1080 - 32 - 32 */
+  height: 1856px; /* 1920 - 32 - 32 */
   display: flex;
   flex-direction: column;
-  border-radius: 64px;
+  border-radius: 28px;
   background: var(--k-card);
-  box-shadow: 0 30px 90px rgba(25, 95, 105, 0.14);
+  box-shadow: 0 12px 40px rgba(25, 95, 105, 0.1);
   animation: k-card-in 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .k-card--flow {
-  top: 120px;
-  height: 1680px;
   padding: 64px 72px 56px;
 }
 
 .k-card--start {
-  top: 300px;
-  height: 1320px;
   padding: 64px 74px 60px;
   align-items: center;
 }
 
 .k-card--welcome {
-  top: 90px;
-  height: 1740px; /* Nov 2026: taller for the language buttons */
   padding: 80px 72px 52px;
   align-items: center;
 }
@@ -146,7 +143,7 @@
   border: 2px solid var(--k-line);
   background: #fff;
   color: var(--k-heading);
-  font: 600 25px var(--k-font);
+  font: 600 29px var(--k-font);
 }
 
 .k-chip--name {
@@ -181,13 +178,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font: 600 28px var(--k-font);
+  font: 600 32px var(--k-font);
   color: var(--k-muted);
 }
 
 .k-footer__version {
   font-weight: 500;
-  font-size: 26px;
+  font-size: 30px;
 }
 
 /* Language switcher (Nov 2026): English / Tagalog / Bisaya, on the start + welcome screens */
@@ -208,7 +205,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font: 700 28px var(--k-font);
+  font: 700 32px var(--k-font);
   color: var(--k-heading);
 }
 
@@ -224,7 +221,7 @@
   border: 3px solid var(--k-primary);
   background: #fff;
   color: var(--k-primary);
-  font: 700 32px var(--k-font);
+  font: 700 37px var(--k-font);
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease, transform 120ms ease;
 }
@@ -261,33 +258,33 @@
 /* ---------- type ---------- */
 .k-h1 {
   margin: 0;
-  font: 800 64px/1.1 var(--k-font);
+  font: 800 74px/1.1 var(--k-font);
   letter-spacing: -0.01em;
   color: var(--k-heading);
 }
 
 .k-h1--xl {
-  font-size: 72px;
+  font-size: 83px;
 }
 
 .k-h1--step {
-  font-size: 56px;
+  font-size: 64px;
   color: var(--ink);
 }
 
 .k-h1--results {
-  font-size: 54px;
+  font-size: 62px;
 }
 
 .k-lead {
   margin: 16px 0 0;
-  font: 400 32px/1.45 var(--k-font);
+  font: 400 37px/1.45 var(--k-font);
   color: var(--k-muted);
 }
 
 .k-body {
   margin: 32px 0 0;
-  font: 400 31px/1.45 var(--k-font);
+  font: 400 36px/1.45 var(--k-font);
   color: var(--k-text);
 }
 
@@ -295,7 +292,7 @@
   margin: 22px 0 0;
   min-height: 34px;
   text-align: center;
-  font: 500 25px var(--k-font);
+  font: 500 29px var(--k-font);
   color: var(--k-muted);
 }
 
@@ -317,7 +314,7 @@
   border: none;
   background: var(--accent);
   color: #fff;
-  font: 700 42px var(--k-font);
+  font: 700 48px var(--k-font);
   box-shadow: 0 18px 40px rgba(30, 60, 70, 0.22);
 }
 
@@ -327,7 +324,7 @@
   border: 2px solid var(--accent);
   background: #fff;
   color: var(--accent);
-  font: 600 34px var(--k-font);
+  font: 600 39px var(--k-font);
 }
 
 .k-btn:active:not(:disabled) {
@@ -354,7 +351,7 @@
   background: #fff;
   border: 2px solid var(--k-line);
   color: var(--k-muted);
-  font: 600 24px var(--k-font);
+  font: 600 28px var(--k-font);
   flex-shrink: 0;
 }
 
@@ -364,7 +361,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  font: 500 25px var(--k-font);
+  font: 500 29px var(--k-font);
   color: var(--k-muted);
   flex-shrink: 0;
 }
@@ -405,7 +402,7 @@
   display: flex;
   gap: 24px;
   align-items: flex-start;
-  font: 400 29px/1.4 var(--k-font);
+  font: 400 33px/1.4 var(--k-font);
   color: var(--k-text);
 }
 
@@ -423,7 +420,7 @@
   justify-content: center;
   background: #fff;
   border: 2px solid var(--k-line);
-  font: 700 24px var(--k-font);
+  font: 700 28px var(--k-font);
   color: var(--accent);
 }
 
@@ -436,7 +433,7 @@
   border-radius: 26px;
   background: #fff;
   color: var(--accent);
-  font: 700 22px var(--k-font);
+  font: 700 25px var(--k-font);
   letter-spacing: 0.08em;
 }
 
@@ -456,7 +453,7 @@
   border-radius: 22px;
   background: #fff;
   border: 2px solid var(--k-line);
-  font: 600 21px var(--k-font);
+  font: 600 24px var(--k-font);
   font-style: normal;
   color: var(--k-muted);
 }
@@ -499,13 +496,13 @@
 
 .k-callout strong {
   display: block;
-  font: 700 28px/1.35 var(--k-font);
+  font: 700 32px/1.35 var(--k-font);
   color: var(--k-heading);
 }
 
 .k-callout p {
   margin: 8px 0 0;
-  font: 400 26px/1.45 var(--k-font);
+  font: 400 30px/1.45 var(--k-font);
   color: var(--k-text);
 }
 
@@ -549,13 +546,13 @@
 }
 
 .k-callout--error strong {
-  font-size: 38px;
+  font-size: 44px;
   line-height: 1.25;
   color: var(--k-error-ink);
 }
 
 .k-callout--error p {
-  font-size: 29px;
+  font-size: 33px;
   color: #5c2a24;
 }
 
@@ -567,11 +564,11 @@
 }
 
 .k-callout--top strong {
-  font-size: 28px;
+  font-size: 32px;
 }
 
 .k-callout--top p {
-  font-size: 24px;
+  font-size: 28px;
 }
 
 .k-callout--step {
@@ -584,18 +581,18 @@
 }
 
 .k-callout--step strong {
-  font-size: 36px;
+  font-size: 41px;
   line-height: 1.25;
   color: var(--ink);
 }
 
 .k-callout--step p {
-  font-size: 29px;
+  font-size: 33px;
 }
 
 .k-callout__muted {
   font-weight: 600 !important;
-  font-size: 26px !important;
+  font-size: 30px !important;
   color: var(--k-muted) !important;
 }
 
@@ -606,7 +603,7 @@
   justify-content: center;
   gap: 12px;
   text-align: center;
-  font: 600 27px/1.4 var(--k-font);
+  font: 600 31px/1.4 var(--k-font);
   color: var(--k-error);
 }
 
@@ -615,7 +612,7 @@
   display: flex;
   justify-content: space-between;
   width: 100%;
-  font: 600 28px var(--k-font);
+  font: 600 32px var(--k-font);
   color: var(--k-muted);
 }
 
@@ -631,7 +628,7 @@
   border-radius: 85px;
   background: var(--k-primary);
   color: #fff;
-  font: 700 60px var(--k-font);
+  font: 700 69px var(--k-font);
   box-shadow: 0 18px 40px rgba(23, 114, 127, 0.28);
   cursor: pointer;
   transition: transform 120ms ease, box-shadow 120ms ease;
@@ -645,7 +642,7 @@
 
 .k-start__hint {
   margin: 40px 0 0;
-  font: 400 32px var(--k-font);
+  font: 400 37px var(--k-font);
   color: var(--k-text);
 }
 
@@ -679,7 +676,7 @@
 
 .k-dodont__label {
   margin: 0 0 12px;
-  font: 800 30px var(--k-font);
+  font: 800 34px var(--k-font);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -707,7 +704,7 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  font: 600 38px/1.25 var(--k-font);
+  font: 600 44px/1.25 var(--k-font);
   color: var(--k-text);
 }
 
@@ -746,7 +743,7 @@
   justify-content: space-between;
   padding: 0 70px;
   border-bottom: 2px solid var(--k-line);
-  font: 600 32px var(--k-font);
+  font: 600 37px var(--k-font);
   color: var(--k-muted);
   pointer-events: none;
 }
@@ -766,7 +763,7 @@
   border-radius: 999px;
   background: var(--k-primary);
   color: #fff;
-  font: 700 44px var(--k-font);
+  font: 700 51px var(--k-font);
   box-shadow: 0 14px 34px rgba(23, 114, 127, 0.28);
   animation: k-breathe 3.2s ease-in-out infinite;
 }
@@ -790,21 +787,21 @@
 /* ---------- Welcome ---------- */
 .k-welcome__title {
   margin: 64px 0 0;
-  font: 800 104px/1 var(--k-font);
+  font: 800 120px/1 var(--k-font);
   letter-spacing: -0.02em;
   color: var(--k-heading);
 }
 
 /* a long "Welcome" (Tagalog / Bisaya) fits on one line */
 .k-welcome__title--long {
-  font-size: 80px;
+  font-size: 92px;
   margin-top: 48px;
 }
 
 .k-welcome__subtitle {
   margin: 32px 0 0;
   text-align: center;
-  font: 400 32px/1.5 var(--k-font);
+  font: 400 37px/1.5 var(--k-font);
   color: var(--k-text);
 }
 
@@ -839,11 +836,11 @@
 }
 
 .k-option strong {
-  font: 700 44px var(--k-font);
+  font: 700 51px var(--k-font);
 }
 
 .k-option small {
-  font: 500 27px var(--k-font);
+  font: 500 31px var(--k-font);
   color: var(--k-muted);
 }
 
@@ -893,13 +890,13 @@
 
 .k-welcome__app-title {
   margin: 0;
-  font: 700 36px var(--k-font);
+  font: 700 41px var(--k-font);
   color: var(--k-heading);
 }
 
 .k-welcome__app-text {
   margin: 14px 0 0;
-  font: 400 27px/1.5 var(--k-font);
+  font: 400 31px/1.5 var(--k-font);
   color: var(--k-text);
 }
 
@@ -979,19 +976,19 @@
 }
 
 .k-readings-list strong {
-  font: 700 31px var(--k-font);
+  font: 700 36px var(--k-font);
   color: var(--ink);
 }
 
 .k-readings-list__text span {
-  font: 500 25px var(--k-font);
+  font: 500 29px var(--k-font);
   color: var(--k-muted);
 }
 
 .k-readings-list__num {
   width: 44px;
   text-align: center;
-  font: 700 26px var(--k-font) !important;
+  font: 700 30px var(--k-font) !important;
 }
 
 .k-readings-list--compact {
@@ -1001,11 +998,11 @@
 }
 
 .k-readings-list--compact strong {
-  font-size: 28px;
+  font-size: 32px;
 }
 
 .k-readings-list--compact span {
-  font-size: 24px;
+  font-size: 28px;
 }
 
 /* ---------- QR camera ---------- */
@@ -1092,7 +1089,7 @@
   border-radius: 28px;
   background: rgba(10, 40, 45, 0.55);
   color: #e9f7f9;
-  font: 600 22px/1.3 var(--k-font);
+  font: 600 25px/1.3 var(--k-font);
   text-align: center;
 }
 
@@ -1126,7 +1123,7 @@
   align-items: center;
   gap: 24px;
   margin-top: 56px;
-  font: 600 24px var(--k-font);
+  font: 600 28px var(--k-font);
   color: var(--k-muted);
 }
 
@@ -1152,7 +1149,7 @@
   border-radius: 56px;
   border: 2px solid var(--k-line);
   background: #fff;
-  font: 500 32px var(--k-font);
+  font: 500 37px var(--k-font);
   color: var(--k-text);
   outline: none;
 }
@@ -1168,7 +1165,7 @@
   border: none;
   background: var(--k-primary);
   color: #fff;
-  font: 700 34px var(--k-font);
+  font: 700 39px var(--k-font);
   cursor: pointer;
 }
 
@@ -1189,18 +1186,18 @@
 }
 
 .k-progress__count {
-  font: 600 24px var(--k-font);
+  font: 600 28px var(--k-font);
   color: var(--k-muted);
 }
 
 .k-progress__percent {
-  font: 600 22px var(--k-font);
+  font: 600 25px var(--k-font);
   color: var(--k-muted);
 }
 
 .k-progress__percent strong {
   margin-right: 8px;
-  font: 800 44px/1 var(--k-font);
+  font: 800 51px/1 var(--k-font);
   color: var(--accent);
   transition: color 300ms ease;
 }
@@ -1241,12 +1238,12 @@
   border: 2px solid var(--k-line);
   background: #fff;
   color: var(--k-muted);
-  font: 600 26px var(--k-font);
+  font: 600 30px var(--k-font);
   transition: background 300ms ease, border-color 300ms ease, color 300ms ease;
 }
 
 .k-progress__label {
-  font: 500 20px/1.25 var(--k-font);
+  font: 500 23px/1.25 var(--k-font);
   color: var(--k-muted);
   text-align: center;
 }
@@ -1278,7 +1275,7 @@
 .k-progress__step.is-skipped .k-progress__dot {
   border: 2px dashed var(--k-muted);
   font-weight: 700;
-  font-size: 30px;
+  font-size: 34px;
 }
 
 .k-progress__line {
@@ -1334,7 +1331,7 @@
 
 .k-panel__title {
   margin: 28px 0 0;
-  font: 700 36px var(--k-font);
+  font: 700 41px var(--k-font);
   color: var(--ink);
 }
 
@@ -1350,13 +1347,13 @@
 
 .k-panel__big {
   margin: 32px 0 0;
-  font: 700 42px/1.3 var(--k-font);
+  font: 700 48px/1.3 var(--k-font);
   color: var(--ink);
 }
 
 .k-panel__sub {
   margin: 22px 0 0;
-  font: 400 29px/1.45 var(--k-font);
+  font: 400 33px/1.45 var(--k-font);
   color: var(--k-muted);
 }
 
@@ -1399,14 +1396,14 @@
 }
 
 .k-ring__center strong {
-  font: 800 128px/1 var(--k-font);
+  font: 800 147px/1 var(--k-font);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
 .k-ring__center span {
   margin-top: 12px;
-  font: 600 28px var(--k-font);
+  font: 600 32px var(--k-font);
   color: var(--k-muted);
 }
 
@@ -1420,13 +1417,13 @@
 
 .k-measuring__title {
   margin: 0;
-  font: 700 44px/1.3 var(--k-font);
+  font: 700 51px/1.3 var(--k-font);
   color: var(--ink);
 }
 
 .k-measuring__hint {
   margin: 16px 0 0;
-  font: 400 31px/1.45 var(--k-font);
+  font: 400 36px/1.45 var(--k-font);
   color: var(--k-muted);
 }
 
@@ -1461,30 +1458,30 @@
 }
 
 .k-bmi__label strong {
-  font: 700 32px var(--k-font);
+  font: 700 37px var(--k-font);
   color: var(--ink);
 }
 
 .k-bmi__label span {
-  font: 600 24px var(--k-font);
+  font: 600 28px var(--k-font);
   color: var(--accent);
 }
 
 .k-bmi__value {
   margin: 0;
-  font: 800 64px/1 var(--k-font);
+  font: 800 74px/1 var(--k-font);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
 .k-bmi__value span {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 600;
   color: var(--k-muted);
 }
 
 .k-bmi__value--muted {
-  font-size: 36px;
+  font-size: 41px;
   font-weight: 700;
   color: var(--k-muted);
 }
@@ -1521,12 +1518,12 @@
   align-items: center;
   gap: 12px;
   color: var(--accent);
-  font: 700 26px var(--k-font);
+  font: 700 30px var(--k-font);
 }
 
 .k-reading__value {
   margin: 26px 0 0;
-  font: 800 140px/1 var(--k-font);
+  font: 800 161px/1 var(--k-font);
   letter-spacing: -0.02em;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
@@ -1534,19 +1531,19 @@
 }
 
 .k-reading__value--long {
-  font-size: 112px;
+  font-size: 129px;
   white-space: nowrap;
 }
 
 .k-reading__value span {
-  font-size: 56px;
+  font-size: 64px;
   font-weight: 600;
   color: var(--k-muted);
 }
 
 .k-reading__label {
   margin: 20px 0 0;
-  font: 600 26px var(--k-font);
+  font: 600 30px var(--k-font);
   letter-spacing: 0.1em;
   color: var(--k-muted);
 }
@@ -1567,7 +1564,7 @@
 
 .k-reading__extra p {
   margin: 0;
-  font: 600 24px var(--k-font);
+  font: 600 28px var(--k-font);
   letter-spacing: 0.08em;
   color: var(--k-muted);
 }
@@ -1575,12 +1572,12 @@
 .k-reading__extra strong {
   display: block;
   margin-top: 14px;
-  font: 800 60px/1 var(--k-font);
+  font: 800 69px/1 var(--k-font);
   color: var(--ink);
 }
 
 .k-reading__extra strong span {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 600;
   color: var(--k-muted);
 }
@@ -1588,7 +1585,7 @@
 .k-after {
   margin: 40px 0 0;
   text-align: center;
-  font: 400 31px var(--k-font);
+  font: 400 36px var(--k-font);
   color: var(--k-muted);
 }
 
@@ -1622,7 +1619,7 @@
 
 .k-results__sub {
   margin: 12px 0 0;
-  font: 400 27px/1.4 var(--k-font);
+  font: 400 31px/1.4 var(--k-font);
   color: var(--k-muted);
 }
 
@@ -1647,7 +1644,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  font: 600 24px var(--k-font);
+  font: 600 28px var(--k-font);
   color: var(--k-muted);
 }
 
@@ -1665,20 +1662,20 @@
 
 .k-result__value {
   margin: 22px 0 0;
-  font: 800 54px/1 var(--k-font);
+  font: 800 62px/1 var(--k-font);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
 .k-result__value span {
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 600;
   color: var(--k-muted);
 }
 
 .k-result__sub {
   margin: 10px 0 0;
-  font: 500 22px var(--k-font);
+  font: 500 25px var(--k-font);
   color: var(--k-muted);
 }
 
@@ -1691,7 +1688,7 @@
   padding: 0 20px;
   border-radius: 27px;
   border: 2px dashed var(--k-muted);
-  font: 600 26px var(--k-font);
+  font: 600 30px var(--k-font);
   color: var(--k-muted);
 }
 
@@ -1802,7 +1799,7 @@
 }
 
 .k-callout--compact p {
-  font-size: 25px;
+  font-size: 29px;
 }
 
 /* ---------- "Leave this check-in?" popup ---------- */
@@ -1845,19 +1842,19 @@
 
 .k-dialog__title {
   margin: 32px 0 0;
-  font: 800 56px var(--k-font);
+  font: 800 64px var(--k-font);
   color: var(--k-heading);
 }
 
 .k-dialog__text {
   margin: 20px 0 0;
-  font: 500 32px/1.45 var(--k-font);
+  font: 500 37px/1.45 var(--k-font);
   color: var(--k-text, #35525a);
 }
 
 .k-dialog__muted {
   margin: 20px 0 40px;
-  font: 500 27px var(--k-font);
+  font: 500 31px var(--k-font);
   color: var(--k-muted);
 }
 
@@ -1884,7 +1881,7 @@
 /* Intro screen: slightly larger type so the content fills the card instead of leaving a gap above the button. */
 .k-body--lg {
   margin-top: 36px;
-  font-size: 32px;
+  font-size: 37px;
 }
 
 .k-step .k-pill {
@@ -1892,7 +1889,7 @@
   height: auto;
   min-height: 60px;
   padding: 8px 28px;
-  font-size: 24px;
+  font-size: 28px;
 }
 
 .k-steps-list--lg {
@@ -1902,7 +1899,7 @@
 }
 
 .k-steps-list--lg li {
-  font-size: 30px;
+  font-size: 34px;
   gap: 26px;
 }
 
@@ -1910,7 +1907,7 @@
   width: 54px;
   height: 54px;
   border-radius: 27px;
-  font-size: 26px;
+  font-size: 30px;
 }
 
 .k-steps-list--lg li > span:last-child {
@@ -2011,7 +2008,7 @@
 .k-scene-note {
   margin: 18px 0 0;
   text-align: center;
-  font: 400 24px/1.4 var(--k-font);
+  font: 400 28px/1.4 var(--k-font);
   color: var(--k-muted);
 }
 
@@ -2100,7 +2097,7 @@
   margin: 22px 0 0;
   padding: 22px 26px;
   border-radius: 22px;
-  font: 700 34px/1.25 var(--k-font);
+  font: 700 39px/1.25 var(--k-font);
   color: #ffffff;
   text-align: center;
 }
@@ -2170,7 +2167,7 @@
 .k-panel--finger .k-banner {
   margin-top: 16px;
   padding: 16px 22px;
-  font-size: 30px;
+  font-size: 34px;
 }
 .k-panel--finger .k-panel__big {
   margin-top: 12px;
@@ -2354,7 +2351,7 @@
   border: 3px dashed var(--k-temp);
   border-radius: 20px;
   background: #ffffff;
-  font: 400 24px/1.35 var(--k-font);
+  font: 400 28px/1.35 var(--k-font);
   color: var(--k-temp-ink);
   text-align: left;
 }
@@ -2390,7 +2387,7 @@
 .k-staff__error {
   min-height: 40px;
   margin: 20px 0 0;
-  font: 600 28px var(--k-font);
+  font: 600 32px var(--k-font);
   color: var(--k-error);
 }
 
@@ -2410,7 +2407,7 @@
   border-radius: 32px;
   background: var(--k-tint);
   color: var(--k-heading);
-  font: 700 52px var(--k-font);
+  font: 700 60px var(--k-font);
   cursor: pointer;
 }
 
