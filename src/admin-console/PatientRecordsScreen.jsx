@@ -69,7 +69,7 @@ export default function PatientRecordsScreen() {
 
         {error && <p className="mk-patient-history__empty" role="alert">{error}</p>}
         <DataTable
-          searchPlaceholder="Search by name, ID or email"
+          searchPlaceholder="Search by name, ID, email or username"
           columns={columns}
           rows={patients}
           searchValue={search}

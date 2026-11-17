@@ -16,10 +16,10 @@ export default function StaffAccountsScreen() {
   const [selectedStaff, setSelectedStaff] = useState(null);
   const me = getCurrentStaff();
   const isSuper = me.accessRole === 'super_admin';
-  const blank = { name: '', email: '', clinic: '', accessRole: 'clinic_staff' };
+  const blank = { name: '', email: '', username: '', clinic: '', accessRole: 'clinic_staff' };
   const [newStaff, setNewStaff] = useState(blank);
   const [error, setError] = useState('');
-  const [secret, setSecret] = useState(null); // { name, email, password } shown once
+  const [secret, setSecret] = useState(null); // { name, email, username, password } shown once
 
   async function refresh() {
     setLoading(true);
@@ -55,10 +55,10 @@ export default function StaffAccountsScreen() {
 
   async function handleAdd(e) {
     e.preventDefault();
-    if (!newStaff.name || !newStaff.email) return;
+    if (!newStaff.name || !newStaff.email || !newStaff.username.trim()) return;
     const created = await act(() => addStaff(newStaff));
     if (!created) return;
-    setSecret({ name: created.name, email: created.email, password: created.temporaryPassword });
+    setSecret({ name: created.name, email: created.email, username: created.username, password: created.temporaryPassword });
     closeAdd();
     refresh();
   }
@@ -101,7 +101,7 @@ export default function StaffAccountsScreen() {
           <div className="mk-staff__avatar">{row.initials}</div>
           <div>
             <p className="mk-staff__name">{row.name}</p>
-            <p className="mk-staff__email">{row.email} · {row.id}</p>
+            <p className="mk-staff__email">{row.email}{row.username ? ` · @${row.username}` : ''} · {row.id}</p>
           </div>
         </div>
       ),
@@ -142,7 +142,7 @@ export default function StaffAccountsScreen() {
 
 
         <DataTable
-          searchPlaceholder="Search by name, email or ID"
+          searchPlaceholder="Search by name, email, username or ID"
           columns={columns}
           rows={staff}
           searchValue={search}
@@ -168,6 +168,12 @@ export default function StaffAccountsScreen() {
               <span>Email</span>
               <input type="email" value={newStaff.email} onChange={(e) => setNewStaff((s) => ({ ...s, email: e.target.value }))} />
             </label>
+            <label className="mk-staff__label">
+              <span>Username</span>
+              <input value={newStaff.username} autoCapitalize="none" spellCheck={false} maxLength={30} placeholder="e.g. ana.cruz"
+                onChange={(e) => setNewStaff((s) => ({ ...s, username: e.target.value }))} />
+              <small>3-30 letters, numbers, dot, dash or underscore. They can sign in with this or their email.</small>
+            </label>
             {isSuper && (
               <label className="mk-staff__label">
                 <span>Access level</span>
@@ -184,7 +190,7 @@ export default function StaffAccountsScreen() {
             {error && <p className="mk-staff__form-error" role="alert">{error}</p>}
             <div className="mk-staff__modal-actions">
               <Button type="button" variant="secondary" onClick={closeAdd}>Cancel</Button>
-              <Button type="submit" disabled={!newStaff.name || !newStaff.email}>Create account</Button>
+              <Button type="submit" disabled={!newStaff.name || !newStaff.email || !newStaff.username.trim()}>Create account</Button>
             </div>
           </form>
         </div>
@@ -198,6 +204,7 @@ export default function StaffAccountsScreen() {
             <p className="mk-staff__modal-subtitle">{selectedStaff.role} · {selectedStaff.clinic || 'No clinic set'}</p>
             <div className="mk-staff__modal-grid">
               <Field label="Email" value={selectedStaff.email} />
+              <Field label="Username" value={selectedStaff.username || '—'} />
               <Field label="ID" value={selectedStaff.id} />
               <Field label="Access level" value={selectedStaff.role} />
               <Field label="Clinic" value={selectedStaff.clinic} />
@@ -219,7 +226,7 @@ export default function StaffAccountsScreen() {
         <div className="mk-staff__modal-backdrop">
           <div className="mk-staff__modal" role="dialog" aria-label="Temporary password">
             <h2>Temporary password</h2>
-            <p className="mk-staff__modal-subtitle">For {secret.name} ({secret.email})</p>
+            <p className="mk-staff__modal-subtitle">For {secret.name} ({secret.username || secret.email})</p>
             <p className="mk-staff__secret">{secret.password}</p>
             <p className="mk-staff__modal-subtitle">
               Give this to them privately. It is shown only once, and they must choose their own password when they first sign in.

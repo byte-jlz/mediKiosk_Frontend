@@ -111,7 +111,6 @@ export function SetupStep({ setupToken, onEnabled, onBack }) {
     <form className="mk-login__form" onSubmit={handleSubmit}>
       <div className="mk-login__brand">
         <h1 className="mk-login__step-title">Set up two-step verification</h1>
-        <p className="mk-login__tagline">Staff accounts need an authenticator app (Google Authenticator, Microsoft Authenticator, Authy…).</p>
       </div>
 
       <ol className="mk-login__steps">

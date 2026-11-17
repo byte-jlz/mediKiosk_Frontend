@@ -164,6 +164,7 @@ export default function PatientDetailScreen() {
                 <Field label="Sex" value={patient.sex} />
                 <Field label="Blood Type" value={patient.bloodType} />
                 <Field label="Email" value={patient.email} />
+                <Field label="Username" value={patient.username || '—'} />
                 <Field label="Address" value={patient.address} />
                 <Field label="Created" value={patient.createdAt && formatDateTime(patient.createdAt)} />
                 <Field label="Last Visit" value={formatDate(patient.lastVisit)} />

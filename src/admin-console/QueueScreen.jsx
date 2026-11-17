@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AdminLayout from '../components/AdminLayout';
 import { AdminHeader } from '../components/Sidebar';
 import StatusBadge from '../components/StatusBadge';
@@ -6,11 +6,16 @@ import Button from '../components/Button';
 import { watchQueue } from '../services/liveService';
 import { getQueue, overrideTier, setVisitStatus } from '../services/clinicalService';
 import Icon from '../components/Icon';
-import { REVIEW_TEXT, TIER_ORDER, VITALS, alertsFor, cellStates, describeFlag, tierRank } from './vitalsDisplay';
+import {
+  CONFIDENCE_CUTOFF, REVIEW_TEXT, TIER_ORDER, VITALS, alertsFor, cellStates, confidenceOf, describeFlag,
+  formatSex, isUnsure, tierPercents, tierRank,
+} from './vitalsDisplay';
 import './QueueScreen.css';
 
 const FALLBACK_MS = 15000;   // polling, only used while the live connection is down
 const TIERS_HIGH_FIRST = [...TIER_ORDER].reverse();
+const clock = (d, opts) => d.toLocaleTimeString([], opts);
+const oneDecimal = (n) => Math.round(Number(n) * 10) / 10;   // 170.157 -> 170.2, 158 -> 158 (display only)
 
 export default function QueueScreen() {
   const [items, setItems] = useState([]);
@@ -18,13 +23,15 @@ export default function QueueScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updated, setUpdated] = useState(null);
-  const [filter, setFilter] = useState('all'); // all | critical | recheck
+  const [filter, setFilter] = useState('all'); // all | critical | unsure
   const [live, setLive] = useState(false);
+  const [below, setBelow] = useState(0);       // rows hidden under the fold of the list
+  const listRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
       const data = await getQueue();
-      setItems(data.items);
+      setItems(data.items.filter((i) => i.patient_ref)); // named patients only, no guests
       setError('');
       setUpdated(new Date());
     } catch (err) {
@@ -57,11 +64,21 @@ export default function QueueScreen() {
 
   const alerts = useMemo(() => new Map(items.map((i) => [i.id, alertsFor(i)])), [items]);
   const nCritical = items.filter((i) => alerts.get(i.id).critical.length > 0).length;
-  const nRecheck = items.filter((i) => alerts.get(i.id).recheck.length > 0).length;
-  const visible = items.filter((i) => {
-    const a = alerts.get(i.id);
-    return filter === 'critical' ? a.critical.length > 0 : filter === 'recheck' ? a.recheck.length > 0 : true;
-  });
+  const nUnsure = items.filter(isUnsure).length;
+  const visible = items.filter((i) => (filter === 'critical' ? alerts.get(i.id).critical.length > 0 : filter === 'unsure' ? isUnsure(i) : true));
+
+  // "+N more below" under the list
+  const measure = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const edge = el.scrollTop + el.clientHeight + 4;
+    setBelow([...el.children].filter((li) => li.offsetTop + li.offsetHeight > edge + 8).length);
+  }, []);
+  useEffect(() => {
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [measure, visible.length, loading]);
 
   return (
     <AdminLayout>
@@ -73,8 +90,7 @@ export default function QueueScreen() {
           <aside className="mk-queue__side" aria-label="Pending patient queue">
             <div className="mk-queue__side-head">
               <h2>Pending patients</h2>
-              <span className="mk-queue__total">{items.length}</span>
-              <button type="button" className="mk-queue__refresh" onClick={load} aria-label="Refresh queue" title="Refresh now">↻</button>
+              <span className="mk-queue__total">{items.length} in queue</span>
             </div>
             <div className="mk-queue__counts">
               {TIERS_HIGH_FIRST.map((t) => (
@@ -86,57 +102,35 @@ export default function QueueScreen() {
 
             {nCritical > 0 && (
               <button type="button" className="mk-queue__attention" onClick={() => setFilter(filter === 'critical' ? 'all' : 'critical')}>
-                <Icon name="alert" size={18} />
-                <span>
-                  <b>{nCritical} {nCritical === 1 ? 'patient has' : 'patients have'} a critical value</b>
-                  <small>Check these first, whatever their tier</small>
-                </span>
+                <span className="mk-queue__attention-icon" aria-hidden="true">!</span>
+                <b>{nCritical} {nCritical === 1 ? 'patient has' : 'patients have'} a critical value</b>
               </button>
             )}
 
             <div className="mk-queue__filters" role="group" aria-label="Filter the list">
               <button type="button" className={filter === 'all' ? 'is-on' : ''} onClick={() => setFilter('all')}>All <b>{items.length}</b></button>
-              <button type="button" className={filter === 'critical' ? 'is-on' : ''} onClick={() => setFilter('critical')}>Critical <b>{nCritical}</b></button>
-              <button type="button" className={filter === 'recheck' ? 'is-on' : ''} onClick={() => setFilter('recheck')}>Re-check <b>{nRecheck}</b></button>
+              <button type="button" className={filter === 'critical' ? 'is-on' : ''} onClick={() => setFilter('critical')}>With Critical Vital <b>{nCritical}</b></button>
+              <button type="button" className={filter === 'unsure' ? 'is-on' : ''} onClick={() => setFilter('unsure')}>Low model confidence <b>{nUnsure}</b></button>
             </div>
 
-            <ol className="mk-queue__rows">
+            <ol className="mk-queue__rows" ref={listRef} onScroll={measure}>
               {loading && <li className="mk-queue__none">Loading…</li>}
               {!loading && visible.length === 0 && <li className="mk-queue__none">{items.length ? 'No patients match this filter.' : 'Nobody is waiting.'}</li>}
-              {visible.map((item) => {
-                const a = alerts.get(item.id);
-                const hasCritical = a.critical.length > 0;
-                return (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      className={`mk-queue__row${selected?.id === item.id ? ' is-selected' : ''}${hasCritical ? ' has-critical' : ''}`}
-                      data-tier={item.tier}
-                      onClick={() => setSelectedId(item.id)}
-                    >
-                      <span className="mk-queue__row-rank">{items.indexOf(item) + 1}</span>
-                      <span className="mk-queue__row-main">
-                        <span className="mk-queue__row-name">{item.patient_name}</span>
-                        <span className="mk-queue__row-sub">
-                          {item.status === 'in_progress' ? 'In progress' : `Waiting ${item.wait_minutes} min`}
-                          {item.escalated && !item.overridden ? ' · moved up' : ''}
-                        </span>
-                        {(hasCritical || a.recheck.length > 0) && (
-                          <span className="mk-queue__chips">
-                            {hasCritical && <span className="mk-chip mk-chip--critical"><Icon name="alert" size={12} strokeWidth={2.4} /> Critical · {a.critical.join(', ')}</span>}
-                            {a.recheck.length > 0 && <span className="mk-chip mk-chip--recheck"><Icon name="recheck" size={12} strokeWidth={2.4} /> Re-check · {a.recheck.join(', ')}</span>}
-                          </span>
-                        )}
-                      </span>
-                      <StatusBadge status={item.tier} />
-                    </button>
-                  </li>
-                );
-              })}
+              {visible.map((item) => (
+                <QueueRow
+                  key={item.id}
+                  item={item}
+                  rank={items.indexOf(item) + 1}
+                  critical={alerts.get(item.id).critical}
+                  selected={selected?.id === item.id}
+                  onSelect={() => setSelectedId(item.id)}
+                />
+              ))}
             </ol>
+            {below > 0 && <p className="mk-queue__more">+{below} more below.</p>}
             <p className="mk-queue__stamp" data-live={live}>
               <i /> {live ? 'Live' : 'Reconnecting, checking every 15s'}
-              {updated && ` · updated ${updated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
+              {updated && ` · updated ${clock(updated, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
             </p>
           </aside>
 
@@ -154,6 +148,46 @@ export default function QueueScreen() {
   );
 }
 
+function QueueRow({ item, rank, critical, selected, onSelect }) {
+  const probs = tierPercents(item);
+  const unsure = isUnsure(item);
+  return (
+    <li>
+      <button
+        type="button"
+        className={`mk-queue__row${selected ? ' is-selected' : ''}${critical.length ? ' has-critical' : ''}`}
+        data-tier={item.tier}
+        onClick={onSelect}
+      >
+        <span className="mk-queue__row-top">
+          <span className="mk-queue__row-rank">{rank}</span>
+          <span className="mk-queue__row-name">{item.patient_name}</span>
+          <StatusBadge status={item.tier} />
+        </span>
+        <span className="mk-queue__row-meta">
+          <span className="mk-queue__row-sub">
+            {item.status === 'in_progress' ? 'In progress' : `Waiting ${item.wait_minutes} min`}
+            {item.escalated && !item.overridden ? ' · moved up' : ''}
+          </span>
+          {unsure && <span className="mk-unsure"><i aria-hidden="true">?</i>Low model confidence</span>}
+        </span>
+        {probs && (
+          <span className="mk-queue__pills">
+            {probs.map((p) => (
+              <span key={p.tier} className={`mk-pill${p.tier === item.model_tier ? ' is-predicted' : ''}`} data-tier={p.tier}>
+                {p.tier} - {p.pct}%
+              </span>
+            ))}
+          </span>
+        )}
+        {critical.length > 0 && (
+          <span className="mk-chip mk-chip--critical"><Icon name="alert" size={12} strokeWidth={2.4} /> Critical · {critical.join(', ')}</span>
+        )}
+      </button>
+    </li>
+  );
+}
+
 function ReviewCard({ item, rank, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -162,9 +196,14 @@ function ReviewCard({ item, rank, onChanged }) {
   const [reason, setReason] = useState('');
   const [confirmLower, setConfirmLower] = useState(false);
 
-  const { critical, recheck } = cellStates(item);
+  const { critical } = cellStates(item);
   const belowFloor = item.escalation_tier && tierRank(tier) < tierRank(item.escalation_tier);
   const notes = (item.review_reasons || []).filter((r) => REVIEW_TEXT[r]).map((r) => REVIEW_TEXT[r]);
+  const probs = tierPercents(item);
+  const confidence = confidenceOf(item);
+  const unsure = isUnsure(item);
+  const arrived = new Date(item.captured_at);
+  const body = item.body || {};
 
   async function run(fn) {
     setBusy(true);
@@ -185,14 +224,15 @@ function ReviewCard({ item, rank, onChanged }) {
   return (
     <div className="mk-review" data-tier={item.tier}>
       <div className="mk-review__head">
-        <span className="mk-review__rank">{rank}</span>
+        <span className="mk-review__bar" />
         <div className="mk-review__who">
-          <p className="mk-review__name">{item.patient_name}</p>
-          <p className="mk-review__sub">
-            {item.kiosk_id} · waiting {item.wait_minutes} min · {item.status === 'in_progress' ? 'in progress' : 'waiting'}
-          </p>
+          <h3 className="mk-review__name"><span>{rank}</span> {item.patient_name}</h3>
+          <p className="mk-review__sub">Kiosk {item.kiosk_id}</p>
         </div>
-        <StatusBadge status={item.tier} />
+        <span className="mk-review__badges">
+          {unsure && <span className="mk-unsure"><i aria-hidden="true">?</i>Low model confidence</span>}
+          <StatusBadge status={item.tier} />
+        </span>
       </div>
 
       {item.escalated && !item.overridden && (
@@ -201,27 +241,64 @@ function ReviewCard({ item, rank, onChanged }) {
         </p>
       )}
 
-      <div className="mk-review__vitals">
-        {VITALS.map((v) => (
-          <div key={v.id} className={`mk-review__vital${critical.has(v.id) ? ' is-critical' : ''}`}>
-            <span>{v.label}</span>
-            <strong>{v.show(item.vitals)}</strong>
-            {recheck.has(v.id) && <RecheckTag text={recheck.get(v.id)} />}
+      <div className="mk-review__section mk-review__card">
+        <h4><small>Patient Profile</small></h4>
+        <div className="mk-review__grid mk-review__grid--5 mk-review__grid--plain">
+          <Fact label="Age" value={item.patient_age != null ? `${item.patient_age} yrs` : '—'} />
+          <Fact label="Sex" value={formatSex(item.patient_sex)} />
+          <Fact label="Height" value={body.height_cm != null ? `${oneDecimal(body.height_cm)} cm` : '—'} />
+          <Fact label="Weight" value={body.weight_kg != null ? `${oneDecimal(body.weight_kg)} kg` : '—'} />
+          <Fact label="BMI" value={body.bmi != null ? oneDecimal(body.bmi) : '—'} />
+        </div>
+        {/* <p className="mk-review__foot">For staff reference only. These don’t affect the tier, confidence or queue order.</p> */}
+      </div>
+
+      <div className="mk-review__section">
+        <h4>Arrival</h4>
+        <div className="mk-review__grid mk-review__grid--3 mk-review__grid--filled">
+          <Fact label="Arrived" value={clock(arrived, { hour: 'numeric', minute: '2-digit' })} />
+          <Fact label="Waiting" value={item.status === 'in_progress' ? 'In progress' : `${item.wait_minutes} min`} />
+          <Fact label="Kiosk" value={item.kiosk_id} />
+        </div>
+      </div>
+
+      <div className="mk-review__section mk-review__card">
+        <div className="mk-review__result-head">
+          <h4>Model confidence distribution</h4>
+          {confidence != null && (
+            <span className={`mk-confidence${unsure ? ' is-unsure' : ''}`} title={`Below ${CONFIDENCE_CUTOFF}% counts as low confidence`}>Confidence {confidence}%</span>
+          )}
+        </div>
+        {probs ? (
+          <div className="mk-bars">
+            {probs.map((p) => (
+              <div key={p.tier} className="mk-bars__row" data-tier={p.tier}>
+                <span className={p.tier === item.model_tier ? 'is-predicted' : ''}>{p.tier}</span>
+                <span className="mk-bars__track"><i style={{ width: `${p.pct}%` }} /></span>
+                <b>{p.pct}%</b>
+              </div>
+            ))}
           </div>
-        ))}
-        {item.body?.bmi != null && (
-          <div className="mk-review__vital">
-            <span>BMI</span>
-            <strong>{item.body.bmi}</strong>
-          </div>
+        ) : (
+          <p className="mk-review__foot">No probabilities were sent with this check-in.</p>
         )}
       </div>
 
-      {(item.critical_flags?.length > 0 || notes.length > 0) && (
-        <div className="mk-review__alerts">
-          {item.critical_flags.map((f) => (
-            <div key={f} className="mk-review__critical">⚠ Critical value: {describeFlag(f, item.vitals)}</div>
+      <div className="mk-review__section">
+        <h4>Vital signs <small>· used by the model</small></h4>
+        <div className="mk-review__grid mk-review__grid--vitals">
+          {VITALS.map((v) => (
+            <div key={v.id} className={`mk-vital${critical.has(v.id) ? ' is-critical' : ''}`}>
+              <span>{v.label}</span>
+              <VitalValue text={v.show(item.vitals)} />
+              {critical.has(v.id) && <em className="mk-vital__flag" title={flagText(item, v)}>⚠ Critical</em>}
+            </div>
           ))}
+        </div>
+      </div>
+
+      {notes.length > 0 && (
+        <div className="mk-review__alerts">
           {notes.map((n) => (
             <div key={n} className="mk-review__note">{n}</div>
           ))}
@@ -267,15 +344,25 @@ function ReviewCard({ item, rank, onChanged }) {
   );
 }
 
-/** Calm grey "please re-check" tag with the explanation one tap away. No red, no model jargon. */
-function RecheckTag({ text }) {
+/** Hover text for a critical tile, e.g. "SpO₂ 88 % (91 or lower)". */
+function flagText(item, vital) {
+  return (item.critical_flags || [])
+    .filter((f) => vital.keys.some((k) => f.startsWith(k)))
+    .map((f) => describeFlag(f, item.vitals))
+    .join('; ');
+}
+
+/** "118/76 mmHg" -> big number with a small unit */
+function VitalValue({ text }) {
+  const [value, ...unit] = text.split(' ');
+  return <strong>{value}{unit.length > 0 && <small>{unit.join(' ')}</small>}</strong>;
+}
+
+function Fact({ label, value }) {
   return (
-    <span className="mk-tag" tabIndex={0}>
-      Re-check {text}
-      <span className="mk-tag__info" aria-hidden="true">ⓘ</span>
-      <span className="mk-tag__tip" role="tooltip">
-        This reading is outside the range the screening tool was built on, so the urgency level is a guide only. Please use your own judgment.
-      </span>
-    </span>
+    <div className="mk-fact">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   );
 }

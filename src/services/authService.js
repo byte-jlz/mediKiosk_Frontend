@@ -4,13 +4,13 @@ import { api, clearSession, getSession, saveSession } from './api';
 // ---------------- staff (one login for all three staff roles) ----------------
 
 /**
- * POST /api/staff/login. Staff sign in in two steps, so this does not always finish the sign-in:
+ * POST /api/staff/login. Sign in with an email address or a username. Staff sign in in two steps, so this does not always finish the sign-in:
  *   { step: 'done', staff }                 signed in (two-step sign-in is switched off on the server)
  *   { step: 'code', mfaToken }              ask for the code from the authenticator app (or a recovery code)
  *   { step: 'setup', setupToken }           first sign-in: the person must set up the authenticator app first
  */
-export async function staffLogin(email, password) {
-  const data = await api('/api/staff/login', { method: 'POST', body: { email: email.trim(), password } });
+export async function staffLogin(emailOrUsername, password) {
+  const data = await api('/api/staff/login', { method: 'POST', body: { identifier: emailOrUsername.trim(), password } });
   if (data.mfaRequired) return { step: 'code', mfaToken: data.mfaToken };
   if (data.mfaSetupRequired) return { step: 'setup', setupToken: data.setupToken };
   return { step: 'done', staff: completeStaffSignIn(data) };

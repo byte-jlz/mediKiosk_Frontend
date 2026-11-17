@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import RequireStaff from './components/RequireStaff';
+import RedirectIfSignedIn from './components/RedirectIfSignedIn';
 import { getCurrentStaff, homeFor } from './services/authService';
 import AdminLoginScreen from './admin-console/AdminLoginScreen';
 import ChangePasswordScreen from './admin-console/ChangePasswordScreen';
@@ -39,7 +40,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* The patient app is the separate MediKiosk Mobile project, so the website is the staff console only. */}
-        <Route path="/sign-in" element={<AdminLoginScreen />} />
+        <Route path="/sign-in" element={<RedirectIfSignedIn><AdminLoginScreen /></RedirectIfSignedIn>} />
         <Route path="/change-password" element={<RequireStaff allowPasswordChange><ChangePasswordScreen /></RequireStaff>} />
 
         {consoleRoutes('/clinic', CLINIC, ['queue', 'dashboard', 'patients', 'patient', 'activity'])}

@@ -57,7 +57,7 @@ export default function AdminLoginScreen() {
     e.preventDefault();
     setError('');
     if (!email || !password) {
-      setError('Please enter both your email and password.');
+      setError('Please enter both your email or username and your password.');
       return;
     }
     setLoading(true);
@@ -89,8 +89,8 @@ export default function AdminLoginScreen() {
             </div>
 
             <label className="mk-login__field">
-              <span>Email</span>
-              <input type="email" value={email} autoComplete="username" onChange={(e) => setEmail(e.target.value)} />
+              <span>Email or username</span>
+              <input type="text" value={email} autoComplete="username" autoCapitalize="none" spellCheck={false} onChange={(e) => setEmail(e.target.value)} />
             </label>
 
             <label className="mk-login__field">

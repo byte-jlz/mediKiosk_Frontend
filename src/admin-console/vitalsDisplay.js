@@ -31,7 +31,7 @@ export function describeFlag(flag, vitals) {
   return `${NAMES[f.key] || f.key} ${value ?? ''}${unit} (${rule})`.replace('  ', ' ');
 }
 
-/** Which card cells are critical / need a re-check. */
+/** Which vital tiles hold a critical value. */
 export function cellStates(item) {
   const critical = new Set();
   for (const flag of item.critical_flags || []) {
@@ -39,21 +39,45 @@ export function cellStates(item) {
     const cell = f && VITALS.find((v) => v.keys.includes(f.key));
     if (cell) critical.add(cell.id);
   }
-  const recheck = new Map(); // cell id -> text for the grey tag
-  for (const key of item.outside_range || []) {
-    const cell = VITALS.find((v) => v.keys.includes(key));
-    if (cell && !recheck.has(cell.id)) recheck.set(cell.id, `${cell.short} (${cell.show(item.vitals)})`);
-  }
-  return { critical, recheck };
+  return { critical };
 }
 
 export const REVIEW_TEXT = {
   breathing_rate_is_estimate: 'Breathing rate is an estimate from the sensor, not a confirmed count.',
 };
 
-/** Short labels for the queue list: which vitals are critical and which need a re-check. */
+/** Short labels for the queue list: which vitals are critical. */
 export function alertsFor(item) {
-  const { critical, recheck } = cellStates(item);
+  const { critical } = cellStates(item);
   const name = (id) => VITALS.find((v) => v.id === id).short;
-  return { critical: [...critical].map(name), recheck: [...recheck.keys()].map(name) };
+  return { critical: [...critical].map(name) };
 }
+
+// ---- model result distribution (queue list + review panel) ----
+
+/** Below this confidence the screening tool is "unsure" and staff should look at the patient themselves. */
+export const CONFIDENCE_CUTOFF = 80;
+
+/** Per-tier probabilities as whole percentages, High first. Accepts 0-1 or 0-100 values; null if the kiosk sent none. */
+export function tierPercents(item) {
+  const raw = item.probabilities;
+  if (!raw || typeof raw !== 'object') return null;
+  const byName = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k.toLowerCase(), Number(v)]));
+  const vals = TIER_ORDER.map((t) => byName[t.toLowerCase()]).filter((n) => Number.isFinite(n));
+  if (!vals.length) return null;
+  const scale = Math.max(...vals) <= 1 ? 100 : 1;
+  return [...TIER_ORDER].reverse().map((t) => ({ tier: t, pct: Math.round((byName[t.toLowerCase()] || 0) * scale) }));
+}
+
+/** The model's confidence in its own tier, 0-100, or null when unknown. */
+export function confidenceOf(item) {
+  const p = tierPercents(item)?.find((x) => x.tier === item.model_tier);
+  return p ? p.pct : null;
+}
+
+export const isUnsure = (item) => {
+  const c = confidenceOf(item);
+  return c != null && c < CONFIDENCE_CUTOFF;
+};
+
+export const formatSex = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '—');

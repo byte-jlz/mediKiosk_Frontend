@@ -25,6 +25,7 @@ const emptyForm = {
   bloodType: '',
   address: '',
   email: '',
+  username: '',
   password: '',
   confirmPassword: '',
 };
@@ -133,6 +134,21 @@ export default function PatientFormModal({ patient, onClose, onSaved }) {
           <FormField label="Email" required wide>
             <input type="email" value={form.email} onChange={update('email')} autoComplete="off" required />
           </FormField>
+          <FormField label="Username" required={!isEdit}>
+            <input
+              value={form.username}
+              onChange={update('username')}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              minLength={3}
+              maxLength={30}
+              pattern="[A-Za-z0-9][A-Za-z0-9._\-]*"
+              title="3-30 letters, numbers, dot, dash or underscore"
+              placeholder="e.g. ana.cruz"
+              required={!isEdit}
+            />
+          </FormField>
 
           <FormField label="Address" required full>
             <input value={form.address} onChange={update('address')} placeholder="Street, barangay, city, province" required />
@@ -182,6 +198,7 @@ function toForm(patient) {
     bloodType: patient.bloodType || '',
     address: patient.address || '',
     email: patient.email || '',
+    username: patient.username || '',
   };
 }
 
