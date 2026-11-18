@@ -13,15 +13,15 @@ const ADVISER = {
 };
 // ms = how long each person stays on screen (Julz and Joana a little longer)
 const MEMBERS = [
-  { img: 'plaza', name: 'Julz Christian J. Plaza', role: 'System Analyst', ms: 4500,
+  { img: 'plaza', name: 'Julz Christian J. Plaza', role: 'System Analyst', ms: 4000,
     desc: 'Designed the overall system and brought it together: the sensors, the Raspberry Pi kiosk software, and the link to the clinic app.' },
-  { img: 'pailanan', name: 'Joana Mae B. Pailanan', role: 'Back-End Developer', ms: 4500,
+  { img: 'pailanan', name: 'Joana Mae B. Pailanan', role: 'Back-End Developer', ms: 4000,
     desc: 'Trained the machine-learning model, built the database, deployed the system, and designed the front end.' },
-  { img: 'odchigue', name: 'Althea Shane M. Odchigue', role: 'Front-End Developer', ms: 3500,
+  { img: 'odchigue', name: 'Althea Shane M. Odchigue', role: 'Front-End Developer', ms: 2000,
     desc: 'Developed the front-end interfaces and led the data gathering.' },
-  { img: 'canoy', name: 'Jan Michael Leo A. Canoy Jr', role: 'Database Administrator', ms: 3500,
+  { img: 'canoy', name: 'Jan Michael Leo A. Canoy Jr', role: 'Database Administrator', ms: 2000,
     desc: 'Managed the database and helped build the kiosk hardware.' },
-  { img: 'ronquillo', name: 'James Vern V. Ronquillo', role: 'Technical Writer', ms: 3500,
+  { img: 'ronquillo', name: 'James Vern V. Ronquillo', role: 'Technical Writer', ms: 2000,
     desc: 'Wrote the project documentation, helped build the hardware, and gathered data.' },
 ];
 const SCHOOL = 'University of Science and Technology of Southern Philippines';
