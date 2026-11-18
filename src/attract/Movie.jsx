@@ -8,7 +8,7 @@ import logo from '../assets/medikiosk-logo.png';
 import { T } from './timeline';
 
 const ADVISER = {
-  img: 'calo', name: 'Mr. Al-Monte Vince M. Calo, DIT', role: 'Capstone Adviser',
+  img: 'calo', name: 'Al-Monte Vince M. Calo, DIT', role: 'Capstone Adviser',
   desc: 'Guided and mentored the team throughout the project.',
 };
 // ms = how long each person stays on screen (Julz and Joana a little longer)
