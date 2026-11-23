@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import KioskShell from './KioskShell';
 import Icon from './ui/Icon';
+import OnScreenKeyboard from './dev/OnScreenKeyboard';
 import { KioskCard, TopBar } from './ui/KioskUI';
 import { clearPatientSession, patientLoginWithQr } from '../services/authService';
 import { useKioskAgent } from '../services/kioskAgentService';
@@ -14,6 +15,13 @@ import { t, useLang } from './i18n';
 // See MediKiosk_hardware/agent/qr_reader.py.
 
 const AGENT_GRACE_MS = 4000; // wait this long for the agent before saying the camera is offline
+const CODE_MAX = 60; // MEDIKIOSK:<36 hex> is 46 characters
+
+// Typing the code: the kiosk has no keyboard, and Chromium in kiosk mode doesn't
+// bring up the Pi's own on-screen keyboard - so tapping the box opens OUR
+// keyboard (the same one as Developer options' Wi-Fi). inputMode="none" stops a
+// system keyboard from popping up on top of it. A USB QR scanner still works:
+// it types into the focused box and presses Enter.
 
 export default function KioskQrScanScreen() {
   const navigate = useNavigate();
@@ -29,6 +37,7 @@ export default function KioskQrScanScreen() {
   const [status, setStatus] = useState('idle'); // idle | verifying
   const [error, setError] = useState('');
   const [manualCode, setManualCode] = useState('');
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   const signIn = useCallback(
     async (value) => {
@@ -106,10 +115,16 @@ export default function KioskQrScanScreen() {
   const cameraShown = agentMissing ? 'unavailable' : cameraState;
   const cameraText = agentMissing ? t('The QR camera is offline.') : cameraError;
 
+  function submitCode() {
+    if (!manualCode.trim() || status === 'verifying') return;
+    setKeyboardOpen(false);
+    signIn(manualCode);
+    setManualCode('');
+  }
+
   function handleManualSubmit(e) {
     e.preventDefault();
-    if (manualCode.trim()) signIn(manualCode);
-    setManualCode('');
+    submitCode();
   }
 
   function continueAsGuest() {
@@ -140,7 +155,9 @@ export default function KioskQrScanScreen() {
           </p>
         </div>
 
-        <div className={`k-camera is-${cameraShown}${status === 'verifying' ? ' is-verifying' : ''}`}>
+        <div
+          className={`k-camera is-${cameraShown}${status === 'verifying' ? ' is-verifying' : ''}${keyboardOpen ? ' is-small' : ''}`}
+        >
           {previewUrl && cameraShown === 'live' && <img src={previewUrl} className="k-camera__video" alt="" />}
           <span className="k-camera__corner k-camera__corner--tl" />
           <span className="k-camera__corner k-camera__corner--tr" />
@@ -173,9 +190,15 @@ export default function KioskQrScanScreen() {
             id="k-qr-code"
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
+            onFocus={() => setKeyboardOpen(true)}
+            onClick={() => setKeyboardOpen(true)}
             placeholder={t('Enter code')}
             autoFocus={cameraShown === 'unavailable'}
             autoComplete="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            inputMode="none"
+            maxLength={CODE_MAX}
           />
           <button type="submit" disabled={status === 'verifying' || !manualCode.trim()}>
             {t('Sign in')}
@@ -187,6 +210,21 @@ export default function KioskQrScanScreen() {
             {t('No app? Continue as Guest')}
           </button>
         </footer>
+
+        {keyboardOpen && (
+          <div className="k-qr-osk">
+            <button type="button" className="k-qr-osk__hide" onClick={() => setKeyboardOpen(false)}>
+              <Icon name="x" size={30} />
+              {t('Hide keyboard')}
+            </button>
+            <OnScreenKeyboard
+              onKey={(c) => setManualCode((v) => (v.length < CODE_MAX ? v + c : v))}
+              onDelete={() => setManualCode((v) => v.slice(0, -1))}
+              onDone={submitCode}
+              doneLabel={t('Sign in')}
+            />
+          </div>
+        )}
       </KioskCard>
     </KioskShell>
   );

@@ -3322,3 +3322,50 @@
   display: block;
   font-size: 34px;
 }
+
+/* ---------- QR screen: our own on-screen keyboard for typing the code ---------- */
+/* Chromium in kiosk mode doesn't open the Pi's keyboard, so KioskQrScanScreen.jsx
+   shows dev/OnScreenKeyboard.jsx docked at the bottom of the card. */
+.k-camera.is-small {
+  width: 340px;
+  height: 340px;
+  margin-top: 32px;
+}
+
+.k-qr-osk {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  border-radius: 0 0 28px 28px;
+  overflow: hidden;
+  box-shadow: 0 -12px 32px rgba(25, 95, 105, 0.14);
+  animation: k-qr-osk-in 200ms ease both;
+}
+
+@keyframes k-qr-osk-in {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+
+.k-qr-osk__hide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 76px;
+  border: none;
+  border-top: 2px solid var(--k-line);
+  background: #f3f7f8;
+  color: var(--k-heading);
+  font: 600 30px var(--k-font);
+  cursor: pointer;
+}
+
+.k-qr-osk .k-osk {
+  border-top: none;
+}

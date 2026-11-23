@@ -63,6 +63,7 @@ const tl = {
   "Height": "Taas",
   "Height & weight": "Taas at timbang",
   "Hi, {name}!": "Hi, {name}!",
+  "Hide keyboard": "Itago ang keyboard",
   "Hold on to anything": "Kumapit sa kahit ano",
   "Hold still": "Wag gumalaw",
   "Hold still in front of the sensor until the reading is complete.": "Huwag gumalaw sa harap ng sensor hanggang matapos ang reading.",

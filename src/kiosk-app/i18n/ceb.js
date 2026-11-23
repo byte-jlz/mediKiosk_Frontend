@@ -63,6 +63,7 @@ const ceb = {
   "Height": "Height",
   "Height & weight": "Height ug timbang",
   "Hi, {name}!": "Hi, {name}!",
+  "Hide keyboard": "Tagoa ang keyboard",
   "Hold on to anything": "Mokapyot bisan asa",
   "Hold still": "Ayaw lihok",
   "Hold still in front of the sensor until the reading is complete.": "Ayaw lihok sa atubangan sa sensor hangtod mahuman ang reading.",
