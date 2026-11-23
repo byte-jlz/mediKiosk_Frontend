@@ -23,6 +23,30 @@ const MORE = [
   { key: 'close', hint: 'joins broken segments' },
 ];
 const STEP = { exposure: 50 }; // everything else: 1
+
+// The picture's size and shape are set HERE (inline), not in kiosk.css: the box
+// always has the camera's own width:height, so the picture is never stretched or
+// squashed and the boxes you drag line up with the real camera pixels.
+// kiosk.css only adds looks (rounded corners, background).
+const CAM_BOX = {
+  position: 'relative',
+  width: '100%',
+  height: 'auto',
+  minHeight: 0,
+  maxHeight: 'none',
+  flex: '0 0 auto',
+  overflow: 'hidden',
+  touchAction: 'none',
+};
+const CAM_IMG = {
+  position: 'absolute',
+  inset: 0,
+  display: 'block',
+  width: '100%',
+  height: '100%',
+  objectFit: 'contain',
+  pointerEvents: 'none',
+};
 const KEEPALIVE_MS = 30000;
 
 export default function DevBpCamera({ token, onBack }) {
@@ -202,14 +226,14 @@ export default function DevBpCamera({ token, onBack }) {
       <div
         ref={area}
         className="k-dev__cam"
-        style={frame ? { aspectRatio: `${frame[0]} / ${frame[1]}` } : undefined}
+        style={{ ...CAM_BOX, aspectRatio: frame ? `${frame[0]} / ${frame[1]}` : '16 / 9' }}
         onPointerDown={down}
         onPointerMove={move}
         onPointerUp={up}
         onPointerCancel={() => setDrag(null)}
       >
         {imgUrl ? (
-          <img src={imgUrl} alt="BP camera" className="k-dev__cam-img" draggable={false} />
+          <img src={imgUrl} alt="BP camera" className="k-dev__cam-img" style={CAM_IMG} draggable={false} />
         ) : (
           <span className="k-dev__cam-wait">Waiting for the camera…</span>
         )}

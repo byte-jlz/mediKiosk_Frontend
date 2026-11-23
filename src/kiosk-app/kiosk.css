@@ -2599,6 +2599,12 @@
 }
 
 /* ---------- Developer options: calibration screens (dev/*.jsx) ---------- */
+/* Developer screens scroll when they're taller than the screen: never squeeze
+   their parts to fit (that flattened the BP camera picture). */
+.k-dev > * {
+  flex-shrink: 0;
+}
+
 .k-dev__host {
   position: absolute;
   inset: 0;
@@ -2931,24 +2937,12 @@
   color: var(--accent);
 }
 
-/* BP camera */
+/* BP camera - looks only. Its size and shape are set inline in dev/DevBpCamera.jsx
+   from the camera's real picture size, so nothing here can stretch it. */
 .k-dev__cam {
-  position: relative;
-  width: 100%;
-  min-height: 300px;
   margin-top: 28px;
   border-radius: 28px;
-  overflow: hidden;
   background: #2a3236;
-  touch-action: none;
-}
-
-.k-dev__cam-img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  pointer-events: none;
 }
 
 .k-dev__cam-wait {
