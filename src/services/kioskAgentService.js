@@ -13,7 +13,10 @@
 //   medikiosk/<KIOSK_ID>/edge/assessment <- the edge service: a patient's check-in was saved
 //                                (status saved / incomplete / rejected - NEVER the risk tier)
 //   medikiosk/<KIOSK_ID>/qr/preview <- JPEG preview of the QR cam (raw bytes)
-//   medikiosk/<KIOSK_ID>/system  <- answers to staff commands (shutdown)
+//   medikiosk/<KIOSK_ID>/system  <- answers to staff commands (shutdown, staff PIN, developer options)
+//   medikiosk/<KIOSK_ID>/dev     <- Developer options live data (weight while calibrating, BP camera readings)
+//   medikiosk/<KIOSK_ID>/dev/bpcam/preview <- JPEG of the BP camera while its calibration screen is open
+//   medikiosk/<KIOSK_ID>/live/temp <- live temperature (raw_c = before the offset, for calibrating)
 //
 // The QR cam is opened by the AGENT (by its USB port), not by the browser:
 // the BP cam is the same webcam model, so the browser can't tell them apart.
@@ -51,6 +54,9 @@ class KioskAgentConnection {
     this.assessments = new Map(); // session id -> last edge/assessment message
     this.assessmentListeners = new Set();
     this.systemListeners = new Map(); // staff command id -> (msg) => void
+    this.devListeners = new Set(); // Developer options live data
+    this.devPreviewListeners = new Set(); // BP camera JPEG (calibration screen)
+    this.liveTempListeners = new Set();
     this.status = null; // last agent status message
     this.connected = false;
   }
@@ -58,6 +64,10 @@ class KioskAgentConnection {
   _handle(topic, payload) {
     if (topic === `${BASE}/qr/preview`) {
       this.previewListeners.forEach((fn) => fn(payload)); // raw JPEG, not JSON
+      return;
+    }
+    if (topic === `${BASE}/dev/bpcam/preview`) {
+      this.devPreviewListeners.forEach((fn) => fn(payload)); // raw JPEG, not JSON
       return;
     }
     let msg;
@@ -78,6 +88,14 @@ class KioskAgentConnection {
     }
     if (kind === 'system') {
       this.systemListeners.get(msg.id)?.(msg);
+      return;
+    }
+    if (kind === 'dev') {
+      this.devListeners.forEach((fn) => fn(msg));
+      return;
+    }
+    if (kind === 'live/temp') {
+      this.liveTempListeners.forEach((fn) => fn(msg));
       return;
     }
     if (kind === 'status') {
@@ -182,9 +200,72 @@ class KioskAgentConnection {
     return () => this.systemListeners.delete(id);
   }
 
+  /**
+   * Staff only: the hidden PIN pad. The AGENT checks the PIN against the
+   * shutdown PIN and the developer PIN and says what it opens:
+   *   { ok: true, opens: 'shutdown' }
+   *   { ok: true, opens: 'developer', token }   (send the token with every developer command)
+   *   { ok: false, message }
+   * Returns stop().
+   */
+  staffPin(pin, onReply) {
+    const id = newId();
+    this.systemListeners.set(id, onReply);
+    this._send({ action: 'staff_pin', id, pin });
+    return () => this.systemListeners.delete(id);
+  }
+
+  /** Close the developer session (Developer options screen closed). */
+  devEnd(token) {
+    this._send({ action: 'dev_end', id: newId(), token });
+  }
+
+  /**
+   * Developer options: send one developer command (dev_cal_get, dev_cal_set,
+   * dev_scale, dev_bpcam - see MediKiosk_hardware/agent/dev_tools.py) and wait
+   * for its answer. Resolves with the agent's reply, or
+   * { ok: false, message } if it doesn't answer in time.
+   */
+  devRequest(token, action, payload = {}, timeoutMs = 8000) {
+    const id = newId();
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        this.systemListeners.delete(id);
+        resolve({ ok: false, message: 'The kiosk agent didn’t answer.' });
+      }, timeoutMs);
+      this.systemListeners.set(id, (msg) => {
+        clearTimeout(timer);
+        this.systemListeners.delete(id);
+        resolve(msg);
+      });
+      this._send({ ...payload, action, id, token });
+    });
+  }
+
+  /** Developer options live data ({ kind: 'weight' | 'bpcam', ... }). Returns unsubscribe(). */
+  onDev(fn) {
+    this.devListeners.add(fn);
+    return () => this.devListeners.delete(fn);
+  }
+
+  /** BP camera preview JPEG frames (Uint8Array) while its calibration screen is open. */
+  onDevPreview(fn) {
+    this.devPreviewListeners.add(fn);
+    return () => this.devPreviewListeners.delete(fn);
+  }
+
+  /** Live temperature messages ({ object_c, raw_c, ambient_c, valid }). Returns unsubscribe(). */
+  onLiveTemp(fn) {
+    this.liveTempListeners.add(fn);
+    return () => this.liveTempListeners.delete(fn);
+  }
+
   close() {
     this.listeners.clear();
     this.systemListeners.clear();
+    this.devListeners.clear();
+    this.devPreviewListeners.clear();
+    this.liveTempListeners.clear();
     this.qrListeners.clear();
     this.previewListeners.clear();
     this.statusListeners.clear();
@@ -207,7 +288,7 @@ export async function connectKioskAgent({ onConnectionChange } = {}) {
     client.subscribe([`${BASE}/state`, `${BASE}/result`, `${BASE}/status`, `${BASE}/qr`, `${BASE}/edge/assessment`, `${BASE}/system`], {
       qos: 1,
     });
-    client.subscribe(`${BASE}/qr/preview`, { qos: 0 });
+    client.subscribe([`${BASE}/qr/preview`, `${BASE}/dev`, `${BASE}/dev/bpcam/preview`, `${BASE}/live/temp`], { qos: 0 });
     onConnectionChange?.('connected');
   });
   client.on('reconnect', () => onConnectionChange?.('reconnecting'));

@@ -87,6 +87,41 @@ const PATHS = {
       <path d="M19 5v14" />
     </>
   ),
+  // staff / developer screens
+  power: (
+    <>
+      <path d="M12 3v9" />
+      <path d="M6.4 6.4a8 8 0 1 0 11.2 0" />
+    </>
+  ),
+  tool: <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z" />,
+  wifi: (
+    <>
+      <path d="M2 8.8a15 15 0 0 1 20 0" />
+      <path d="M5 12.5a10 10 0 0 1 14 0" />
+      <path d="M8.5 16a5 5 0 0 1 7 0" />
+      <path d="M12 19.5v.01" />
+    </>
+  ),
+  height: <path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4" />,
+  monitor: (
+    <>
+      <rect x="3" y="4" width="18" height="13" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </>
+  ),
+  terminal: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M7 9l3 3-3 3M12 15h5" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </>
+  ),
   cloudOff: (
     <>
       <path d="M3 3l18 18" />

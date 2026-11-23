@@ -2428,3 +2428,903 @@
 .k-card--welcome .k-start__clock {
   margin-bottom: 32px;
 }
+
+/* ---------- staff PIN pad: shutdown question (StaffShutdown.jsx) ---------- */
+.k-staff__icon--danger {
+  background: var(--k-error-tint);
+  color: var(--k-error);
+}
+
+.k-staff__actions {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 56px;
+}
+
+.k-staff__btn--danger {
+  --accent: var(--k-error);
+}
+
+/* ---------- Developer options (DeveloperOptions.jsx) - developer PIN only ---------- */
+.k-dev {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  padding: 48px 64px 56px;
+  border-radius: 28px;
+  background: #fff;
+  color: var(--k-text);
+  text-align: left;
+  overflow-y: auto;
+  animation: k-fade-in 200ms ease both;
+  --accent: var(--k-primary);
+}
+
+.k-dev__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.k-dev__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  height: 68px;
+  padding: 0 28px;
+  border-radius: 34px;
+  background: var(--k-heading);
+  color: #fff;
+  font: 700 29px var(--k-font);
+}
+
+.k-dev__muted {
+  font: 500 29px var(--k-font);
+  color: var(--k-muted);
+}
+
+.k-dev__title {
+  margin: 40px 0 0;
+  font: 800 74px/1.1 var(--k-font);
+  color: var(--k-heading);
+}
+
+.k-dev__sub {
+  margin: 16px 0 0;
+  font: 400 37px/1.45 var(--k-font);
+  color: var(--k-muted);
+}
+
+.k-dev__section {
+  margin: 48px 0 20px;
+  font: 700 31px var(--k-font);
+  letter-spacing: 0.06em;
+  color: var(--k-muted);
+}
+
+.k-dev__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.k-dev__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 36px;
+  border: none;
+  border-radius: 32px;
+  background: var(--tint);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.k-dev__tile svg {
+  color: var(--accent);
+}
+
+.k-dev__tile-title {
+  font: 800 44px var(--k-font);
+}
+
+.k-dev__tile-sub {
+  font: 500 31px var(--k-font);
+}
+
+.k-dev__row {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  padding: 32px 36px;
+  border: 2px solid var(--k-line);
+  border-radius: 32px;
+  background: #fff;
+  color: var(--k-heading);
+  text-align: left;
+  cursor: pointer;
+}
+
+.k-dev__row svg {
+  color: var(--k-primary);
+  flex-shrink: 0;
+}
+
+.k-dev__row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.k-dev__row .k-dev__tile-sub {
+  color: var(--k-muted);
+}
+
+.k-dev__system {
+  height: 128px;
+  border: 2px solid var(--k-primary);
+  border-radius: 32px;
+  background: #fff;
+  color: var(--k-primary);
+  font: 700 38px var(--k-font);
+  cursor: pointer;
+}
+
+.k-dev__tile:disabled,
+.k-dev__row:disabled,
+.k-dev__system:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.k-dev__tile:active:not(:disabled),
+.k-dev__row:active:not(:disabled),
+.k-dev__system:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.k-dev__note {
+  margin: 20px 0 0;
+}
+
+.k-dev__bottom {
+  margin-top: auto;
+  padding-top: 40px;
+}
+
+/* ---------- Developer options: calibration screens (dev/*.jsx) ---------- */
+.k-dev__host {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+}
+
+.k-dev[data-color] {
+  --k-dev-ink: var(--ink);
+}
+
+.k-dev__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 68px;
+  padding: 0 28px 0 18px;
+  border: 2px solid var(--k-line);
+  border-radius: 34px;
+  background: #fff;
+  color: var(--k-heading);
+  font: 600 29px var(--k-font);
+  cursor: pointer;
+}
+
+.k-dev__title--step {
+  color: var(--ink);
+}
+
+.k-dev__msg {
+  margin: 20px 0 0;
+  font: 600 31px/1.4 var(--k-font);
+  color: var(--k-muted);
+}
+
+.k-dev__msg--ok {
+  color: #1e6e47;
+}
+
+.k-dev__msg--bad {
+  color: var(--k-error);
+}
+
+.k-dev__live {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  margin-top: 36px;
+  padding: 36px 40px;
+  border-radius: 32px;
+  background: var(--tint);
+  color: var(--ink);
+}
+
+.k-dev__live > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.k-dev__live-label {
+  font: 600 29px var(--k-font);
+}
+
+.k-dev__live-value {
+  font: 800 80px var(--k-font);
+}
+
+.k-dev__live-value--accent {
+  color: var(--accent);
+}
+
+.k-dev__live-value--big {
+  font-size: 100px;
+}
+
+.k-dev__live-note {
+  grid-column: 1 / -1;
+  font: 500 28px var(--k-font);
+}
+
+.k-dev__stepper {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.k-dev__step-btn {
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+  border: 2px solid var(--accent);
+  border-radius: 32px;
+  background: #fff;
+  color: var(--accent);
+  font: 700 64px var(--k-font);
+  cursor: pointer;
+}
+
+.k-dev__step-btn--small {
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  font-size: 46px;
+}
+
+.k-dev__step-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.k-dev__step-value {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: center;
+  height: 140px;
+  border-radius: 32px;
+  background: var(--k-page);
+  color: var(--k-heading);
+  font: 800 60px var(--k-font);
+}
+
+.k-dev__numfield {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.k-dev__numfield-label {
+  font: 600 33px var(--k-font);
+  color: var(--k-text);
+}
+
+.k-dev__numfield-value {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 120px;
+  box-sizing: border-box;
+  padding: 0 32px;
+  border: 2px solid var(--k-line);
+  border-radius: 28px;
+  background: #fff;
+  color: var(--k-heading);
+  font: 700 48px var(--k-font);
+}
+
+.k-dev__numfield-value.is-empty {
+  color: var(--k-muted);
+  font-weight: 500;
+  font-size: 36px;
+}
+
+.k-dev__pad-dialog {
+  position: fixed;
+  z-index: 40;
+  border-radius: 28px;
+}
+
+.k-dev__pad-title {
+  margin-top: 0;
+  font-size: 48px;
+}
+
+.k-dev__pad-display {
+  margin: 28px 0 8px;
+  font: 800 88px var(--k-font);
+  color: var(--k-heading);
+}
+
+.k-dev__pad-display span {
+  font-size: 44px;
+  color: var(--k-muted);
+}
+
+.k-dev__pad-dialog .k-dev__grid {
+  width: 100%;
+}
+
+.k-dev__system--primary {
+  border: none;
+  background: var(--k-primary);
+  color: #fff;
+}
+
+.k-dev__wide {
+  width: 100%;
+  margin-top: 24px;
+}
+
+.k-dev__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.k-dev__scan {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 32px;
+  border: 3px solid var(--accent);
+  border-radius: 32px;
+}
+
+.k-dev__scan-label {
+  font: 700 31px var(--k-font);
+  color: var(--k-muted);
+}
+
+.k-dev__scan-msg {
+  font: 700 40px/1.3 var(--k-font);
+  color: var(--k-heading);
+}
+
+.k-dev__points {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.k-dev__points li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 28px;
+  border-radius: 24px;
+  background: var(--k-page);
+  font: 600 31px var(--k-font);
+  color: var(--k-heading);
+}
+
+.k-dev__chip-btn {
+  align-self: flex-start;
+  height: 72px;
+  padding: 0 28px;
+  border: 2px solid var(--k-line);
+  border-radius: 36px;
+  background: #fff;
+  color: var(--k-heading);
+  font: 600 28px var(--k-font);
+  cursor: pointer;
+}
+
+.k-dev__chip-btn--big {
+  height: 104px;
+  padding: 0 40px;
+  border-color: var(--accent);
+  color: var(--accent);
+  font: 700 36px var(--k-font);
+}
+
+.k-dev__chip-btn:disabled {
+  opacity: 0.45;
+}
+
+.k-dev__stepcard {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-top: 28px;
+  padding: 32px;
+  border: 2px solid var(--k-line);
+  border-radius: 32px;
+}
+
+.k-dev__stepcard--column {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+  border: 3px solid var(--accent);
+}
+
+.k-dev__stepcard-row {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.k-dev__stepnum {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font: 800 40px var(--k-font);
+}
+
+.k-dev__stepcard-text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: 6px;
+}
+
+.k-dev__stepcard-title {
+  font: 700 38px var(--k-font);
+  color: var(--k-heading);
+}
+
+.k-dev__stepcard-sub {
+  font: 500 30px var(--k-font);
+  color: var(--k-muted);
+}
+
+.k-dev__row--wide {
+  grid-column: 1 / -1;
+  border: none;
+  background: var(--tint);
+  color: var(--ink);
+}
+
+.k-dev__row--wide svg {
+  color: var(--accent);
+}
+
+/* BP camera */
+.k-dev__cam {
+  position: relative;
+  width: 100%;
+  min-height: 300px;
+  margin-top: 28px;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #2a3236;
+  touch-action: none;
+}
+
+.k-dev__cam-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.k-dev__cam-wait {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font: 600 32px var(--k-font);
+}
+
+.k-dev__cam-box {
+  position: absolute;
+  box-sizing: border-box;
+  border: 5px solid;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.k-dev__cam-box--drag {
+  border-style: dashed;
+}
+
+.k-dev__cam-tag {
+  position: absolute;
+  top: -38px;
+  left: -5px;
+  padding: 2px 12px;
+  border-radius: 8px;
+  color: #fff;
+  font: 700 24px var(--k-font);
+}
+
+.k-dev__cam-live {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font: 600 24px var(--k-font);
+}
+
+.k-dev__fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.k-dev__field {
+  height: 104px;
+  border: 3px solid var(--field);
+  border-radius: 26px;
+  background: #fff;
+  color: var(--k-heading);
+  font: 700 34px var(--k-font);
+  cursor: pointer;
+}
+
+.k-dev__field.is-active {
+  background: var(--field);
+  color: #fff;
+}
+
+.k-dev__field--plain {
+  border: 2px solid var(--k-line);
+  font-size: 30px;
+}
+
+.k-dev__reads {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+  padding: 24px 32px;
+  border-radius: 28px;
+  background: var(--tint);
+  color: var(--ink);
+}
+
+.k-dev__reads > span {
+  display: flex;
+  flex-direction: column;
+}
+
+.k-dev__reads-value {
+  font: 800 56px var(--k-font);
+}
+
+.k-dev__sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.k-dev__slider {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.k-dev__slider-name {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  font: 700 32px var(--k-font);
+  color: var(--k-heading);
+}
+
+.k-dev__slider-hint {
+  font: 500 24px var(--k-font);
+  color: var(--k-muted);
+}
+
+.k-dev__slider-bar {
+  position: relative;
+  flex-grow: 1;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--tint);
+}
+
+.k-dev__slider-bar span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--accent);
+}
+
+.k-dev__slider-value {
+  width: 96px;
+  text-align: right;
+  font: 800 36px var(--k-font);
+  color: var(--k-heading);
+}
+
+/* Developer options: Shut down button (full width, red) */
+.k-dev__system--danger {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  border-color: var(--k-error);
+  color: var(--k-error);
+}
+
+/* ---------- Developer options: Wi-Fi (dev/DevWifi.jsx) + on-screen keyboard ---------- */
+.k-dev__wifi-status {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+  margin-top: 36px;
+  padding: 36px 40px;
+  border-radius: 32px;
+  background: var(--tint);
+  color: var(--ink);
+}
+
+.k-dev__wifi-status > span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.k-dev__wifi-value {
+  font: 800 38px var(--k-font);
+  overflow-wrap: anywhere;
+}
+
+.k-dev__wifi-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.k-dev__wifi-head .k-dev__chip-btn {
+  margin-bottom: 14px;
+}
+
+.k-dev__nets {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.k-dev__net {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  padding: 30px 36px;
+  border: 2px solid var(--k-line);
+  border-radius: 28px;
+  background: #fff;
+  color: var(--k-heading);
+  text-align: left;
+  cursor: pointer;
+}
+
+.k-dev__net svg {
+  flex-shrink: 0;
+  color: var(--k-primary);
+}
+
+.k-dev__net.is-current {
+  border-color: var(--k-primary);
+  background: var(--k-tint);
+}
+
+.k-dev__net .k-dev__row-text {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.k-dev__net-name {
+  font: 700 38px var(--k-font);
+  overflow-wrap: anywhere;
+}
+
+.k-dev__pw-label {
+  display: block;
+  margin-top: 40px;
+}
+
+.k-dev__pw-row {
+  display: flex;
+  gap: 20px;
+  margin-top: 14px;
+}
+
+.k-dev__pw {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+  height: 124px;
+  box-sizing: border-box;
+  padding: 0 32px;
+  border: 3px solid var(--k-primary);
+  border-radius: 28px;
+  color: var(--k-heading);
+  font: 600 46px var(--k-font);
+  white-space: pre;
+  overflow: hidden;
+}
+
+.k-dev__pw .is-empty {
+  color: var(--k-muted);
+  font-weight: 500;
+  font-size: 36px;
+}
+
+.k-dev__caret {
+  width: 4px;
+  height: 56px;
+  margin-left: 4px;
+  background: var(--k-primary);
+  animation: k-caret 1s steps(1) infinite;
+}
+
+@keyframes k-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.k-dev__osk-dock {
+  margin: auto -64px -56px;
+  padding-top: 32px;
+}
+
+.k-osk {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px 20px 40px;
+  border-top: 2px solid var(--k-line);
+  background: #e9eff1;
+}
+
+.k-osk__row {
+  display: flex;
+  gap: 10px;
+}
+
+.k-osk__row--inset {
+  padding: 0 44px;
+}
+
+.k-osk__key {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 108px;
+  border: none;
+  border-radius: 18px;
+  background: #fff;
+  color: var(--k-heading);
+  font: 600 44px var(--k-font);
+  box-shadow: 0 2px 0 #c3cfd3;
+  cursor: pointer;
+}
+
+.k-osk__key:active {
+  transform: scale(0.95);
+  background: var(--k-tint);
+}
+
+.k-osk__key--wide {
+  flex-grow: 1.6;
+}
+
+.k-osk__key--space {
+  flex-grow: 5;
+}
+
+.k-osk__key--small {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.k-osk__key--dark {
+  background: #c9d6da;
+}
+
+.k-osk__key--dark.is-on {
+  background: var(--k-heading);
+  color: #fff;
+}
+
+.k-osk__key--go {
+  background: var(--k-primary);
+  color: #fff;
+}
+
+/* Developer options: Open terminal (full width) + "also stop the programs" option */
+.k-dev__system--terminal {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.k-dev__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 36px;
+  padding: 28px 32px;
+  border: 2px solid var(--k-warn-line);
+  border-radius: 28px;
+  background: var(--k-warn-tint);
+  color: var(--k-warn-ink);
+  font: 500 30px/1.4 var(--k-font);
+  text-align: left;
+}
+
+.k-dev__check input {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  margin: 4px 0 0;
+  accent-color: var(--k-primary);
+}
+
+.k-dev__check strong {
+  display: block;
+  font-size: 34px;
+}

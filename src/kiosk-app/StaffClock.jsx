@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import StaffShutdown from './StaffShutdown';
 import { formatDate, formatTime, useNow } from './useNow';
 
-// Staff only: press and hold the clock this long to open the shutdown panel (asks for the PIN).
+// Staff only: press and hold the clock this long to open the staff PIN pad (shutdown or developer options).
 const STAFF_HOLD_MS = 5000;
 
 /**
  * The date + time row at the top of the Start and Welcome screens.
- * Hold it 5 s = the hidden staff shutdown panel (StaffShutdown.jsx) - no visible hint on purpose.
+ * Hold it 5 s = the hidden staff PIN pad (StaffShutdown.jsx) - no visible hint on purpose.
  *
  *   onOpenChange(open)  told when the staff panel opens / closes (the screen pauses its intro video timer)
  */
