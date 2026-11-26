@@ -27,9 +27,6 @@ export async function staffLoginCode(mfaToken, code) {
   return completeStaffSignIn(await api('/api/staff/login/mfa', { method: 'POST', body: { mfaToken, code: code.trim() } }));
 }
 
-/** POST /api/staff/login/mfa/email: emails a one-time code (only when the clinic has turned that on). */
-export const staffEmailCode = (mfaToken) => api('/api/staff/login/mfa/email', { method: 'POST', body: { mfaToken } });
-
 /** POST /api/mfa/setup: returns { secret, otpauthUri } to show as a QR code. */
 export const mfaStart = (setupToken) => api('/api/mfa/setup', { method: 'POST', token: setupToken });
 

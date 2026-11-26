@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import Button from '../components/Button';
-import { mfaFinish, mfaStart, staffEmailCode, staffLoginCode } from '../services/authService';
+import { mfaFinish, mfaStart, staffLoginCode } from '../services/authService';
 
 // The extra sign-in steps shown inside the staff sign-in card (see AdminLoginScreen):
 //   CodeStep      every later sign-in: the 6-digit code from the authenticator app, or a recovery code
@@ -11,13 +11,11 @@ import { mfaFinish, mfaStart, staffEmailCode, staffLoginCode } from '../services
 export function CodeStep({ mfaToken, onSignedIn, onBack }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
-  const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    setNote('');
     if (!code.trim()) return setError('Enter the code from your authenticator app.');
     setLoading(true);
     try {
@@ -27,17 +25,6 @@ export function CodeStep({ mfaToken, onSignedIn, onBack }) {
       if (err.status === 401 && /expired/i.test(err.message)) onBack(); // the 5-minute step timed out: start again
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleEmail() {
-    setError('');
-    setNote('');
-    try {
-      await staffEmailCode(mfaToken);
-      setNote('We emailed you a 6-digit code. Type it above. It works once and expires in 10 minutes.');
-    } catch (err) {
-      setError(err.status === 404 ? 'Emailed codes are not available. Use your authenticator app or a recovery code.' : err.message);
     }
   }
 
@@ -64,11 +51,9 @@ export function CodeStep({ mfaToken, onSignedIn, onBack }) {
       <p className="mk-login__hint">Lost your phone? Type one of your recovery codes here instead (like <code>a1b2c3-d4e5f6</code>).</p>
 
       {error && <p className="mk-login__error" role="alert">{error}</p>}
-      {note && <p className="mk-login__note" role="status">{note}</p>}
 
       <Button type="submit" disabled={loading}>{loading ? 'VERIFYING…' : 'VERIFY'}</Button>
       <div className="mk-login__links">
-        <button type="button" className="mk-login__link" onClick={handleEmail}>Email me a code instead</button>
         <button type="button" className="mk-login__link" onClick={onBack}>Back to sign in</button>
       </div>
     </form>
