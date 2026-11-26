@@ -7,12 +7,13 @@ import logoFull from '../assets/logo-full.png';
 import logoMark from '../assets/logo-mark-white.png';
 import './Sidebar.css';
 
-// What each role sees. Clinic staff work the queue; admins manage accounts and kiosks; only the super admin sees audit logs.
+// What each role sees. Clinic staff work the queue; admins manage accounts and kiosks; only the super admin sees audit logs and manages clinics.
 const NAV_ITEMS = [
   { page: 'queue', label: 'Queue', icon: 'queue', roles: ['clinic_staff'] },
   { page: 'dashboard', label: 'Overview', icon: 'grid', end: true, roles: ['clinic_staff', 'admin', 'super_admin'] },
   { page: 'patients', label: 'Patients', icon: 'patients', roles: ['clinic_staff', 'admin', 'super_admin'] },
   { page: 'staff', label: 'Staff', icon: 'staff', roles: ['admin', 'super_admin'] },
+  { page: 'clinics', label: 'Clinics', icon: 'clinic', roles: ['super_admin'] },
   { page: 'kiosks', label: 'Kiosks', icon: 'kiosk', roles: ['admin', 'super_admin'] },
   { page: 'kiosks-activity', label: 'Activity', icon: 'activity', roles: ['clinic_staff', 'admin', 'super_admin'] },
   { page: 'audit-logs', label: 'Audit', icon: 'audit', roles: ['super_admin'] },

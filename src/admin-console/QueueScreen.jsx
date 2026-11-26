@@ -181,7 +181,13 @@ function QueueRow({ item, rank, critical, selected, onSelect }) {
           </span>
         )}
         {critical.length > 0 && (
-          <span className="mk-chip mk-chip--critical"><Icon name="alert" size={12} strokeWidth={2.4} /> Critical · {critical.join(', ')}</span>
+          <span className="mk-queue__chips">
+            <span className="mk-chip mk-chip--critical"><Icon name="alert" size={12} strokeWidth={2.4} /> Critical · {critical.join(', ')}</span>
+            {/* A critical value on a Low or Normal patient: the model rated them low, so staff should look at the vitals. */}
+            {(item.tier === 'Low' || item.tier === 'Normal') && (
+              <span className="mk-chip mk-chip--check"><span aria-hidden="true">⚑</span> Check vitals</span>
+            )}
+          </span>
         )}
       </button>
     </li>

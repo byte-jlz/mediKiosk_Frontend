@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
+import PasswordInput from '../components/PasswordInput';
 import logoFull from '../assets/logo-full.png';
 import LobbyArtPanel from './LobbyArtPanel';
 import { changeStaffPassword, getCurrentStaff, homeFor, staffLogout } from '../services/authService';
@@ -51,15 +52,15 @@ export default function ChangePasswordScreen() {
           </p>
           <label className="mk-alogin__field">
             <span>{staff?.mustChangePassword ? 'TEMPORARY PASSWORD' : 'CURRENT PASSWORD'}</span>
-            <input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" />
+            <PasswordInput value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" />
           </label>
           <label className="mk-alogin__field">
             <span>NEW PASSWORD</span>
-            <input type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />
+            <PasswordInput value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />
           </label>
           <label className="mk-alogin__field">
             <span>CONFIRM NEW PASSWORD</span>
-            <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
+            <PasswordInput value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
           </label>
           {error && <p className="mk-alogin__error">{error}</p>}
           <Button type="submit" disabled={loading}>{loading ? 'SAVING…' : 'SAVE PASSWORD'}</Button>

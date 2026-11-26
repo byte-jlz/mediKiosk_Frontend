@@ -7,10 +7,13 @@ import {
   getKiosks,
   getRemovedKiosks,
   setKioskStatus,
+  setKioskClinic,
   addKiosk,
   removeKiosk,
   restoreKiosk,
 } from '../services/kiosksService';
+import { getClinics } from '../services/clinicsService';
+import { getCurrentStaff } from '../services/authService';
 import './KiosksScreen.css';
 
 function formatRemovedAt(timestamp) {
@@ -32,15 +35,19 @@ export default function KiosksScreen() {
   const [confirmRemoveId, setConfirmRemoveId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newKiosk, setNewKiosk] = useState({ id: '', name: '', clinic: '' });
+  const [clinics, setClinics] = useState([]);
+  // Only a super admin registers, removes and restores kiosks; an admin sees and can deactivate their own clinic's kiosks.
+  const isSuper = getCurrentStaff()?.accessRole === 'super_admin';
 
   const [error, setError] = useState('');
 
   async function refresh() {
     setLoading(true);
     try {
-      const [active, removed] = await Promise.all([getKiosks(), getRemovedKiosks()]);
+      const [active, removed, list] = await Promise.all([getKiosks(), isSuper ? getRemovedKiosks() : Promise.resolve([]), isSuper ? getClinics() : Promise.resolve([])]);
       setKiosks(active);
       setRemovedKiosks(removed);
+      setClinics(list);
     } catch (err) {
       setError(err.message);
     }
@@ -66,6 +73,12 @@ export default function KiosksScreen() {
     await act(() => setKioskStatus(kiosk.id, nextStatus));
   }
 
+  async function handleMove(kiosk, clinic) {
+    if (!clinic || clinic === kiosk.clinic) return;
+    if (!window.confirm(`Move ${kiosk.name} to ${clinic}? From now on its check-ins show for ${clinic}'s staff, not ${kiosk.clinic || 'its old clinic'}'s.`)) return;
+    await act(() => setKioskClinic(kiosk.id, clinic));
+  }
+
   async function handleAdd(e) {
     e.preventDefault();
     if (!newKiosk.name || !newKiosk.clinic) return;
@@ -89,6 +102,9 @@ export default function KiosksScreen() {
     await act(() => restoreKiosk(kiosk.id));
   }
 
+  // the registered spelling of this kiosk's clinic (stored names may differ in capital letters), so the dropdown shows the right entry
+  const clinicValue = (k) => clinics.find((c) => c.name.trim().toLowerCase() === (k.clinic || '').trim().toLowerCase())?.name || k.clinic || '';
+
   const isRemovedTab = activeTab === 'removed';
   const visibleKiosks = isRemovedTab ? removedKiosks : kiosks;
 
@@ -99,10 +115,10 @@ export default function KiosksScreen() {
         <div className="mk-page__title-row">
           <div>
             <p className="mk-page__subtitle">
-              Provision new kiosks, edit settings, and deactivate units across all clinics.
+              {isSuper ? 'Register kiosks, assign them to a clinic, and deactivate units across all clinics.' : "Your clinic's kiosks. You can deactivate or reactivate a unit."}
             </p>
           </div>
-          {!isRemovedTab && (
+          {isSuper && !isRemovedTab && (
             <div className="mk-page__actions">
               <Button onClick={() => setShowAddForm((v) => !v)}>+ Add kiosks</Button>
             </div>
@@ -120,7 +136,7 @@ export default function KiosksScreen() {
           >
             Active kiosks <span className="mk-kiosks__tab-count">{kiosks.length}</span>
           </button>
-          <button
+          {isSuper && <button
             type="button"
             role="tab"
             aria-selected={isRemovedTab}
@@ -132,10 +148,10 @@ export default function KiosksScreen() {
             }}
           >
             Removed kiosks <span className="mk-kiosks__tab-count">{removedKiosks.length}</span>
-          </button>
+          </button>}
         </div>
 
-        {showAddForm && !isRemovedTab && (
+        {isSuper && showAddForm && !isRemovedTab && (
           <form className="mk-kiosks__add-form" onSubmit={handleAdd}>
             <input
               placeholder="Kiosk ID (exactly as set on the kiosk, e.g. K-01)"
@@ -149,12 +165,17 @@ export default function KiosksScreen() {
               placeholder="Kiosk name (e.g. Lobby — West Wing)"
               value={newKiosk.name}
               onChange={(e) => setNewKiosk((k) => ({ ...k, name: e.target.value }))}
+              required
             />
-            <input
-              placeholder="Clinic"
+            <select
+              aria-label="Clinic"
               value={newKiosk.clinic}
               onChange={(e) => setNewKiosk((k) => ({ ...k, clinic: e.target.value }))}
-            />
+              required
+            >
+              <option value="">{clinics.length ? 'Choose a clinic' : 'No clinics yet: add one on the Clinics page'}</option>
+              {clinics.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+            </select>
             <Button type="submit">Save</Button>
           </form>
         )}
@@ -228,16 +249,27 @@ export default function KiosksScreen() {
                     </div>
                   </div>
                 ) : k.registered === false ? (
-                  <>
+                  isSuper ? <>
                     <p className="mk-kiosks__unreg-note">
                       This kiosk connected but is not registered, so its check-ins are on hold (nothing is lost). Register it to accept them.
                     </p>
                     <div className="mk-kiosks__actions">
                       <Button onClick={() => startRegister(k)}>Register this kiosk</Button>
                     </div>
-                  </>
+                  </> : null
                 ) : (
                   <>
+                    {isSuper && (
+                      <label className="mk-kiosks__clinic-pick">
+                        <span>Clinic</span>
+                        <select value={clinicValue(k)} onChange={(e) => handleMove(k, e.target.value)}>
+                          {!clinics.some((c) => c.name === clinicValue(k)) && (
+                            <option value={k.clinic || ''} disabled>{k.clinic ? `${k.clinic} (not a registered clinic)` : 'Choose a clinic'}</option>
+                          )}
+                          {clinics.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                        </select>
+                      </label>
+                    )}
                     <div className="mk-kiosks__actions">
                       <button
                         className="mk-kiosks__deactivate"
@@ -246,13 +278,13 @@ export default function KiosksScreen() {
                         {k.status === 'Deactivated' ? '↻ Reactivate' : '⏻ Deactivate'}
                       </button>
                     </div>
-                    <button
+                    {isSuper && <button
                       type="button"
                       className="mk-kiosks__remove"
                       onClick={() => setConfirmRemoveId(k.id)}
                     >
                       🗑 Remove kiosk
-                    </button>
+                    </button>}
                   </>
                 )}
               </div>

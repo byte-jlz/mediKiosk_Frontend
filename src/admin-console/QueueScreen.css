@@ -60,6 +60,9 @@
 
 .mk-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; line-height: 1.2; border-radius: 7px; padding: 3px 8px; max-width: 100%; margin-left: 22px; }
 .mk-chip--critical { background: var(--tier-high); color: #fff; }
+.mk-queue__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 22px; }
+.mk-queue__chips .mk-chip { margin-left: 0; }
+.mk-chip--check { background: #fff4d6; color: #8a5e00; border: 1px solid #f0c46a; }
 
 .mk-queue__more { margin: 6px 4px 0; font-size: 11.5px; color: var(--muted); }
 .mk-queue__stamp { font-size: 11px; color: var(--muted-light); margin: 8px 4px 0; display: flex; align-items: center; gap: 6px; }

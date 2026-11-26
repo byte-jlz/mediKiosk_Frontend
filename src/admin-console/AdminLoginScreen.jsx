@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
+import PasswordInput from '../components/PasswordInput';
 import { staffLogin, homeFor, completeStaffSignIn } from '../services/authService';
 import { CodeStep, RecoveryStep, SetupStep } from './TwoFactorSteps';
 import logoFull from '../assets/logo-full.png';
@@ -95,7 +96,7 @@ export default function AdminLoginScreen() {
 
             <label className="mk-login__field">
               <span>Password</span>
-              <input type="password" value={password} autoComplete="current-password" onChange={(e) => setPassword(e.target.value)} />
+              <PasswordInput value={password} autoComplete="current-password" onChange={(e) => setPassword(e.target.value)} />
             </label>
 
             {error && <p className="mk-login__error" role="alert">{error}</p>}

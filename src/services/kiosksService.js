@@ -4,6 +4,8 @@ export const getKiosks = () => api('/api/kiosks', { as: 'staff' });
 export const getRemovedKiosks = () => api('/api/kiosks?removed=true', { as: 'staff' });
 export const addKiosk = ({ id, name, clinic }) => api('/api/kiosks', { as: 'staff', method: 'POST', body: { ...(id ? { id } : {}), name, clinic } });
 export const setKioskStatus = (id, status) => api(`/api/kiosks/${encodeURIComponent(id)}`, { as: 'staff', method: 'PATCH', body: { status } });
+/** Super admin only: move a registered kiosk to another registered clinic. */
+export const setKioskClinic = (id, clinic) => api(`/api/kiosks/${encodeURIComponent(id)}`, { as: 'staff', method: 'PATCH', body: { clinic } });
 export const removeKiosk = (id) => api(`/api/kiosks/${encodeURIComponent(id)}`, { as: 'staff', method: 'DELETE' });
 export const restoreKiosk = (id) => api(`/api/kiosks/${encodeURIComponent(id)}/restore`, { as: 'staff', method: 'POST' });
 export const getKioskActivity = ({ day = '', kiosk = '', clinic = '' } = {}) => {

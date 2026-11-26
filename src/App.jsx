@@ -12,6 +12,7 @@ import PatientDetailScreen from './admin-console/PatientDetailScreen';
 import KiosksScreen from './admin-console/KiosksScreen';
 import KiosksActivityScreen from './admin-console/KiosksActivityScreen';
 import AuditLogsScreen from './admin-console/AuditLogsScreen';
+import ClinicsScreen from './admin-console/ClinicsScreen';
 
 const CLINIC = ['clinic_staff'];
 const ADMIN = ['admin'];
@@ -29,9 +30,9 @@ const guard = (roles, el) => <RequireStaff roles={roles}>{el}</RequireStaff>;
 function consoleRoutes(prefix, roles, pages) {
   const P = {
     queue: <QueueScreen />, dashboard: <DashboardScreen />, patients: <PatientRecordsScreen />, patient: <PatientDetailScreen />,
-    activity: <KiosksActivityScreen />, staff: <StaffAccountsScreen />, kiosks: <KiosksScreen />, audit: <AuditLogsScreen />,
+    activity: <KiosksActivityScreen />, staff: <StaffAccountsScreen />, kiosks: <KiosksScreen />, audit: <AuditLogsScreen />, clinics: <ClinicsScreen />,
   };
-  const paths = { queue: 'queue', dashboard: 'dashboard', patients: 'patients', patient: 'patients/:patientId', activity: 'kiosks-activity', staff: 'staff', kiosks: 'kiosks', audit: 'audit-logs' };
+  const paths = { queue: 'queue', dashboard: 'dashboard', patients: 'patients', patient: 'patients/:patientId', activity: 'kiosks-activity', staff: 'staff', kiosks: 'kiosks', audit: 'audit-logs', clinics: 'clinics' };
   return pages.map((k) => <Route key={`${prefix}-${k}`} path={`${prefix}/${paths[k]}`} element={guard(roles, P[k])} />);
 }
 
@@ -45,7 +46,7 @@ export default function App() {
 
         {consoleRoutes('/clinic', CLINIC, ['queue', 'dashboard', 'patients', 'patient', 'activity'])}
         {consoleRoutes('/admin', ADMIN, ['dashboard', 'patients', 'patient', 'staff', 'kiosks', 'activity'])}
-        {consoleRoutes('/super-admin', SUPER, ['dashboard', 'patients', 'patient', 'staff', 'kiosks', 'activity', 'audit'])}
+        {consoleRoutes('/super-admin', SUPER, ['dashboard', 'patients', 'patient', 'staff', 'clinics', 'kiosks', 'activity', 'audit'])}
 
         {/* bare or old addresses just send you where you belong */}
         <Route path="*" element={<GoHome />} />

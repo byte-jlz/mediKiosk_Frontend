@@ -5,6 +5,7 @@ import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import Button from '../components/Button';
 import { getStaff, addStaff, removeStaff, updateStaff, resetStaffPassword, resetStaffMfa } from '../services/staffService';
+import { getClinics } from '../services/clinicsService';
 import { getCurrentStaff } from '../services/authService';
 import './StaffAccountsScreen.css';
 
@@ -20,6 +21,11 @@ export default function StaffAccountsScreen() {
   const [newStaff, setNewStaff] = useState(blank);
   const [error, setError] = useState('');
   const [secret, setSecret] = useState(null); // { name, email, username, password } shown once
+  const [clinics, setClinics] = useState([]);  // a super admin picks from these; an admin's new staff always join the admin's own clinic
+
+  useEffect(() => {
+    getClinics().then(setClinics).catch(() => {});
+  }, []);
 
   async function refresh() {
     setLoading(true);
@@ -55,7 +61,7 @@ export default function StaffAccountsScreen() {
 
   async function handleAdd(e) {
     e.preventDefault();
-    if (!newStaff.name || !newStaff.email || !newStaff.username.trim()) return;
+    if (!newStaff.name || !newStaff.email || !newStaff.username.trim() || (isSuper && !newStaff.clinic)) return;
     const created = await act(() => addStaff(newStaff));
     if (!created) return;
     setSecret({ name: created.name, email: created.email, username: created.username, password: created.temporaryPassword });
@@ -66,6 +72,16 @@ export default function StaffAccountsScreen() {
   async function handleRemove(row) {
     if (!window.confirm(`Delete ${row.name}'s account? This cannot be undone.`)) return;
     if (await act(() => removeStaff(row.id))) refresh();
+  }
+
+  async function handleMove(row, clinic) {
+    if (!clinic || clinic === row.clinic) return;
+    if (!window.confirm(`Move ${row.name} to ${clinic}? They will only see ${clinic}'s kiosks and patients' check-ins from now on.`)) return;
+    const updated = await act(() => updateStaff(row.id, { clinic }));
+    if (updated) {
+      setSelectedStaff(updated);
+      refresh();
+    }
   }
 
   async function handleSuspend(row) {
@@ -91,6 +107,9 @@ export default function StaffAccountsScreen() {
       window.alert(`${row.name}'s two-step sign-in was reset.`);
     }
   }
+
+  // the registered spelling of someone's clinic (stored names may differ in capital letters), so the dropdown shows the right entry
+  const clinicOf = (row) => clinics.find((c) => c.name.trim().toLowerCase() === (row.clinic || '').trim().toLowerCase())?.name || row.clinic || '';
 
   const columns = [
     {
@@ -185,12 +204,22 @@ export default function StaffAccountsScreen() {
             )}
             <label className="mk-staff__label">
               <span>Clinic</span>
-              <input value={newStaff.clinic} onChange={(e) => setNewStaff((s) => ({ ...s, clinic: e.target.value }))} />
+              {isSuper ? (
+                <select value={newStaff.clinic} onChange={(e) => setNewStaff((s) => ({ ...s, clinic: e.target.value }))} required>
+                  <option value="">{clinics.length ? 'Choose a clinic' : 'No clinics yet: add one on the Clinics page'}</option>
+                  {clinics.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              ) : (
+                <>
+                  <input value={me.clinic || ''} disabled readOnly />
+                  <small>{me.clinic ? 'New staff join your clinic.' : 'No clinic is assigned to your account yet. Ask a super admin.'}</small>
+                </>
+              )}
             </label>
             {error && <p className="mk-staff__form-error" role="alert">{error}</p>}
             <div className="mk-staff__modal-actions">
               <Button type="button" variant="secondary" onClick={closeAdd}>Cancel</Button>
-              <Button type="submit" disabled={!newStaff.name || !newStaff.email || !newStaff.username.trim()}>Create account</Button>
+              <Button type="submit" disabled={!newStaff.name || !newStaff.email || !newStaff.username.trim() || (isSuper ? !newStaff.clinic : !me.clinic)}>Create account</Button>
             </div>
           </form>
         </div>
@@ -207,7 +236,19 @@ export default function StaffAccountsScreen() {
               <Field label="Username" value={selectedStaff.username || '—'} />
               <Field label="ID" value={selectedStaff.id} />
               <Field label="Access level" value={selectedStaff.role} />
-              <Field label="Clinic" value={selectedStaff.clinic} />
+              {isSuper && selectedStaff.accessRole !== 'super_admin' ? (
+                <div className="mk-staff__field">
+                  <span>Clinic</span>
+                  <select value={clinicOf(selectedStaff)} onChange={(e) => handleMove(selectedStaff, e.target.value)}>
+                    {!clinics.some((c) => c.name === clinicOf(selectedStaff)) && (
+                      <option value={selectedStaff.clinic || ''} disabled>{selectedStaff.clinic ? `${selectedStaff.clinic} (not a registered clinic)` : 'Choose a clinic'}</option>
+                    )}
+                    {clinics.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
+              ) : (
+                <Field label="Clinic" value={selectedStaff.clinic} />
+              )}
               <Field label="Status" value={selectedStaff.status} />
               <Field label="Last active" value={selectedStaff.lastActive} />
             </div>
